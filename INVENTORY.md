@@ -1,6 +1,15 @@
-# StellarCode M0-M3 Complete — Inventory
+# StellarCode v0.3.2 Inventory
 
-Total files: 117
+Generated: 2026-10-30T08:38:05Z
+
+## Status
+
+- Version: 0.3.2-mvp
+- Automated tests: 16/16 passing
+- Hotfixes included: 0.3.1 symbol identity, 0.3.2 search/context ranking
+- `stellar search` is supported; `stellar find` remains an alias.
+- Chinese engineering-query expansion is deterministic/local and uses zero LLM tokens.
+- No-match task queries return empty recommendations instead of importance fallback.
 
 ## Files
 
@@ -76,6 +85,7 @@ Total files: 117
 - `docs/BENCHMARK_10K_RESULT.json`
 - `docs/DELIVERY_SUMMARY.md`
 - `docs/HOTFIX_0.3.1.md`
+- `docs/HOTFIX_0.3.2.md`
 - `docs/IMPLEMENTATION_STATUS.md`
 - `docs/IMPLEMENTED_ARCHITECTURE.md`
 - `docs/KNOWN_LIMITATIONS.md`
@@ -121,3 +131,4 @@ Total files: 117
 - `tests/m1-index.test.js`
 - `tests/m2-web.test.js`
 - `tests/m3-mcp-benchmark.test.js`
+- `tests/m3-query-regression.test.js`

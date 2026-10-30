@@ -1,11 +1,11 @@
 npm notice
-npm notice package: stellarcode@0.3.1-mvp
+npm notice package: stellarcode@0.3.2-mvp
 npm notice Tarball Contents
 npm notice 346B .github/workflows/ci.yml
 npm notice 456B AGENTS.md
-npm notice 1.3kB INVENTORY.md
+npm notice 4.2kB INVENTORY.md
 npm notice 1.1kB LICENSE
-npm notice 5.3kB README.md
+npm notice 5.8kB README.md
 npm notice 11.3kB SHA256SUMS.txt
 npm notice 1.6kB benchmark/baseline.example.jsonl
 npm notice 731B benchmark/example-report.json
@@ -72,13 +72,14 @@ npm notice 8.7kB design-pack/ui/WIREFRAMES.md
 npm notice 154B docs/BENCHMARK_10K_RESULT.json
 npm notice 1.3kB docs/DELIVERY_SUMMARY.md
 npm notice 1.2kB docs/HOTFIX_0.3.1.md
+npm notice 1.8kB docs/HOTFIX_0.3.2.md
 npm notice 3.0kB docs/IMPLEMENTATION_STATUS.md
 npm notice 2.0kB docs/IMPLEMENTED_ARCHITECTURE.md
 npm notice 1.2kB docs/KNOWN_LIMITATIONS.md
 npm notice 930B docs/MCP_SETUP.md
 npm notice 0B docs/NPM_PACK_DRY_RUN.txt
 npm notice 599B docs/SECURITY.md
-npm notice 1.8kB docs/TEST_REPORT.txt
+npm notice 2.4kB docs/TEST_REPORT.txt
 npm notice 247B fixtures/sample/python/session.py
 npm notice 170B fixtures/sample/python/token_store.py
 npm notice 94B fixtures/sample/README.md
@@ -103,7 +104,7 @@ npm notice 4.1kB src/indexer/scanner.js
 npm notice 14.0kB src/indexer/sync.js
 npm notice 4.9kB src/mcp/server.js
 npm notice 1.2kB src/platform/paths.js
-npm notice 13.4kB src/query/query-service.js
+npm notice 18.6kB src/query/query-service.js
 npm notice 5.0kB src/storage/db.js
 npm notice 1.2kB src/storage/project-store.js
 npm notice 1.7kB src/storage/registry.js
@@ -116,14 +117,15 @@ npm notice 2.2kB tests/m0-foundation.test.js
 npm notice 5.5kB tests/m1-index.test.js
 npm notice 1.3kB tests/m2-web.test.js
 npm notice 2.3kB tests/m3-mcp-benchmark.test.js
+npm notice 4.0kB tests/m3-query-regression.test.js
 npm notice Tarball Details
 npm notice name: stellarcode
-npm notice version: 0.3.1-mvp
-npm notice filename: stellarcode-0.3.1-mvp.tgz
+npm notice version: 0.3.2-mvp
+npm notice filename: stellarcode-0.3.2-mvp.tgz
 npm notice package size: 5.4 MB
 npm notice unpacked size: 5.7 MB
-npm notice shasum: b3da3552edd2d8e68d52156493cdde968eb96fa2
-npm notice integrity: sha512-si5R0UHIWnNa7[...]upZrZFHxq7PBQ==
-npm notice total files: 115
+npm notice shasum: 4c168947ef74ff648ba3f4eeb564fc6f9ee7e8a8
+npm notice integrity: sha512-R5nTv0Y5If5Hx[...]xSbCTBbFj9hVQ==
+npm notice total files: 117
 npm notice
-stellarcode-0.3.1-mvp.tgz
+stellarcode-0.3.2-mvp.tgz

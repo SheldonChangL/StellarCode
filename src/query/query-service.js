@@ -1,8 +1,64 @@
 import path from 'node:path'
 import { withFreshProjectDb } from '../core/runtime.js'
 
-function tokens(query) {
-  return String(query ?? '').toLowerCase().split(/[^a-z0-9_$.-]+/i).filter(Boolean)
+const QUERY_CONCEPTS = [
+  { patterns: ['登入', '登錄', '登录', '登入流程', '登入功能', '登入頁'], terms: ['login', 'signin', 'sign-in', 'auth', 'authentication'] },
+  { patterns: ['登出', '注销', '登出流程'], terms: ['logout', 'signout', 'sign-out', 'auth'] },
+  { patterns: ['認證', '认证', '驗證身份', '身份驗證'], terms: ['auth', 'authentication', 'identity'] },
+  { patterns: ['權限', '权限', '授權', '授权'], terms: ['permission', 'authorization', 'authorize', 'access'] },
+  { patterns: ['使用者', '用户', '用戶'], terms: ['user', 'account', 'profile'] },
+  { patterns: ['設定', '配置', '設定檔', '配置文件'], terms: ['config', 'configuration', 'settings'] },
+  { patterns: ['測試', '测试'], terms: ['test', 'spec'] },
+  { patterns: ['入口', '進入點', '进入点', '啟動點', '启动点'], terms: ['index', 'main', 'bootstrap', 'entry', 'entrypoint'] },
+  { patterns: ['核心', '核心模組', '核心模块'], terms: ['core', 'engine', 'service', 'manager'] },
+  { patterns: ['路由'], terms: ['router', 'route', 'routing'] },
+  { patterns: ['資料庫', '数据库'], terms: ['database', 'db', 'repository', 'store'] },
+  { patterns: ['快取', '缓存'], terms: ['cache'] },
+  { patterns: ['網路', '网络', '請求', '请求'], terms: ['network', 'http', 'api', 'client', 'request'] },
+  { patterns: ['刷新', '更新 token', '更新token'], terms: ['refresh', 'token'] },
+  { patterns: ['場景', '场景'], terms: ['scene'] },
+  { patterns: ['遊戲', '游戏'], terms: ['game'] },
+  { patterns: ['魚', '鱼'], terms: ['fish'] }
+]
+
+const STOP_WORDS = new Set([
+  'a','an','the','to','of','for','and','or','in','on','with','from','is','are','be','this','that','these','those',
+  'find','show','tell','locate','modify','change','fix','file','files','code','project','repo','repository','flow',
+  'please','where','which','what','how','need','should','first','look','at','about'
+])
+
+function unique(values) {
+  return [...new Set(values.filter(Boolean))]
+}
+
+function asciiTokens(query) {
+  return String(query ?? '')
+    .toLowerCase()
+    .match(/[a-z0-9_$.-]+/g)?.filter(token => token.length > 1 && !STOP_WORDS.has(token)) ?? []
+}
+
+function queryProfile(query) {
+  const raw = String(query ?? '')
+  const lower = raw.toLowerCase()
+  const direct = asciiTokens(lower)
+  const concepts = []
+  const expanded = []
+
+  for (const concept of QUERY_CONCEPTS) {
+    if (concept.patterns.some(pattern => lower.includes(pattern.toLowerCase()))) {
+      concepts.push(concept.patterns[0])
+      expanded.push(...concept.terms)
+    }
+  }
+
+  const architectureOverview = /入口|進入點|进入点|啟動點|启动点|核心|架構|架构|architecture|entry\s*point|entrypoint|core\s+module|main\s+module/i.test(raw)
+  return {
+    raw,
+    terms: unique([...direct, ...expanded]),
+    directTerms: unique(direct),
+    concepts: unique(concepts),
+    architectureOverview
+  }
 }
 
 function scoreText(text, queryTokens) {
@@ -15,6 +71,15 @@ function scoreText(text, queryTokens) {
     else if (value.includes(token)) score += 3
   }
   return score
+}
+
+function entryPointBonus(filePath) {
+  const normalized = String(filePath ?? '').replaceAll('\\', '/').toLowerCase()
+  const base = path.posix.basename(normalized).replace(/\.[^.]+$/, '')
+  if (/(^|\/)src\/(index|main)\.[^/]+$/.test(normalized)) return 48
+  if (['index', 'main', 'bootstrap', 'entry', 'entrypoint'].includes(base)) return 40
+  if (/(^|\/)(server|cli)\.[^/]+$/.test(normalized)) return 20
+  return 0
 }
 
 function fileRow(row) {
@@ -35,18 +100,24 @@ function fileRow(row) {
 export async function searchProject(projectPath, query, options = {}) {
   const limit = Math.min(Number(options.limit ?? 10), 50)
   return withFreshProjectDb(projectPath, ({ db }) => {
-    const qTokens = tokens(query)
+    const profile = queryProfile(query)
+    const qTokens = profile.terms
     if (!qTokens.length) return []
     const fileRows = db.prepare('SELECT * FROM files').all()
     const symbolRows = db.prepare(`SELECT s.*, f.path, f.summary AS file_summary, f.importance FROM symbols s JOIN files f ON f.file_id=s.file_id`).all()
     const results = []
     for (const row of fileRows) {
-      const s = scoreText(row.path, qTokens) * 2 + scoreText(row.summary, qTokens) + row.importance
-      if (s > 0) results.push({ type: 'file', score: s, path: row.path, summary: row.summary, language: row.language, importance: row.importance })
+      const lexical = scoreText(row.path, qTokens) * 2 + scoreText(row.summary, qTokens)
+      const structural = profile.architectureOverview ? entryPointBonus(row.path) : 0
+      if (lexical <= 0 && structural <= 0) continue
+      const s = lexical + structural + row.importance
+      results.push({ type: 'file', score: s, path: row.path, summary: row.summary, language: row.language, importance: row.importance })
     }
     for (const row of symbolRows) {
-      const s = scoreText(row.name, qTokens) * 3 + scoreText(row.qualified_name, qTokens) * 2 + scoreText(row.path, qTokens) + row.importance
-      if (s > 0) results.push({
+      const lexical = scoreText(row.name, qTokens) * 3 + scoreText(row.qualified_name, qTokens) * 2 + scoreText(row.path, qTokens)
+      if (lexical <= 0) continue
+      const s = lexical + row.importance
+      results.push({
         type: 'symbol', score: s, name: row.name, qualifiedName: row.qualified_name,
         kind: row.kind, path: row.path, lines: [row.start_line, row.end_line], summary: row.file_summary
       })
@@ -83,11 +154,11 @@ export async function fileDetail(projectPath, requestedPath, options = {}) {
 export async function symbolLookup(projectPath, query, options = {}) {
   const limit = Math.min(Number(options.limit ?? 10), 30)
   return withFreshProjectDb(projectPath, ({ db }) => {
-    const q = String(query).toLowerCase()
+    const profile = queryProfile(query)
+    const queryTerms = profile.terms.length ? profile.terms : [String(query).toLowerCase()]
     const rows = db.prepare(`SELECT s.*, f.path FROM symbols s JOIN files f ON f.file_id=s.file_id`).all()
     return rows.map(row => ({
-      score: (row.name.toLowerCase() === q ? 20 : 0) + (row.qualified_name.toLowerCase() === q ? 20 : 0) +
-        (row.name.toLowerCase().includes(q) ? 8 : 0) + (row.qualified_name.toLowerCase().includes(q) ? 4 : 0),
+      score: scoreText(row.name, queryTerms) * 3 + scoreText(row.qualified_name, queryTerms) * 2,
       name: row.name, qualifiedName: row.qualified_name, kind: row.kind, path: row.path,
       lines: [row.start_line, row.end_line], exported: Boolean(row.exported), signature: row.signature
     })).filter(v => v.score > 0).sort((a, b) => b.score - a.score).slice(0, limit)
@@ -158,7 +229,8 @@ export async function contextForTask(projectPath, task, options = {}) {
   const limit = Math.min(Number(options.limit ?? 8), 12)
   const syncOptions = { ...options }
   return withFreshProjectDb(projectPath, async ({ db }) => {
-    const qTokens = tokens(task)
+    const profile = queryProfile(task)
+    const qTokens = profile.terms
     const files = db.prepare('SELECT * FROM files').all()
     const symbols = db.prepare('SELECT file_id,name,qualified_name,start_line,end_line,kind FROM symbols').all()
     const symbolsByFile = new Map()
@@ -166,16 +238,30 @@ export async function contextForTask(projectPath, task, options = {}) {
       if (!symbolsByFile.has(s.file_id)) symbolsByFile.set(s.file_id, [])
       symbolsByFile.get(s.file_id).push(s)
     }
+
     const ranked = files.map(file => {
       const ownSymbols = symbolsByFile.get(file.file_id) ?? []
-      const symbolScore = Math.max(0, ...ownSymbols.map(s => scoreText(`${s.name} ${s.qualified_name}`, qTokens)))
-      const lexical = scoreText(`${file.path} ${file.summary ?? ''}`, qTokens)
-      const recent = file.git_activity > 0 ? Math.min(2, file.git_activity / 10) : 0
+      const symbolScore = qTokens.length ? Math.max(0, ...ownSymbols.map(s => scoreText(`${s.name} ${s.qualified_name}`, qTokens))) : 0
+      const lexical = qTokens.length ? scoreText(`${file.path} ${file.summary ?? ''}`, qTokens) : 0
+      const evidence = lexical * 2 + symbolScore * 3
+      const entryBonus = profile.architectureOverview ? entryPointBonus(file.path) : 0
+      const structuralEvidence = profile.architectureOverview ? entryBonus + file.importance * 5 : 0
+      const recent = file.git_activity > 0 ? Math.min(1, file.git_activity / 20) : 0
       const testPenalty = file.is_test ? -1 : 0
-      return { file, score: lexical * 2 + symbolScore * 3 + file.importance * 4 + recent + testPenalty, ownSymbols }
-    }).filter(v => v.score > 0).sort((a, b) => b.score - a.score)
+      const eligible = evidence > 0 || structuralEvidence > 0
+      return {
+        file,
+        score: evidence + structuralEvidence + (evidence > 0 ? file.importance * 2 + recent : 0) + testPenalty,
+        evidence,
+        entryBonus,
+        ownSymbols
+      }
+    }).filter(v => v.score > 0 && (v.evidence > 0 || profile.architectureOverview)).sort((a, b) => b.score - a.score || a.file.path.localeCompare(b.file.path))
 
-    const primaryRanked = ranked.filter(v => !v.file.is_test).slice(0, Math.min(3, limit))
+    // For normal task queries, no lexical/symbol evidence means "no match". Do not fabricate
+    // recommendations merely because a file has a high graph importance score.
+    const evidenceRanked = profile.architectureOverview ? ranked : ranked.filter(v => v.evidence > 0)
+    const primaryRanked = evidenceRanked.filter(v => !v.file.is_test).slice(0, Math.min(3, limit))
     const selected = new Map(primaryRanked.map(v => [v.file.file_id, { ...v, category: 'primary' }]))
 
     for (const p of primaryRanked) {
@@ -186,35 +272,47 @@ export async function contextForTask(projectPath, task, options = {}) {
         WHERE e.target_id=? AND e.edge_type IN ('imports','tests')`).all(p.file.file_id, p.file.file_id)
       for (const n of neighbors) {
         if (selected.size >= limit) break
-        if (!selected.has(n.file_id)) selected.set(n.file_id, { file: n, score: p.score * 0.45 + n.importance, ownSymbols: symbolsByFile.get(n.file_id) ?? [], category: n.is_test ? 'tests' : 'related', via: n.edge_type })
+        if (!selected.has(n.file_id)) selected.set(n.file_id, { file: n, score: p.score * 0.45 + n.importance, evidence: 0, entryBonus: 0, ownSymbols: symbolsByFile.get(n.file_id) ?? [], category: n.is_test ? 'tests' : 'related', via: n.edge_type })
       }
     }
 
-    for (const v of ranked.filter(v => v.file.is_test)) {
+    for (const v of evidenceRanked.filter(v => v.file.is_test && v.evidence > 0)) {
       if (selected.size >= limit) break
       if (!selected.has(v.file.file_id)) selected.set(v.file.file_id, { ...v, category: 'tests' })
     }
 
     const makeEntry = (v) => {
-      const matchingSymbols = v.ownSymbols.filter(s => scoreText(`${s.name} ${s.qualified_name}`, qTokens) > 0)
+      const matchingSymbols = qTokens.length ? v.ownSymbols.filter(s => scoreText(`${s.name} ${s.qualified_name}`, qTokens) > 0) : []
       const lines = matchingSymbols.length
         ? [Math.min(...matchingSymbols.map(s => s.start_line)), Math.max(...matchingSymbols.map(s => s.end_line))]
         : undefined
       let reason
       if (matchingSymbols.length) reason = `Matches symbols: ${matchingSymbols.slice(0, 3).map(s => s.qualified_name).join(', ')}`
       else if (v.via) reason = `${v.via} relation to a primary match`
-      else reason = `Path/summary relevance with importance ${Number(v.file.importance).toFixed(2)}`
+      else if (v.entryBonus > 0) reason = `Likely entry point; structural importance ${Number(v.file.importance).toFixed(2)}`
+      else if (profile.architectureOverview && v.evidence <= 0) reason = `High structural importance ${Number(v.file.importance).toFixed(2)}`
+      else reason = `Matches query terms: ${qTokens.filter(t => scoreText(`${v.file.path} ${v.file.summary ?? ''}`, [t]) > 0).slice(0, 4).join(', ') || 'symbol match'}`
       return { path: v.file.path, ...(lines ? { lines } : {}), reason }
     }
 
     const values = [...selected.values()].sort((a, b) => b.score - a.score)
     const meta = db.prepare('SELECT graph_version FROM project_meta LIMIT 1').get()
+    const primary = values.filter(v => v.category === 'primary').slice(0, 3).map(makeEntry)
+    const relatedFiles = values.filter(v => v.category === 'related').slice(0, 4).map(makeEntry)
+    const tests = values.filter(v => v.category === 'tests').slice(0, 3).map(makeEntry)
     return {
       query: task,
       graphVersion: meta?.graph_version ?? 0,
-      primary: values.filter(v => v.category === 'primary').slice(0, 3).map(makeEntry),
-      related: values.filter(v => v.category === 'related').slice(0, 4).map(makeEntry),
-      tests: values.filter(v => v.category === 'tests').slice(0, 3).map(makeEntry)
+      queryProfile: {
+        terms: qTokens,
+        concepts: profile.concepts,
+        architectureOverview: profile.architectureOverview
+      },
+      confidence: primary.length ? (profile.architectureOverview ? 'structural' : 'lexical') : 'none',
+      ...(primary.length ? {} : { noMatchReason: qTokens.length ? 'No indexed path, summary, or symbol matched the query.' : 'No deterministic query terms could be extracted.' }),
+      primary,
+      related: relatedFiles,
+      tests
     }
   }, syncOptions)
 }

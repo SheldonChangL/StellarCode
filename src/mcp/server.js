@@ -30,7 +30,7 @@ function write(message, output = process.stdout) {
 export async function handleMcpMessage(message, { defaultProject = process.cwd(), queryOptions = {} } = {}) {
   const { id, method, params } = message
   if (method === 'initialize') {
-    return { jsonrpc:'2.0', id, result:{ protocolVersion: params?.protocolVersion || PROTOCOL_VERSION, capabilities:{ tools:{ listChanged:false } }, serverInfo:{ name:'stellarcode', version:'0.3.0-mvp' }, instructions:'Query StellarCode before broad repository search. Responses contain indexed metadata, not source bodies.' } }
+    return { jsonrpc:'2.0', id, result:{ protocolVersion: params?.protocolVersion || PROTOCOL_VERSION, capabilities:{ tools:{ listChanged:false } }, serverInfo:{ name:'stellarcode', version:'0.3.2-mvp' }, instructions:'Query StellarCode before broad repository search. Responses contain indexed metadata, not source bodies.' } }
   }
   if (method === 'ping') return { jsonrpc:'2.0', id, result:{} }
   if (method === 'tools/list') return { jsonrpc:'2.0', id, result:{ tools } }

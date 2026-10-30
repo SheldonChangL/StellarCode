@@ -7,7 +7,8 @@ stellar init
 stellar scan
 stellar status
 stellar serve
-stellar find <query>
+stellar search <query>
+# stellar find <query> remains an alias
 stellar file <path>
 stellar related <path-or-symbol>
 stellar impact <path-or-symbol>

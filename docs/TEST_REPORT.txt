@@ -1,31 +1,38 @@
 
-> stellarcode@0.3.1-mvp test
+> stellarcode@0.3.2-mvp test
 > node --test --test-reporter=spec tests/*.test.js
 
-(node:6845) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(node:8408) ExperimentalWarning: SQLite is an experimental feature and might change at any time
 (Use `node --trace-warnings ...` to show where the warning was created)
-✔ platform adapter resolves standard application data locations (2.542552ms)
-✔ init is idempotent and repo metadata is tiny/path-independent (660.345434ms)
-✔ moving a repo keeps UUID and refreshes registry path (376.177451ms)
-(node:6846) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+✔ platform adapter resolves standard application data locations (1.854785ms)
+✔ init is idempotent and repo metadata is tiny/path-independent (387.121251ms)
+✔ moving a repo keeps UUID and refreshes registry path (276.519618ms)
+(node:8409) ExperimentalWarning: SQLite is an experimental feature and might change at any time
 (Use `node --trace-warnings ...` to show where the warning was created)
-✔ full index extracts known TS/JS/Python symbols and dependencies (905.178425ms)
-✔ same-name JavaScript declarations on the same line receive unique symbol IDs (642.987724ms)
-✔ incremental sync is graph-equivalent to clean full reindex (926.995786ms)
-✔ warm no-change sync preserves graph version and reparses nothing (419.76995ms)
-✔ query service narrows search, related, impact and context (729.49876ms)
-(node:6847) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+✔ full index extracts known TS/JS/Python symbols and dependencies (577.756457ms)
+✔ same-name JavaScript declarations on the same line receive unique symbol IDs (507.076311ms)
+✔ incremental sync is graph-equivalent to clean full reindex (926.213747ms)
+✔ warm no-change sync preserves graph version and reparses nothing (508.730863ms)
+✔ query service narrows search, related, impact and context (887.588435ms)
+(node:8410) ExperimentalWarning: SQLite is an experimental feature and might change at any time
 (Use `node --trace-warnings ...` to show where the warning was created)
-✔ local read-only API and universe shell are served from real index (1629.666831ms)
-(node:6915) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+✔ local read-only API and universe shell are served from real index (1166.396964ms)
+(node:8478) ExperimentalWarning: SQLite is an experimental feature and might change at any time
 (Use `node --trace-warnings ...` to show where the warning was created)
-✔ MCP initialize/list/call exposes compact StellarCode tools (788.175792ms)
-✔ benchmark reporter evaluates MVP acceptance thresholds (229.890921ms)
-ℹ tests 11
+✔ MCP initialize/list/call exposes compact StellarCode tools (717.010738ms)
+✔ benchmark reporter evaluates MVP acceptance thresholds (258.490057ms)
+(node:8521) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ CLI documents and recognizes stellar search as an alias (800.551359ms)
+✔ Chinese login query expands deterministically to indexed auth/login symbols (718.119722ms)
+✔ architecture-overview query favors entry points and structural core (513.83303ms)
+✔ no-evidence task returns no primary files instead of importance fallback (558.501557ms)
+✔ recognized Chinese intent with no repository evidence still returns no match (539.143834ms)
+ℹ tests 16
 ℹ suites 0
-ℹ pass 11
+ℹ pass 16
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 4103.184308
+ℹ duration_ms 5199.571403

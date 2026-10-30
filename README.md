@@ -64,7 +64,7 @@ cd /path/to/your/repo
 stellar init --install-agent-rule
 stellar scan
 stellar status
-stellar find "login"
+stellar search "login"
 stellar context "fix refresh token retry after 401"
 stellar serve
 ```
@@ -86,7 +86,8 @@ stellar init [path] [--dry-run] [--install-agent-rule]
 stellar scan [path] [--json]
 stellar sync [path] [--json]
 stellar status [path] [--json]
-stellar find <query> [path] [--json]
+stellar search <query> [path] [--json]
+stellar find <query> [path] [--json]   # backwards-compatible alias
 stellar file <relative-path> [project-path] [--json]
 stellar symbol <query> [project-path] [--json]
 stellar related <path-or-symbol> [project-path] [--json]
@@ -146,3 +147,8 @@ npm test
 ```
 
 The package was delivered with all included tests passing in the build environment. See `docs/IMPLEMENTATION_STATUS.md` for what is automatically verified vs. what still requires external/OS-specific validation.
+
+## 0.3.2 query behavior
+
+`stellar search <query>` is the preferred repository search command (`stellar find` remains an alias).
+`stellar context` now requires real path/symbol evidence for normal task queries and returns `confidence: "none"` rather than unrelated high-importance files when no match exists. Common Chinese engineering terms are expanded locally without an LLM; architecture-overview requests can intentionally use entry-point and graph-importance signals.

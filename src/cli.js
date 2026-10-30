@@ -14,7 +14,7 @@ import { appDirectories } from './platform/paths.js'
 import { StellarError } from './core/errors.js'
 
 function help() {
-  console.log(`StellarCode 0.3.1-mvp\n\nUsage:\n  stellar init [path] [--dry-run] [--install-agent-rule]\n  stellar scan [path] [--json]\n  stellar sync [path] [--json]\n  stellar status [path] [--json]\n  stellar find <query> [path] [--json]\n  stellar file <relative-path> [project-path] [--json]\n  stellar symbol <query> [project-path] [--json]\n  stellar related <path-or-symbol> [project-path] [--json]\n  stellar impact <path-or-symbol> [project-path] [--depth N] [--json]\n  stellar context <task> [project-path] [--json]\n  stellar serve [path] [--port 7432]\n  stellar mcp [path]\n  stellar agent-rule\n  stellar benchmark report <baseline.jsonl> <stellar.jsonl>\n`)
+  console.log(`StellarCode 0.3.2-mvp\n\nUsage:\n  stellar init [path] [--dry-run] [--install-agent-rule]\n  stellar scan [path] [--json]\n  stellar sync [path] [--json]\n  stellar status [path] [--json]\n  stellar search <query> [path] [--json]\n  stellar find <query> [path] [--json]  # alias\n  stellar file <relative-path> [project-path] [--json]\n  stellar symbol <query> [project-path] [--json]\n  stellar related <path-or-symbol> [project-path] [--json]\n  stellar impact <path-or-symbol> [project-path] [--depth N] [--json]\n  stellar context <task> [project-path] [--json]\n  stellar serve [path] [--port 7432]\n  stellar mcp [path]\n  stellar agent-rule\n  stellar benchmark report <baseline.jsonl> <stellar.jsonl>\n`)
 }
 
 function hasFlag(args, flag) { return args.includes(flag) }
@@ -68,8 +68,8 @@ async function main() {
     return print(result, hasFlag(args,'--json'))
   }
   if (command === 'status') return cmdStatus(args)
-  if (command === 'find') {
-    const pos=positional(args); if(!pos[0])throw new StellarError('find requires a query','USAGE',2)
+  if (command === 'find' || command === 'search') {
+    const pos=positional(args); if(!pos[0])throw new StellarError(`${command} requires a query`,'USAGE',2)
     return print(await searchProject(pos[1]??process.cwd(),pos[0],{limit:10}),hasFlag(args,'--json'))
   }
   if (command === 'file') {
