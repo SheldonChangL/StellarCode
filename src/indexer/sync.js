@@ -12,8 +12,8 @@ function edgeId(source, target, type) {
   return crypto.createHash('sha1').update(`${source}|${target}|${type}`).digest('hex')
 }
 
-function importId(source, specifier, line) {
-  return crypto.createHash('sha1').update(`${source}|${specifier}|${line}`).digest('hex')
+function importId(source, specifier, line, sourceOffset = '') {
+  return crypto.createHash('sha1').update(`${source}|${specifier}|${line}|${sourceOffset}`).digest('hex')
 }
 
 function previousMap(db) {
@@ -243,7 +243,7 @@ export async function syncProject(root, options = {}) {
           s.exported ? 1 : 0, s.signature, null)
       }
       for (const imp of facts.imports) {
-        insertImport.run(importId(file.fileId, imp.specifier, imp.line), file.fileId, imp.specifier,
+        insertImport.run(importId(file.fileId, imp.specifier, imp.line, imp.sourceOffset), file.fileId, imp.specifier,
           JSON.stringify(imp.importedNames ?? []), imp.line ?? null)
       }
     }

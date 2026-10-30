@@ -1,39 +1,123 @@
-# StellarCode M0-M3 Complete Package Inventory
+# StellarCode M0-M3 Complete — Inventory
 
-- Package version: 0.3.0-mvp
-- Total files before checksum manifest: 114
-- Unpacked size: 5.9M
+Total files: 117
 
-## Runnable implementation
+## Files
 
-- `src/cli.js` — CLI entrypoint
-- `src/core/` — project/runtime/agent rules
-- `src/platform/` — macOS/Linux/Windows paths
-- `src/storage/` — registry + per-project SQLite
-- `src/indexer/` — scanner/parser/Git/incremental graph
-- `src/query/` — search/file/symbol/related/impact/context
-- `src/web/` — local API + Universe UI
-- `src/mcp/` — MCP stdio server
-- `src/benchmark/` — A/B reporter
-
-## Verification
-
-- `tests/` — M0-M3 automated tests
-- `fixtures/sample/` — TypeScript/Python golden fixture
-- `scripts/benchmark-10k.js` — 10k-source-file benchmark
-- `docs/TEST_REPORT.txt` — final automated test output
-- `docs/BENCHMARK_10K_RESULT.json` — final 10k benchmark result
-
-## Design/spec assets
-
-- `design-pack/` — full previous StellarCode MVP Design Pack
-- `design-pack/original-zip/StellarCode_MVP_Design_Pack.zip` — original previous ZIP preserved verbatim
-- includes M0-M5 plans, architecture docs, schemas, wireframes, SVG assets, PNG mockups and static prototype
-
-## Read first
-
-1. `README.md`
-2. `docs/DELIVERY_SUMMARY.md`
-3. `docs/IMPLEMENTATION_STATUS.md`
-4. `docs/KNOWN_LIMITATIONS.md`
-5. `docs/MCP_SETUP.md`
+- `.github/workflows/ci.yml`
+- `.gitignore`
+- `AGENTS.md`
+- `INVENTORY.md`
+- `LICENSE`
+- `README.md`
+- `SHA256SUMS.txt`
+- `benchmark/README.md`
+- `benchmark/baseline.example.jsonl`
+- `benchmark/example-report.json`
+- `benchmark/stellar.example.jsonl`
+- `benchmark/tasks.json`
+- `design-pack/INVENTORY.md`
+- `design-pack/PROJECT_PLAN.md`
+- `design-pack/README.md`
+- `design-pack/SHA256SUMS.txt`
+- `design-pack/docs/00_PRODUCT_VISION.md`
+- `design-pack/docs/01_SYSTEM_ARCHITECTURE.md`
+- `design-pack/docs/02_SOFTWARE_ARCHITECTURE.md`
+- `design-pack/docs/03_DATA_MODEL.md`
+- `design-pack/docs/04_INDEXING_SYNC.md`
+- `design-pack/docs/05_CLI_MCP_API.md`
+- `design-pack/docs/06_SECURITY_PRIVACY.md`
+- `design-pack/docs/07_VALIDATION_BENCHMARK.md`
+- `design-pack/docs/08_IMPLEMENTATION_HANDOFF.md`
+- `design-pack/docs/diagrams/roadmap.png`
+- `design-pack/docs/diagrams/roadmap.svg`
+- `design-pack/docs/diagrams/software-architecture.png`
+- `design-pack/docs/diagrams/software-architecture.svg`
+- `design-pack/docs/diagrams/system-architecture.png`
+- `design-pack/docs/diagrams/system-architecture.svg`
+- `design-pack/examples/context-response.json`
+- `design-pack/examples/graph.json`
+- `design-pack/examples/project.json`
+- `design-pack/milestones/M0_FOUNDATION.md`
+- `design-pack/milestones/M1_INDEX_ENGINE.md`
+- `design-pack/milestones/M2_UNIVERSE_UI.md`
+- `design-pack/milestones/M3_AI_GATEWAY_BENCHMARK.md`
+- `design-pack/milestones/M4_DAEMON_SCALE.md`
+- `design-pack/milestones/M5_ADVANCED_INTELLIGENCE.md`
+- `design-pack/original-zip/StellarCode_MVP_Design_Pack.zip`
+- `design-pack/prototype/app.js`
+- `design-pack/prototype/index.html`
+- `design-pack/prototype/styles.css`
+- `design-pack/schemas/context-response.schema.json`
+- `design-pack/schemas/graph.schema.json`
+- `design-pack/schemas/project.schema.json`
+- `design-pack/ui/ASSET_MANIFEST.md`
+- `design-pack/ui/DESIGN_TOKENS.json`
+- `design-pack/ui/UI_UX_SPEC.md`
+- `design-pack/ui/WIREFRAMES.md`
+- `design-pack/ui/assets/app-icon.svg`
+- `design-pack/ui/assets/icon-change.svg`
+- `design-pack/ui/assets/icon-impact.svg`
+- `design-pack/ui/assets/icon-search.svg`
+- `design-pack/ui/assets/icon-warning.svg`
+- `design-pack/ui/assets/node-folder.svg`
+- `design-pack/ui/assets/node-planet.svg`
+- `design-pack/ui/assets/node-star.svg`
+- `design-pack/ui/assets/node-test.svg`
+- `design-pack/ui/assets/starfield.svg`
+- `design-pack/ui/assets/stellarcode-logo.svg`
+- `design-pack/ui/assets/stellarcode-symbol.svg`
+- `design-pack/ui/mockup-focus.png`
+- `design-pack/ui/mockup-focus.svg`
+- `design-pack/ui/mockup-impact.png`
+- `design-pack/ui/mockup-impact.svg`
+- `design-pack/ui/mockup-universe.png`
+- `design-pack/ui/mockup-universe.svg`
+- `docs/BENCHMARK_10K_RESULT.json`
+- `docs/DELIVERY_SUMMARY.md`
+- `docs/HOTFIX_0.3.1.md`
+- `docs/IMPLEMENTATION_STATUS.md`
+- `docs/IMPLEMENTED_ARCHITECTURE.md`
+- `docs/KNOWN_LIMITATIONS.md`
+- `docs/MCP_SETUP.md`
+- `docs/NPM_PACK_DRY_RUN.txt`
+- `docs/SECURITY.md`
+- `docs/TEST_REPORT.txt`
+- `fixtures/sample/README.md`
+- `fixtures/sample/python/session.py`
+- `fixtures/sample/python/token_store.py`
+- `fixtures/sample/src/auth/AuthService.ts`
+- `fixtures/sample/src/auth/TokenStore.ts`
+- `fixtures/sample/src/http/ApiClient.ts`
+- `fixtures/sample/src/index.ts`
+- `fixtures/sample/src/ui/LoginPage.tsx`
+- `fixtures/sample/tests/auth/AuthService.test.ts`
+- `package-lock.json`
+- `package.json`
+- `scripts/benchmark-10k.js`
+- `src/benchmark/report.js`
+- `src/cli.js`
+- `src/core/agent-rule.js`
+- `src/core/constants.js`
+- `src/core/errors.js`
+- `src/core/project.js`
+- `src/core/runtime.js`
+- `src/indexer/git.js`
+- `src/indexer/parser.js`
+- `src/indexer/scanner.js`
+- `src/indexer/sync.js`
+- `src/mcp/server.js`
+- `src/platform/paths.js`
+- `src/query/query-service.js`
+- `src/storage/db.js`
+- `src/storage/project-store.js`
+- `src/storage/registry.js`
+- `src/web/public/app.js`
+- `src/web/public/index.html`
+- `src/web/public/styles.css`
+- `src/web/server.js`
+- `tests/helpers.js`
+- `tests/m0-foundation.test.js`
+- `tests/m1-index.test.js`
+- `tests/m2-web.test.js`
+- `tests/m3-mcp-benchmark.test.js`

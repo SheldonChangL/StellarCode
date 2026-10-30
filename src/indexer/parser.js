@@ -6,6 +6,17 @@ function id(parts) {
   return crypto.createHash('sha1').update(parts.join('|')).digest('hex')
 }
 
+// A source location must be part of a symbol identity. Line number alone is not
+// sufficient because valid (and especially generated/minified) JavaScript can
+// contain multiple declarations with the same name on one physical line.
+//
+// We keep the human-friendly line in the ID input, but add the declaration's
+// byte/character offset as the final discriminator so PRIMARY KEY collisions
+// cannot occur for distinct declarations in the same file.
+function makeSymbolId(file, kind, qualifiedName, startLine, sourceOffset) {
+  return id([file.path, kind, qualifiedName, String(startLine), String(sourceOffset)])
+}
+
 function lineAt(text, index) {
   let line = 1
   for (let i = 0; i < index; i++) if (text.charCodeAt(i) === 10) line++
@@ -67,7 +78,12 @@ function parseJsTs(text, file) {
   ]
   for (const pattern of importPatterns) {
     for (const match of text.matchAll(pattern)) {
-      imports.push({ specifier: match[1], line: lineAt(text, match.index), importedNames: [] })
+      imports.push({
+        specifier: match[1],
+        line: lineAt(text, match.index),
+        sourceOffset: match.index,
+        importedNames: []
+      })
     }
   }
 
@@ -89,7 +105,7 @@ function parseJsTs(text, file) {
         endLine = lineAt(masked, findBlockEnd(masked, brace))
       }
       symbols.push({
-        symbolId: id([file.path, decl.kind, name, String(startLine)]),
+        symbolId: makeSymbolId(file, decl.kind, name, startLine, match.index),
         fileId: file.fileId,
         qualifiedName: name,
         name,
@@ -112,7 +128,7 @@ function parseJsTs(text, file) {
           const absoluteIndex = brace + 1 + mm.index
           const methodLine = lineAt(masked, absoluteIndex)
           symbols.push({
-            symbolId: id([file.path, 'method', `${name}.${methodName}`, String(methodLine)]),
+            symbolId: makeSymbolId(file, 'method', `${name}.${methodName}`, methodLine, absoluteIndex),
             fileId: file.fileId,
             qualifiedName: `${name}.${methodName}`,
             name: methodName,
@@ -133,7 +149,7 @@ function parseJsTs(text, file) {
     if (!symbols.some(s => s.name === name)) {
       const startLine = lineAt(masked, match.index)
       symbols.push({
-        symbolId: id([file.path, 'constant', name, String(startLine)]), fileId: file.fileId,
+        symbolId: makeSymbolId(file, 'constant', name, startLine, match.index), fileId: file.fileId,
         qualifiedName: name, name, kind: 'constant', startLine, endLine: startLine,
         exported: true, signature: text.split(/\r?\n/)[startLine - 1]?.trim().slice(0, 300) ?? null
       })
@@ -160,7 +176,7 @@ function parsePython(text, file) {
     if (m) {
       const name = m[1]
       symbols.push({
-        symbolId: id([file.path, 'class', name, String(i + 1)]), fileId: file.fileId,
+        symbolId: makeSymbolId(file, 'class', name, i + 1, i), fileId: file.fileId,
         qualifiedName: name, name, kind: 'class', startLine: i + 1, endLine: i + 1,
         exported: !name.startsWith('_'), signature: trimmed.slice(0, 300)
       })
@@ -174,7 +190,7 @@ function parsePython(text, file) {
       const cls = classStack[classStack.length - 1]
       const qualifiedName = cls ? `${cls.name}.${name}` : name
       symbols.push({
-        symbolId: id([file.path, cls ? 'method' : 'function', qualifiedName, String(i + 1)]), fileId: file.fileId,
+        symbolId: makeSymbolId(file, cls ? 'method' : 'function', qualifiedName, i + 1, i), fileId: file.fileId,
         qualifiedName, name, kind: cls ? 'method' : 'function', startLine: i + 1, endLine: i + 1,
         exported: !name.startsWith('_'), signature: trimmed.slice(0, 300)
       })
@@ -183,12 +199,14 @@ function parsePython(text, file) {
 
     m = trimmed.match(/^from\s+([.\w]+)\s+import\s+(.+)$/)
     if (m) {
-      imports.push({ specifier: m[1], line: i + 1, importedNames: m[2].split(',').map(v => v.trim().split(/\s+as\s+/)[0]) })
+      imports.push({ specifier: m[1], line: i + 1, sourceOffset: i, importedNames: m[2].split(',').map(v => v.trim().split(/\s+as\s+/)[0]) })
       continue
     }
     m = trimmed.match(/^import\s+(.+)$/)
     if (m) {
-      for (const part of m[1].split(',')) imports.push({ specifier: part.trim().split(/\s+as\s+/)[0], line: i + 1, importedNames: [] })
+      for (const [partIndex, part] of m[1].split(',').entries()) {
+        imports.push({ specifier: part.trim().split(/\s+as\s+/)[0], line: i + 1, sourceOffset: `${i}:${partIndex}`, importedNames: [] })
+      }
     }
   }
   return { symbols, imports }

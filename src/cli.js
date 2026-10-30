@@ -14,7 +14,7 @@ import { appDirectories } from './platform/paths.js'
 import { StellarError } from './core/errors.js'
 
 function help() {
-  console.log(`StellarCode 0.3.0-mvp\n\nUsage:\n  stellar init [path] [--dry-run] [--install-agent-rule]\n  stellar scan [path] [--json]\n  stellar sync [path] [--json]\n  stellar status [path] [--json]\n  stellar find <query> [path] [--json]\n  stellar file <relative-path> [project-path] [--json]\n  stellar symbol <query> [project-path] [--json]\n  stellar related <path-or-symbol> [project-path] [--json]\n  stellar impact <path-or-symbol> [project-path] [--depth N] [--json]\n  stellar context <task> [project-path] [--json]\n  stellar serve [path] [--port 7432]\n  stellar mcp [path]\n  stellar agent-rule\n  stellar benchmark report <baseline.jsonl> <stellar.jsonl>\n`)
+  console.log(`StellarCode 0.3.1-mvp\n\nUsage:\n  stellar init [path] [--dry-run] [--install-agent-rule]\n  stellar scan [path] [--json]\n  stellar sync [path] [--json]\n  stellar status [path] [--json]\n  stellar find <query> [path] [--json]\n  stellar file <relative-path> [project-path] [--json]\n  stellar symbol <query> [project-path] [--json]\n  stellar related <path-or-symbol> [project-path] [--json]\n  stellar impact <path-or-symbol> [project-path] [--depth N] [--json]\n  stellar context <task> [project-path] [--json]\n  stellar serve [path] [--port 7432]\n  stellar mcp [path]\n  stellar agent-rule\n  stellar benchmark report <baseline.jsonl> <stellar.jsonl>\n`)
 }
 
 function hasFlag(args, flag) { return args.includes(flag) }

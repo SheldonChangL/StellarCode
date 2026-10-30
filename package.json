@@ -1,6 +1,6 @@
 {
   "name": "stellarcode",
-  "version": "0.3.0-mvp",
+  "version": "0.3.1-mvp",
   "description": "A living map of your codebase for humans and AI agents.",
   "type": "module",
   "bin": {
@@ -17,5 +17,12 @@
     "node": ">=22.5.0"
   },
   "license": "MIT",
-  "keywords": ["codebase", "graph", "mcp", "ai", "repository", "developer-tools"]
+  "keywords": [
+    "codebase",
+    "graph",
+    "mcp",
+    "ai",
+    "repository",
+    "developer-tools"
+  ]
 }

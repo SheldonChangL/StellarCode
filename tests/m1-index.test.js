@@ -27,6 +27,25 @@ test('full index extracts known TS/JS/Python symbols and dependencies', async ()
   } finally { await w.cleanup() }
 })
 
+test('same-name JavaScript declarations on the same line receive unique symbol IDs', async () => {
+  const w=await makeWorkspace()
+  try {
+    await initializeProject(w.repo)
+    const collisionFile=path.join(w.repo,'src','same-line.js')
+    await fs.writeFile(collisionFile,'function duplicate(){}; { function duplicate(){} }\n')
+    const result=await syncProject(w.repo,{dirs:w.dirs,force:true})
+    assert.ok(result.symbols>0)
+    const metadata=await readProjectMetadata(w.repo)
+    const {db}=await openProjectStore(w.repo,metadata,{dirs:w.dirs})
+    const rows=db.prepare("SELECT symbol_id,name,start_line FROM symbols WHERE file_id='src/same-line.js' AND name='duplicate' ORDER BY symbol_id").all()
+    assert.equal(rows.length,2)
+    assert.equal(new Set(rows.map(row=>row.symbol_id)).size,2)
+    assert.equal(rows[0].start_line,1)
+    assert.equal(rows[1].start_line,1)
+    db.close()
+  } finally { await w.cleanup() }
+})
+
 test('incremental sync is graph-equivalent to clean full reindex', async () => {
   const w=await makeWorkspace()
   try {
