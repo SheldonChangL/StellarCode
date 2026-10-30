@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { withFreshProjectDb } from '../core/runtime.js'
+import { loadArchitectureHints, classifyArchitecture, architectureRank, hierarchyForPath, summarizeHierarchy } from './architecture.js'
 
 const QUERY_CONCEPTS = [
   { patterns: ['登入', '登錄', '登录', '登入流程', '登入功能', '登入頁'], terms: ['login', 'signin', 'sign-in', 'auth', 'authentication'] },
@@ -99,19 +100,24 @@ function fileRow(row) {
 
 export async function searchProject(projectPath, query, options = {}) {
   const limit = Math.min(Number(options.limit ?? 10), 50)
-  return withFreshProjectDb(projectPath, ({ db }) => {
+  return withFreshProjectDb(projectPath, async ({ db, root }) => {
     const profile = queryProfile(query)
     const qTokens = profile.terms
     if (!qTokens.length) return []
+    const hints = await loadArchitectureHints(root)
     const fileRows = db.prepare('SELECT * FROM files').all()
     const symbolRows = db.prepare(`SELECT s.*, f.path, f.summary AS file_summary, f.importance FROM symbols s JOIN files f ON f.file_id=s.file_id`).all()
     const results = []
     for (const row of fileRows) {
+      const architecture = classifyArchitecture(row, hints)
       const lexical = scoreText(row.path, qTokens) * 2 + scoreText(row.summary, qTokens)
-      const structural = profile.architectureOverview ? entryPointBonus(row.path) : 0
+      const structural = profile.architectureOverview ? Math.max(0, architecture.score * 0.55) : 0
       if (lexical <= 0 && structural <= 0) continue
       const s = lexical + structural + row.importance
-      results.push({ type: 'file', score: s, path: row.path, summary: row.summary, language: row.language, importance: row.importance })
+      results.push({
+        type: 'file', score: s, path: row.path, summary: row.summary, language: row.language,
+        importance: row.importance, role: architecture.role, roleLabel: architecture.roleLabel
+      })
     }
     for (const row of symbolRows) {
       const lexical = scoreText(row.name, qTokens) * 3 + scoreText(row.qualified_name, qTokens) * 2 + scoreText(row.path, qTokens)
@@ -127,10 +133,13 @@ export async function searchProject(projectPath, query, options = {}) {
 }
 
 export async function fileDetail(projectPath, requestedPath, options = {}) {
-  return withFreshProjectDb(projectPath, ({ db }) => {
+  return withFreshProjectDb(projectPath, async ({ db, root }) => {
     let file = db.prepare('SELECT * FROM files WHERE path=?').get(requestedPath.replaceAll('\\', '/'))
     if (!file) file = db.prepare('SELECT * FROM files WHERE name=? LIMIT 1').get(path.basename(requestedPath))
     if (!file) return null
+    const hints = await loadArchitectureHints(root)
+    const architecture = classifyArchitecture(file, hints)
+    const hierarchy = hierarchyForPath(file.path)
     const symbols = db.prepare('SELECT name,qualified_name,kind,start_line,end_line,exported,signature FROM symbols WHERE file_id=? ORDER BY start_line LIMIT 20').all(file.file_id)
     const dependsOn = db.prepare(`SELECT e.edge_type, f.path, f.summary FROM edges e JOIN files f ON f.file_id=e.target_id
       WHERE e.source_id=? AND e.edge_type IN ('imports','tests') ORDER BY f.importance DESC LIMIT 10`).all(file.file_id)
@@ -141,7 +150,7 @@ export async function fileDetail(projectPath, requestedPath, options = {}) {
     const recentChanges = db.prepare(`SELECT c.change_id,c.occurred_at,c.source,c.reason,c.commit_sha
       FROM change_files cf JOIN changes c ON c.change_id=cf.change_id WHERE cf.file_id=? ORDER BY c.occurred_at DESC LIMIT 8`).all(file.file_id)
     return {
-      ...fileRow(file),
+      ...fileRow(file), architecture, hierarchy,
       symbols: symbols.map(s => ({ name: s.name, qualifiedName: s.qualified_name, kind: s.kind, lines: [s.start_line, s.end_line], exported: Boolean(s.exported), signature: s.signature })),
       dependsOn,
       usedBy,
@@ -227,72 +236,102 @@ export async function impact(projectPath, target, options = {}) {
 
 export async function contextForTask(projectPath, task, options = {}) {
   const limit = Math.min(Number(options.limit ?? 8), 12)
-  const syncOptions = { ...options }
-  return withFreshProjectDb(projectPath, async ({ db }) => {
+  return withFreshProjectDb(projectPath, async ({ db, root }) => {
     const profile = queryProfile(task)
     const qTokens = profile.terms
+    const hints = await loadArchitectureHints(root)
     const files = db.prepare('SELECT * FROM files').all()
     const symbols = db.prepare('SELECT file_id,name,qualified_name,start_line,end_line,kind FROM symbols').all()
     const symbolsByFile = new Map()
-    for (const s of symbols) {
-      if (!symbolsByFile.has(s.file_id)) symbolsByFile.set(s.file_id, [])
-      symbolsByFile.get(s.file_id).push(s)
+    for (const symbol of symbols) {
+      if (!symbolsByFile.has(symbol.file_id)) symbolsByFile.set(symbol.file_id, [])
+      symbolsByFile.get(symbol.file_id).push(symbol)
     }
 
-    const ranked = files.map(file => {
-      const ownSymbols = symbolsByFile.get(file.file_id) ?? []
-      const symbolScore = qTokens.length ? Math.max(0, ...ownSymbols.map(s => scoreText(`${s.name} ${s.qualified_name}`, qTokens))) : 0
-      const lexical = qTokens.length ? scoreText(`${file.path} ${file.summary ?? ''}`, qTokens) : 0
-      const evidence = lexical * 2 + symbolScore * 3
-      const entryBonus = profile.architectureOverview ? entryPointBonus(file.path) : 0
-      const structuralEvidence = profile.architectureOverview ? entryBonus + file.importance * 5 : 0
-      const recent = file.git_activity > 0 ? Math.min(1, file.git_activity / 20) : 0
-      const testPenalty = file.is_test ? -1 : 0
-      const eligible = evidence > 0 || structuralEvidence > 0
-      return {
-        file,
-        score: evidence + structuralEvidence + (evidence > 0 ? file.importance * 2 + recent : 0) + testPenalty,
-        evidence,
-        entryBonus,
-        ownSymbols
+    const enriched = files.map(file => ({
+      file,
+      architecture: classifyArchitecture(file, hints),
+      ownSymbols: symbolsByFile.get(file.file_id) ?? []
+    }))
+
+    let primaryRanked = []
+    if (profile.architectureOverview) {
+      const viable = enriched.filter(v => !['test', 'docs', 'config'].includes(v.architecture.role))
+      const entries = viable
+        .filter(v => v.architecture.role === 'application-entry')
+        .sort((a, b) => architectureRank(b.file, b.architecture) - architectureRank(a.file, a.architecture))
+      const core = viable
+        .filter(v => v.architecture.role !== 'application-entry')
+        .map(v => ({ ...v, structuralRank: architectureRank(v.file, v.architecture) + Number(v.file.importance ?? 0) * 35 }))
+        .sort((a, b) => b.structuralRank - a.structuralRank || a.file.path.localeCompare(b.file.path))
+      const distinctCore = []
+      const seenModules = new Set()
+      for (const candidate of core) {
+        const module = hierarchyForPath(candidate.file.path).module
+        if (seenModules.has(module)) continue
+        seenModules.add(module)
+        distinctCore.push(candidate)
       }
-    }).filter(v => v.score > 0 && (v.evidence > 0 || profile.architectureOverview)).sort((a, b) => b.score - a.score || a.file.path.localeCompare(b.file.path))
+      primaryRanked = [...entries.slice(0, 1), ...distinctCore.slice(0, entries.length ? 2 : 3)]
+        .slice(0, Math.min(3, limit))
+        .map(v => ({ ...v, score: architectureRank(v.file, v.architecture), evidence: 0, category: 'primary' }))
+    } else {
+      const ranked = enriched.map(v => {
+        const symbolScore = qTokens.length ? Math.max(0, ...v.ownSymbols.map(symbol => scoreText(`${symbol.name} ${symbol.qualified_name}`, qTokens))) : 0
+        const lexical = qTokens.length ? scoreText(`${v.file.path} ${v.file.summary ?? ''}`, qTokens) : 0
+        const evidence = lexical * 2 + symbolScore * 3
+        const recent = v.file.git_activity > 0 ? Math.min(1, v.file.git_activity / 20) : 0
+        return { ...v, evidence, score: evidence + (evidence > 0 ? v.file.importance * 2 + recent : 0) + (v.file.is_test ? -1 : 0) }
+      }).filter(v => v.evidence > 0).sort((a, b) => b.score - a.score || a.file.path.localeCompare(b.file.path))
+      primaryRanked = ranked.filter(v => !v.file.is_test).slice(0, Math.min(3, limit)).map(v => ({ ...v, category: 'primary' }))
+    }
 
-    // For normal task queries, no lexical/symbol evidence means "no match". Do not fabricate
-    // recommendations merely because a file has a high graph importance score.
-    const evidenceRanked = profile.architectureOverview ? ranked : ranked.filter(v => v.evidence > 0)
-    const primaryRanked = evidenceRanked.filter(v => !v.file.is_test).slice(0, Math.min(3, limit))
-    const selected = new Map(primaryRanked.map(v => [v.file.file_id, { ...v, category: 'primary' }]))
-
-    for (const p of primaryRanked) {
+    const selected = new Map(primaryRanked.map(v => [v.file.file_id, v]))
+    for (const primary of primaryRanked) {
       const neighbors = db.prepare(`SELECT f.*, e.edge_type FROM edges e JOIN files f ON f.file_id=e.target_id
         WHERE e.source_id=? AND e.edge_type IN ('imports','tests')
         UNION
         SELECT f.*, e.edge_type FROM edges e JOIN files f ON f.file_id=e.source_id
-        WHERE e.target_id=? AND e.edge_type IN ('imports','tests')`).all(p.file.file_id, p.file.file_id)
-      for (const n of neighbors) {
+        WHERE e.target_id=? AND e.edge_type IN ('imports','tests')`).all(primary.file.file_id, primary.file.file_id)
+      for (const neighbor of neighbors) {
         if (selected.size >= limit) break
-        if (!selected.has(n.file_id)) selected.set(n.file_id, { file: n, score: p.score * 0.45 + n.importance, evidence: 0, entryBonus: 0, ownSymbols: symbolsByFile.get(n.file_id) ?? [], category: n.is_test ? 'tests' : 'related', via: n.edge_type })
+        if (selected.has(neighbor.file_id)) continue
+        const architecture = classifyArchitecture(neighbor, hints)
+        selected.set(neighbor.file_id, {
+          file: neighbor,
+          architecture,
+          score: primary.score * 0.45 + neighbor.importance,
+          evidence: 0,
+          ownSymbols: symbolsByFile.get(neighbor.file_id) ?? [],
+          category: neighbor.is_test ? 'tests' : 'related',
+          via: neighbor.edge_type
+        })
       }
     }
 
-    for (const v of evidenceRanked.filter(v => v.file.is_test && v.evidence > 0)) {
-      if (selected.size >= limit) break
-      if (!selected.has(v.file.file_id)) selected.set(v.file.file_id, { ...v, category: 'tests' })
+    if (!profile.architectureOverview) {
+      const testMatches = enriched.map(v => {
+        const symbolScore = qTokens.length ? Math.max(0, ...v.ownSymbols.map(symbol => scoreText(`${symbol.name} ${symbol.qualified_name}`, qTokens))) : 0
+        const lexical = qTokens.length ? scoreText(`${v.file.path} ${v.file.summary ?? ''}`, qTokens) : 0
+        return { ...v, evidence: lexical * 2 + symbolScore * 3, score: lexical * 2 + symbolScore * 3 + v.file.importance }
+      }).filter(v => v.file.is_test && v.evidence > 0).sort((a, b) => b.score - a.score)
+      for (const match of testMatches) {
+        if (selected.size >= limit) break
+        if (!selected.has(match.file.file_id)) selected.set(match.file.file_id, { ...match, category: 'tests' })
+      }
     }
 
-    const makeEntry = (v) => {
-      const matchingSymbols = qTokens.length ? v.ownSymbols.filter(s => scoreText(`${s.name} ${s.qualified_name}`, qTokens) > 0) : []
+    const makeEntry = v => {
+      const matchingSymbols = qTokens.length ? v.ownSymbols.filter(symbol => scoreText(`${symbol.name} ${symbol.qualified_name}`, qTokens) > 0) : []
       const lines = matchingSymbols.length
-        ? [Math.min(...matchingSymbols.map(s => s.start_line)), Math.max(...matchingSymbols.map(s => s.end_line))]
+        ? [Math.min(...matchingSymbols.map(symbol => symbol.start_line)), Math.max(...matchingSymbols.map(symbol => symbol.end_line))]
         : undefined
       let reason
-      if (matchingSymbols.length) reason = `Matches symbols: ${matchingSymbols.slice(0, 3).map(s => s.qualified_name).join(', ')}`
+      if (profile.architectureOverview && v.category === 'primary') reason = `${v.architecture.roleLabel}: ${v.architecture.reason}; importance ${Number(v.file.importance).toFixed(2)}`
+      else if (matchingSymbols.length) reason = `Matches symbols: ${matchingSymbols.slice(0, 3).map(symbol => symbol.qualified_name).join(', ')}`
       else if (v.via) reason = `${v.via} relation to a primary match`
-      else if (v.entryBonus > 0) reason = `Likely entry point; structural importance ${Number(v.file.importance).toFixed(2)}`
-      else if (profile.architectureOverview && v.evidence <= 0) reason = `High structural importance ${Number(v.file.importance).toFixed(2)}`
-      else reason = `Matches query terms: ${qTokens.filter(t => scoreText(`${v.file.path} ${v.file.summary ?? ''}`, [t]) > 0).slice(0, 4).join(', ') || 'symbol match'}`
-      return { path: v.file.path, ...(lines ? { lines } : {}), reason }
+      else reason = `Matches query terms: ${qTokens.filter(term => scoreText(`${v.file.path} ${v.file.summary ?? ''}`, [term]) > 0).slice(0, 4).join(', ') || 'symbol match'}`
+      return { path: v.file.path, role: v.architecture.role, ...(lines ? { lines } : {}), reason }
     }
 
     const values = [...selected.values()].sort((a, b) => b.score - a.score)
@@ -303,34 +342,75 @@ export async function contextForTask(projectPath, task, options = {}) {
     return {
       query: task,
       graphVersion: meta?.graph_version ?? 0,
-      queryProfile: {
-        terms: qTokens,
-        concepts: profile.concepts,
-        architectureOverview: profile.architectureOverview
-      },
+      queryProfile: { terms: qTokens, concepts: profile.concepts, architectureOverview: profile.architectureOverview },
       confidence: primary.length ? (profile.architectureOverview ? 'structural' : 'lexical') : 'none',
       ...(primary.length ? {} : { noMatchReason: qTokens.length ? 'No indexed path, summary, or symbol matched the query.' : 'No deterministic query terms could be extracted.' }),
       primary,
       related: relatedFiles,
       tests
     }
-  }, syncOptions)
+  }, options)
+}
+
+export async function architectureOverview(projectPath, options = {}) {
+  return withFreshProjectDb(projectPath, async ({ db, root }) => {
+    const hints = await loadArchitectureHints(root)
+    const files = db.prepare('SELECT * FROM files').all()
+    const enriched = files.map(file => {
+      const architecture = classifyArchitecture(file, hints)
+      const hierarchy = hierarchyForPath(file.path)
+      return { ...fileRow(file), architecture, ...hierarchy, rank: architectureRank(file, architecture) }
+    })
+    const { galaxies, modules } = summarizeHierarchy(enriched)
+    const entries = enriched.filter(v => v.architecture.role === 'application-entry').sort((a, b) => b.rank - a.rank).slice(0, 8)
+    const coreRanked = enriched.filter(v => ['domain-core', 'service', 'infrastructure', 'source'].includes(v.architecture.role) && !v.isTest)
+      .sort((a, b) => (b.importance * 50 + b.rank) - (a.importance * 50 + a.rank))
+    const core = []
+    const coreModules = new Set()
+    for (const candidate of coreRanked) {
+      if (coreModules.has(candidate.module)) continue
+      coreModules.add(candidate.module)
+      core.push(candidate)
+      if (core.length >= 12) break
+    }
+    const roleCounts = {}
+    for (const file of enriched) roleCounts[file.architecture.role] = (roleCounts[file.architecture.role] ?? 0) + 1
+    return { entries, core, galaxies, modules, roleCounts }
+  }, options)
 }
 
 export async function graphData(projectPath, options = {}) {
   const limit = Math.min(Number(options.limit ?? 5000), 10000)
-  return withFreshProjectDb(projectPath, ({ db }) => {
-    const files = db.prepare('SELECT path,name,language,line_count,importance,is_test,modified_at,summary FROM files ORDER BY importance DESC LIMIT ?').all(limit)
-    const visible = new Set(files.map(f => f.path))
+  return withFreshProjectDb(projectPath, async ({ db, root }) => {
+    const hints = await loadArchitectureHints(root)
+    const files = db.prepare('SELECT path,name,language,line_count,importance,is_test,modified_at,summary,git_activity FROM files ORDER BY importance DESC LIMIT ?').all(limit)
+    const visible = new Set(files.map(file => file.path))
+    const nodes = files.map(file => {
+      const architecture = classifyArchitecture(file, hints)
+      const { galaxy, module } = hierarchyForPath(file.path)
+      return {
+        id: file.path,
+        label: file.name,
+        galaxy,
+        module,
+        language: file.language,
+        lines: file.line_count,
+        importance: file.importance,
+        gitActivity: file.git_activity,
+        isTest: Boolean(file.is_test),
+        modifiedAt: file.modified_at,
+        summary: file.summary,
+        role: architecture.role,
+        roleLabel: architecture.roleLabel,
+        roleReason: architecture.reason
+      }
+    })
     const edges = db.prepare(`SELECT source_id,target_id,edge_type FROM edges WHERE edge_type IN ('imports','tests')`).all()
-      .filter(e => visible.has(e.source_id) && visible.has(e.target_id))
+      .filter(edge => visible.has(edge.source_id) && visible.has(edge.target_id))
+      .map(edge => ({ source: edge.source_id, target: edge.target_id, type: edge.edge_type }))
     const meta = db.prepare('SELECT display_name,graph_version,last_indexed_head FROM project_meta LIMIT 1').get()
-    return {
-      project: meta,
-      nodes: files.map(f => { const parts=f.path.split('/'); const group=parts.length>2 && ['src','tests','test','app','packages'].includes(parts[0]) ? parts.slice(0,2).join('/') : (parts[0] || '.'); return ({ id: f.path, label: f.name, group, language: f.language, lines: f.line_count,
-        importance: f.importance, isTest: Boolean(f.is_test), modifiedAt: f.modified_at, summary: f.summary }) }),
-      edges: edges.map(e => ({ source: e.source_id, target: e.target_id, type: e.edge_type }))
-    }
+    const { galaxies, modules } = summarizeHierarchy(nodes)
+    return { project: meta, nodes, edges, galaxies, modules }
   }, options)
 }
 

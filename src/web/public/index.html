@@ -8,48 +8,49 @@
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <div class="shell">
+  <div class="app-shell">
     <header class="topbar">
-      <div class="brand"><span class="brand-mark">✦</span><span>StellarCode</span><span class="mvp">MVP</span></div>
-      <button id="searchTrigger" class="search-trigger"><span>⌕</span><span>Search files, symbols, tasks…</span><kbd>⌘K</kbd></button>
-      <div class="top-actions"><span id="syncState" class="sync-state">● indexed</span><button id="resetView" title="Reset view">◎</button></div>
+      <div class="brand" aria-label="StellarCode"><span class="brand-mark">✦</span><span>StellarCode</span><span class="version">0.4</span></div>
+      <nav id="breadcrumbs" class="breadcrumbs" aria-label="Universe location"></nav>
+      <button id="searchTrigger" class="search-trigger" type="button"><span class="search-icon">⌕</span><span>Search files, symbols, tasks…</span><kbd>⌘K</kbd></button>
+      <div class="top-actions"><span id="syncState" class="sync-state"><i></i> indexed</span><button id="resetView" class="icon-button" title="Back to galaxies">◎</button></div>
     </header>
 
-    <aside class="sidebar">
-      <div class="side-section-title">PROJECT</div>
-      <button class="nav active" data-view="universe"><span>◉</span> Universe</button>
-      <button class="nav" data-view="changes"><span>◷</span> Changes</button>
-      <div class="side-section-title gap">LEGEND</div>
-      <div class="legend"><i class="dot core"></i> Core / important</div>
-      <div class="legend"><i class="dot file"></i> Source file</div>
-      <div class="legend"><i class="dot test"></i> Test</div>
-      <div class="legend"><i class="edge-line"></i> Dependency</div>
-      <div class="side-footer"><div id="projectName">Loading…</div><small id="graphVersion">Graph v—</small></div>
+    <aside class="rail" aria-label="Primary navigation">
+      <button class="rail-button active" data-view="universe" title="Universe"><span>◉</span><small>Map</small></button>
+      <button class="rail-button" data-view="changes" title="Changes"><span>◷</span><small>Changes</small></button>
+      <div class="rail-spacer"></div>
+      <button class="rail-button" id="architectureBtn" title="Architecture overview"><span>⌘</span><small>Arch</small></button>
     </aside>
 
     <main class="main">
       <section id="universeView" class="view active">
-        <div class="stats" id="stats"></div>
-        <canvas id="universe"></canvas>
-        <div class="cluster-legend" id="clusterLegend"></div>
+        <canvas id="universe" aria-label="Interactive code universe"></canvas>
+        <div id="universeHud" class="universe-hud"></div>
+        <div id="roleLegend" class="role-legend"></div>
+        <div id="tooltip" class="node-tooltip hidden"></div>
         <div class="canvas-controls">
-          <button id="zoomOut">−</button><button id="zoomIn">＋</button><button id="fitView">⌖</button>
+          <button id="zoomOut" title="Zoom out">−</button><button id="zoomIn" title="Zoom in">＋</button><button id="fitView" title="Fit view">⌾</button>
         </div>
-        <div class="hint">Drag to pan · scroll to zoom · click a planet to inspect</div>
+        <div id="universeHint" class="universe-hint">Click a galaxy to enter · scroll to zoom · drag to explore</div>
       </section>
-      <section id="changesView" class="view changes-view"><div class="changes-header"><h2>Repository Changes</h2><p>Incremental index events recorded by StellarCode.</p></div><div id="changesList" class="changes-list"></div></section>
+
+      <section id="changesView" class="view changes-view">
+        <div class="section-kicker">Repository memory</div>
+        <h1>Recent changes</h1>
+        <p class="section-copy">Incremental index activity recorded by StellarCode.</p>
+        <div id="changesList" class="changes-list"></div>
+      </section>
     </main>
 
-    <aside id="inspector" class="inspector empty">
-      <div class="empty-state"><span class="empty-orbit">◌</span><h3>Select a planet</h3><p>Inspect purpose, symbols, dependencies and impact.</p></div>
-    </aside>
+    <aside id="inspector" class="inspector hidden" aria-live="polite"></aside>
   </div>
 
   <div id="palette" class="palette-backdrop hidden">
-    <div class="palette">
-      <div class="palette-input-wrap"><span>⌕</span><input id="searchInput" autocomplete="off" placeholder="Search file, symbol, or describe a task…" /><kbd>esc</kbd></div>
-      <div id="searchResults" class="search-results"><div class="search-empty">Type to navigate the code universe.</div></div>
-      <div class="palette-footer"><span>↵ focus</span><span>AI context results are ranked without an LLM</span></div>
+    <div class="palette" role="dialog" aria-modal="true" aria-label="Search StellarCode">
+      <div class="palette-input-wrap"><span>⌕</span><input id="searchInput" autocomplete="off" placeholder="Search file, symbol, or intent…" /><kbd>ESC</kbd></div>
+      <div id="searchResults" class="search-results"></div>
+      <div class="palette-footer"><span>↵ open</span><span>StellarCode searches the index before source files</span></div>
     </div>
   </div>
 

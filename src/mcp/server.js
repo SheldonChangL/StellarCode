@@ -1,5 +1,5 @@
 import readline from 'node:readline'
-import { searchProject, fileDetail, symbolLookup, related, impact, contextForTask } from '../query/query-service.js'
+import { searchProject, fileDetail, symbolLookup, related, impact, contextForTask, architectureOverview } from '../query/query-service.js'
 
 const PROTOCOL_VERSION = '2025-06-18'
 
@@ -9,7 +9,8 @@ const tools = [
   { name:'stellar_symbol', description:'Resolve a symbol name to file and line ranges.', inputSchema:{type:'object',properties:{query:{type:'string'},limit:{type:'integer',minimum:1,maximum:30},projectPath:{type:'string'}},required:['query'],additionalProperties:false} },
   { name:'stellar_related', description:'Return direct incoming/outgoing repository relationships for a file or symbol.', inputSchema:{type:'object',properties:{target:{type:'string'},limit:{type:'integer',minimum:1,maximum:100},projectPath:{type:'string'}},required:['target'],additionalProperties:false} },
   { name:'stellar_impact', description:'Bounded reverse dependency traversal showing likely impacted files/tests.', inputSchema:{type:'object',properties:{target:{type:'string'},depth:{type:'integer',minimum:1,maximum:6},limit:{type:'integer',minimum:1,maximum:200},projectPath:{type:'string'}},required:['target'],additionalProperties:false} },
-  { name:'stellar_context', description:'Recommend the smallest relevant reading set for a coding task. Deterministic and source-body-free.', inputSchema:{type:'object',properties:{task:{type:'string'},limit:{type:'integer',minimum:1,maximum:12},projectPath:{type:'string'}},required:['task'],additionalProperties:false} }
+  { name:'stellar_context', description:'Recommend the smallest relevant reading set for a coding task. Deterministic and source-body-free.', inputSchema:{type:'object',properties:{task:{type:'string'},limit:{type:'integer',minimum:1,maximum:12},projectPath:{type:'string'}},required:['task'],additionalProperties:false} },
+  { name:'stellar_architecture', description:'Return deterministic application entries, structural core files, role counts, galaxies and modules.', inputSchema:{type:'object',properties:{projectPath:{type:'string'}},additionalProperties:false} }
 ]
 
 async function invoke(name, args = {}, defaultProject = process.cwd(), queryOptions = {}) {
@@ -20,6 +21,7 @@ async function invoke(name, args = {}, defaultProject = process.cwd(), queryOpti
   if (name === 'stellar_related') return related(project, args.target, { ...queryOptions, limit: args.limit ?? 30 })
   if (name === 'stellar_impact') return impact(project, args.target, { ...queryOptions, depth: args.depth ?? 3, limit: args.limit ?? 50 })
   if (name === 'stellar_context') return contextForTask(project, args.task, { ...queryOptions, limit: args.limit ?? 8 })
+  if (name === 'stellar_architecture') return architectureOverview(project, queryOptions)
   throw new Error(`Unknown tool: ${name}`)
 }
 
@@ -30,7 +32,7 @@ function write(message, output = process.stdout) {
 export async function handleMcpMessage(message, { defaultProject = process.cwd(), queryOptions = {} } = {}) {
   const { id, method, params } = message
   if (method === 'initialize') {
-    return { jsonrpc:'2.0', id, result:{ protocolVersion: params?.protocolVersion || PROTOCOL_VERSION, capabilities:{ tools:{ listChanged:false } }, serverInfo:{ name:'stellarcode', version:'0.3.2-mvp' }, instructions:'Query StellarCode before broad repository search. Responses contain indexed metadata, not source bodies.' } }
+    return { jsonrpc:'2.0', id, result:{ protocolVersion: params?.protocolVersion || PROTOCOL_VERSION, capabilities:{ tools:{ listChanged:false } }, serverInfo:{ name:'stellarcode', version:'0.4.0' }, instructions:'Query StellarCode before broad repository search. Responses contain indexed metadata, not source bodies.' } }
   }
   if (method === 'ping') return { jsonrpc:'2.0', id, result:{} }
   if (method === 'tools/list') return { jsonrpc:'2.0', id, result:{ tools } }

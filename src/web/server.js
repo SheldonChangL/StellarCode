@@ -3,7 +3,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { DEFAULT_PORT } from '../core/constants.js'
-import { graphData, searchProject, fileDetail, related, impact, contextForTask, changes } from '../query/query-service.js'
+import { graphData, searchProject, fileDetail, related, impact, contextForTask, architectureOverview, changes } from '../query/query-service.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const publicDir = path.join(__dirname, 'public')
@@ -51,6 +51,7 @@ export async function createWebServer(projectRoot, options = {}) {
         return json(res, result ? 200 : 404, result ?? { error: 'not_found' })
       }
       if (url.pathname === '/api/context') return json(res, 200, await contextForTask(projectRoot, url.searchParams.get('q') || '', { limit: 8 }))
+      if (url.pathname === '/api/architecture') return json(res, 200, await architectureOverview(projectRoot))
       if (url.pathname === '/api/changes') return json(res, 200, await changes(projectRoot))
       if (await staticFile(res, url.pathname)) return
       json(res, 404, { error: 'not_found' })

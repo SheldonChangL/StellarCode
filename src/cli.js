@@ -5,7 +5,7 @@ import { initializeProject, readProjectMetadata, findProjectRoot } from './core/
 import { openProjectStore, projectMeta } from './storage/project-store.js'
 import { syncProject } from './indexer/sync.js'
 import { resolveProject } from './core/runtime.js'
-import { searchProject, fileDetail, related, impact, contextForTask, symbolLookup } from './query/query-service.js'
+import { searchProject, fileDetail, related, impact, contextForTask, symbolLookup, architectureOverview } from './query/query-service.js'
 import { createWebServer } from './web/server.js'
 import { startMcpServer } from './mcp/server.js'
 import { benchmarkReport } from './benchmark/report.js'
@@ -14,7 +14,7 @@ import { appDirectories } from './platform/paths.js'
 import { StellarError } from './core/errors.js'
 
 function help() {
-  console.log(`StellarCode 0.3.2-mvp\n\nUsage:\n  stellar init [path] [--dry-run] [--install-agent-rule]\n  stellar scan [path] [--json]\n  stellar sync [path] [--json]\n  stellar status [path] [--json]\n  stellar search <query> [path] [--json]\n  stellar find <query> [path] [--json]  # alias\n  stellar file <relative-path> [project-path] [--json]\n  stellar symbol <query> [project-path] [--json]\n  stellar related <path-or-symbol> [project-path] [--json]\n  stellar impact <path-or-symbol> [project-path] [--depth N] [--json]\n  stellar context <task> [project-path] [--json]\n  stellar serve [path] [--port 7432]\n  stellar mcp [path]\n  stellar agent-rule\n  stellar benchmark report <baseline.jsonl> <stellar.jsonl>\n`)
+  console.log(`StellarCode 0.4.0\n\nUsage:\n  stellar init [path] [--dry-run] [--install-agent-rule]\n  stellar scan [path] [--json]\n  stellar sync [path] [--json]\n  stellar status [path] [--json]\n  stellar search <query> [path] [--json]\n  stellar find <query> [path] [--json]  # alias\n  stellar file <relative-path> [project-path] [--json]\n  stellar symbol <query> [project-path] [--json]\n  stellar related <path-or-symbol> [project-path] [--json]\n  stellar impact <path-or-symbol> [project-path] [--depth N] [--json]\n  stellar context <task> [project-path] [--json]\n  stellar architecture [project-path] [--json]\n  stellar serve [path] [--port 7432]\n  stellar mcp [path]\n  stellar agent-rule\n  stellar benchmark report <baseline.jsonl> <stellar.jsonl>\n`)
 }
 
 function hasFlag(args, flag) { return args.includes(flag) }
@@ -91,6 +91,10 @@ async function main() {
   if (command === 'context') {
     const pos=positional(args); if(!pos[0])throw new StellarError('context requires a task string','USAGE',2)
     return print(await contextForTask(pos[1]??process.cwd(),pos[0],{limit:8}),hasFlag(args,'--json'))
+  }
+  if (command === 'architecture') {
+    const root=(await resolveProject(positional(args)[0]??process.cwd())).root
+    return print(await architectureOverview(root),hasFlag(args,'--json'))
   }
   if (command === 'serve') {
     const root=(await resolveProject(positional(args)[0]??process.cwd())).root

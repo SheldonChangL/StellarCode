@@ -1,83 +1,96 @@
-# StellarCode — M0–M3 MVP Implementation
+# StellarCode v0.4
 
 > **A living map of your codebase.** Humans explore the universe; AI agents query the map before reading source.
 
-This package contains a runnable M0–M3 implementation **plus the full original design/spec/mockup pack** under `design-pack/`.
+This package contains the runnable **M0–M3 MVP plus the v0.4 Universe UX/architecture rewrite**, and preserves the original design/spec/mockup pack under `design-pack/`.
 
-## What is implemented
+## v0.4 highlights
 
-### M0 — Foundation
+- **Galaxy → Module → File** navigation instead of rendering every file at once.
+- **Graph-on-demand**: no global dependency spiderweb; edges appear on Focus/Impact only.
+- Cross-module dependencies become contextual **external satellites**.
+- Deterministic architecture roles: App Entry, Module Entry, Domain Core, Service, UI, Infrastructure, Test, Config, Docs, Source.
+- `package.json`/framework-aware application-entry hints.
+- `stellar architecture` CLI command.
+- `stellar_architecture` MCP tool.
+- Architecture queries no longer treat every nested `index.ts` as an application entry.
+- Installed CLI hides only the noisy Node 22 `node:sqlite` ExperimentalWarning.
+- Existing StellarCode project IDs and databases remain compatible.
+
+See `docs/V0.4_RELEASE.md` and `docs/V0.4_UI_QA.md`.
+
+## M0 — Foundation
+
 - Cross-platform application data path adapter (macOS/Linux/Windows).
-- Stable repo identity in `.stellar/project.json` (UUID only; no absolute path).
+- Stable repo identity in `.stellar/project.json`.
 - Global registry DB + isolated per-project `index.db`.
 - Idempotent `stellar init`, dry-run, optional agent-rule installer.
 - Three-OS GitHub Actions CI matrix.
 
-### M1 — Repository index engine
-- Supported source types: TypeScript, JavaScript, Python.
+## M1 — Repository index engine
+
+- TypeScript, JavaScript and Python source indexing.
 - Ignore rules, binary/size filtering, SHA-256 content state.
-- Fast stale check reuses hashes when size+mtime are unchanged.
 - Deterministic symbol/import extraction with no LLM/API key.
 - Import/test/reference graph + reverse dependencies.
 - Git HEAD/status/activity and rename hints.
 - Incremental add/modify/delete sync.
 - Importance scoring.
-- Search/file/symbol/related/impact/context query service.
-- Full-vs-incremental equivalence test fixture.
-- Git-clean fast path; synthetic 10k-file benchmark reached 163 ms warm no-change sync in the final delivery run.
+- Git-clean fast path for warm queries.
+- **Zero-token maintenance**.
 
-### M2 — Universe UI
+## M2 — Universe UI
+
 - Local-only HTTP server (`127.0.0.1`).
-- Canvas-based galaxy view using the real project index.
-- Folder clustering, importance-sized planets, test markers and dependency edges.
-- Pan/zoom, focus, Cmd/Ctrl+K search, inspector, Impact mode, Changes view.
-- Reduced-motion CSS support and graph payload limits.
+- Galaxy-first hierarchical navigation.
+- Canvas starfield and deterministic layout.
+- Search, breadcrumbs, zoom/pan, floating inspector.
+- Architecture role visual language.
+- Focus mode and cross-module external satellites.
+- Bounded Impact mode.
+- Changes view.
 
-### M3 — AI Gateway
-- MCP stdio JSON-RPC server.
-- `stellar_search`, `stellar_file`, `stellar_symbol`, `stellar_related`, `stellar_impact`, `stellar_context`.
-- Compact, source-body-free tool responses.
-- Optional minimal `AGENTS.md` / `CLAUDE.md` rule installer.
-- A/B benchmark JSONL reporter and 12-task benchmark suite template.
+## M3 — AI Gateway
 
-## Important implementation note
+MCP tools:
 
-The M1 design document originally proposed Tree-sitter. This self-contained MVP ships a dependency-free deterministic parser instead, so the ZIP runs with Node 22 without `npm install` or native modules. It passes the included golden fixture but is **not a replacement for a production Tree-sitter/LSP parser on all real-world syntax**. See `docs/KNOWN_LIMITATIONS.md`.
+```text
+stellar_search
+stellar_file
+stellar_symbol
+stellar_related
+stellar_impact
+stellar_context
+stellar_architecture
+```
 
-The M3 benchmark harness is complete, but the real acceptance gate (Claude/Codex A/B token savings) requires running external agents with telemetry. Example data demonstrates the report format only; it is not claimed as real token savings evidence.
+Responses contain indexed metadata and line locations, not full source bodies.
 
 ## Requirements
 
-- Node.js 22.5+ (uses built-in `node:sqlite`).
-- Git is recommended for Git metadata; indexing still works without useful Git history.
-
-No npm dependencies are required for the MVP runtime.
+- Node.js **22.5+**.
+- Git is recommended.
+- Runtime has no npm dependencies.
 
 ## Quick start
 
 ```bash
-cd StellarCode_M0-M3_Complete
+cd StellarCode_v0.4
 npm test
 npm link
 
 cd /path/to/your/repo
 stellar init --install-agent-rule
 stellar scan
-stellar status
+stellar architecture
 stellar search "login"
-stellar context "fix refresh token retry after 401"
+stellar context "找出這個專案的主要入口與核心模組"
 stellar serve
 ```
 
-Open the URL printed by `stellar serve` (default `http://127.0.0.1:7432`).
+Open the printed URL (default `http://127.0.0.1:7432`).
 
-### Without `npm link`
-
-```bash
-node /path/to/StellarCode_M0-M3_Complete/src/cli.js init /path/to/repo
-node /path/to/StellarCode_M0-M3_Complete/src/cli.js scan /path/to/repo
-node /path/to/StellarCode_M0-M3_Complete/src/cli.js serve /path/to/repo
-```
+If the repository was already initialized with v0.3.x, you do **not** need to delete `.stellar/` or the Application Support database. Install/link v0.4 and run `stellar serve` or `stellar sync` normally.
 
 ## CLI
 
@@ -87,12 +100,13 @@ stellar scan [path] [--json]
 stellar sync [path] [--json]
 stellar status [path] [--json]
 stellar search <query> [path] [--json]
-stellar find <query> [path] [--json]   # backwards-compatible alias
+stellar find <query> [path] [--json]
 stellar file <relative-path> [project-path] [--json]
 stellar symbol <query> [project-path] [--json]
 stellar related <path-or-symbol> [project-path] [--json]
 stellar impact <path-or-symbol> [project-path] [--depth N] [--json]
 stellar context <task> [project-path] [--json]
+stellar architecture [project-path] [--json]
 stellar serve [path] [--port 7432]
 stellar mcp [path]
 stellar agent-rule
@@ -101,12 +115,12 @@ stellar benchmark report <baseline.jsonl> <stellar.jsonl>
 
 ## Storage policy
 
-Repository local:
+Repository-local identity only:
 
 ```text
 repo/
 └── .stellar/
-    └── project.json     # UUID + schema version only
+    └── project.json
 ```
 
 Application data:
@@ -117,38 +131,16 @@ Linux   ~/.local/share/stellarcode/
 Windows %LOCALAPPDATA%\StellarCode\
 ```
 
-Each project has its own `index.db`. Source code is never copied into the database.
+Each project has an isolated `index.db`; source code is never copied into the database.
 
-## Project layout
+## Parser note
 
-```text
-src/
-  cli.js
-  core/       project identity, runtime, agent rule
-  platform/   OS-standard data paths
-  storage/    SQLite registry/project databases
-  indexer/    scan, parse, Git, incremental graph sync
-  query/      search, file, related, impact, context
-  web/        local API + interactive Universe UI
-  mcp/        MCP stdio server
-  benchmark/  A/B metric reporter
-fixtures/     mixed TS/Python golden repo
-tests/        M0–M3 automated tests
-benchmark/    12-task suite + example telemetry
-design-pack/  all previous specs, wireframes, UI assets, mockups, prototype
-```
+The current MVP parser is dependency-free and deterministic rather than Tree-sitter/LSP based. It is sufficient for the included TS/JS/Python fixture and current navigation experiments, but production parser depth remains a post-MVP upgrade. See `docs/KNOWN_LIMITATIONS.md`.
 
 ## Verification
-
-Run:
 
 ```bash
 npm test
 ```
 
-The package was delivered with all included tests passing in the build environment. See `docs/IMPLEMENTATION_STATUS.md` for what is automatically verified vs. what still requires external/OS-specific validation.
-
-## 0.3.2 query behavior
-
-`stellar search <query>` is the preferred repository search command (`stellar find` remains an alias).
-`stellar context` now requires real path/symbol evidence for normal task queries and returns `confidence: "none"` rather than unrelated high-importance files when no match exists. Common Chinese engineering terms are expanded locally without an LLM; architecture-overview requests can intentionally use entry-point and graph-importance signals.
+v0.4 adds regression coverage for architecture classification, hierarchy payloads, nested barrel handling and the architecture API/MCP surface.
