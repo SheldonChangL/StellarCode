@@ -1,0 +1,14 @@
+[
+  {"id":"locate-01","category":"locate","prompt":"Where is login implemented and what directly supports it?","expectedSignals":["AuthService","login","TokenStore"]},
+  {"id":"locate-02","category":"locate","prompt":"Find the refresh-token path and its tests.","expectedSignals":["refreshToken","AuthService.test"]},
+  {"id":"dependency-01","category":"dependency","prompt":"Trace direct dependencies of AuthService.","expectedSignals":["TokenStore","ApiClient"]},
+  {"id":"dependency-02","category":"dependency","prompt":"What files would likely be affected by changing TokenStore?","expectedSignals":["AuthService","AuthService.test"]},
+  {"id":"bug-01","category":"bug","prompt":"Fix refresh retry after a 401 response.","expectedSignals":["AuthService","ApiClient","TokenStore"]},
+  {"id":"bug-02","category":"bug","prompt":"Fix logout so tokens are always cleared.","expectedSignals":["AuthService.logout","TokenStore.clear"]},
+  {"id":"feature-01","category":"feature","prompt":"Add a session restore helper using stored tokens.","expectedSignals":["TokenStore.read","SessionManager"]},
+  {"id":"feature-02","category":"feature","prompt":"Add an authentication status API to the UI layer.","expectedSignals":["AuthService","LoginPage"]},
+  {"id":"test-01","category":"test-impact","prompt":"Which tests should be run after changing refreshToken?","expectedSignals":["AuthService.test"]},
+  {"id":"test-02","category":"test-impact","prompt":"Find source files covered by the auth test module.","expectedSignals":["AuthService","TokenStore","ApiClient"]},
+  {"id":"regression-01","category":"regression","prompt":"A recent token-store change broke authentication; identify the likely blast radius.","expectedSignals":["TokenStore","AuthService","LoginPage"]},
+  {"id":"regression-02","category":"regression","prompt":"Locate the core files to inspect for a login regression before opening source.","expectedSignals":["AuthService","ApiClient","LoginPage"]}
+]

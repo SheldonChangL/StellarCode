@@ -1,0 +1,12 @@
+{"taskId": "locate-01", "success": true, "discoveryToolCalls": 7, "discoveryTokens": 4300, "firstRelevantMs": 3200, "filesOpened": 4}
+{"taskId": "locate-02", "success": true, "discoveryToolCalls": 8, "discoveryTokens": 4650, "firstRelevantMs": 3700, "filesOpened": 5}
+{"taskId": "dependency-01", "success": true, "discoveryToolCalls": 9, "discoveryTokens": 5000, "firstRelevantMs": 3200, "filesOpened": 6}
+{"taskId": "dependency-02", "success": true, "discoveryToolCalls": 7, "discoveryTokens": 4300, "firstRelevantMs": 3700, "filesOpened": 4}
+{"taskId": "bug-01", "success": true, "discoveryToolCalls": 8, "discoveryTokens": 4650, "firstRelevantMs": 3200, "filesOpened": 5}
+{"taskId": "bug-02", "success": true, "discoveryToolCalls": 9, "discoveryTokens": 5000, "firstRelevantMs": 3700, "filesOpened": 6}
+{"taskId": "feature-01", "success": true, "discoveryToolCalls": 7, "discoveryTokens": 4300, "firstRelevantMs": 3200, "filesOpened": 4}
+{"taskId": "feature-02", "success": true, "discoveryToolCalls": 8, "discoveryTokens": 4650, "firstRelevantMs": 3700, "filesOpened": 5}
+{"taskId": "test-01", "success": true, "discoveryToolCalls": 9, "discoveryTokens": 5000, "firstRelevantMs": 3200, "filesOpened": 6}
+{"taskId": "test-02", "success": true, "discoveryToolCalls": 7, "discoveryTokens": 4300, "firstRelevantMs": 3700, "filesOpened": 4}
+{"taskId": "regression-01", "success": true, "discoveryToolCalls": 8, "discoveryTokens": 4650, "firstRelevantMs": 3200, "filesOpened": 5}
+{"taskId": "regression-02", "success": true, "discoveryToolCalls": 9, "discoveryTokens": 5000, "firstRelevantMs": 3700, "filesOpened": 6}

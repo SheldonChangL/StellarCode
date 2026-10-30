@@ -1,0 +1,14 @@
+{
+  "query": "fix refresh token retry after 401",
+  "graphVersion": 42,
+  "primary": [
+    {"path":"src/auth/AuthService.ts","lines":[42,138],"reason":"Contains login and refreshToken orchestration."}
+  ],
+  "related": [
+    {"path":"src/http/ApiClient.ts","lines":[80,132],"reason":"401 path triggers refresh handling."},
+    {"path":"src/auth/TokenStore.ts","lines":[1,120],"reason":"Persists refreshed credentials used by AuthService."}
+  ],
+  "tests": [
+    {"path":"tests/auth/AuthService.test.ts","lines":[120,205],"reason":"Covers refresh retry behavior."}
+  ]
+}

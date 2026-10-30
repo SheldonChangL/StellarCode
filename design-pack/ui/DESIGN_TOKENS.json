@@ -1,0 +1,51 @@
+{
+  "name": "StellarCode Dark Universe",
+  "colors": {
+    "bg0": "#070A12",
+    "bg1": "#0B1020",
+    "panel": "rgba(14, 20, 38, 0.78)",
+    "panelStrong": "#10182C",
+    "border": "rgba(139, 161, 204, 0.18)",
+    "textPrimary": "#EEF4FF",
+    "textSecondary": "#94A4C4",
+    "textMuted": "#66728C",
+    "cyan": "#61E7FF",
+    "violet": "#A77BFF",
+    "blue": "#5A8DFF",
+    "success": "#5FE2A0",
+    "warning": "#FFD166",
+    "danger": "#FF6B83",
+    "focusGlow": "rgba(97, 231, 255, 0.45)"
+  },
+  "typography": {
+    "ui": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+    "mono": "SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace",
+    "size": {
+      "xs": 11,
+      "sm": 12,
+      "base": 14,
+      "md": 16,
+      "lg": 20,
+      "xl": 28
+    }
+  },
+  "radius": {
+    "sm": 6,
+    "md": 10,
+    "lg": 16,
+    "pill": 999
+  },
+  "spacing": [4, 8, 12, 16, 20, 24, 32, 40],
+  "motion": {
+    "fastMs": 150,
+    "normalMs": 260,
+    "cameraMs": 340
+  },
+  "graph": {
+    "nodeMinPx": 7,
+    "nodeMaxPx": 28,
+    "edgeBaseOpacity": 0.17,
+    "unrelatedOpacity": 0.12,
+    "selectedScale": 1.18
+  }
+}

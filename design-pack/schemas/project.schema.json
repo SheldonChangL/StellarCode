@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stellarcode.local/schemas/project.schema.json",
+  "title": "StellarCode Project Metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["projectId", "schemaVersion"],
+  "properties": {
+    "projectId": {"type": "string", "format": "uuid"},
+    "schemaVersion": {"type": "integer", "minimum": 1},
+    "displayName": {"type": "string", "minLength": 1, "maxLength": 120}
+  }
+}

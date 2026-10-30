@@ -1,0 +1,13 @@
+{
+  "projectId": "c64db2a8-8fd2-4c1c-a881-2a583f1f925c",
+  "graphVersion": 42,
+  "nodes": [
+    {"id":"file:auth","kind":"file","label":"AuthService.ts","path":"src/auth/AuthService.ts","importance":0.94,"summary":"Coordinates login, logout, and token refresh behavior."},
+    {"id":"file:token","kind":"file","label":"TokenStore.ts","path":"src/auth/TokenStore.ts","importance":0.72,"summary":"Stores authentication tokens and refresh persistence."},
+    {"id":"file:test","kind":"file","label":"AuthService.test.ts","path":"tests/auth/AuthService.test.ts","importance":0.48,"summary":"Behavior tests for authentication and refresh retry."}
+  ],
+  "edges": [
+    {"source":"file:auth","target":"file:token","type":"imports","weight":1,"confidence":1},
+    {"source":"file:test","target":"file:auth","type":"tests","weight":1,"confidence":1}
+  ]
+}

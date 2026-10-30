@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>StellarCode Universe</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">✦</span><span>StellarCode</span><span class="mvp">MVP</span></div>
+      <button id="searchTrigger" class="search-trigger"><span>⌕</span><span>Search files, symbols, tasks…</span><kbd>⌘K</kbd></button>
+      <div class="top-actions"><span id="syncState" class="sync-state">● indexed</span><button id="resetView" title="Reset view">◎</button></div>
+    </header>
+
+    <aside class="sidebar">
+      <div class="side-section-title">PROJECT</div>
+      <button class="nav active" data-view="universe"><span>◉</span> Universe</button>
+      <button class="nav" data-view="changes"><span>◷</span> Changes</button>
+      <div class="side-section-title gap">LEGEND</div>
+      <div class="legend"><i class="dot core"></i> Core / important</div>
+      <div class="legend"><i class="dot file"></i> Source file</div>
+      <div class="legend"><i class="dot test"></i> Test</div>
+      <div class="legend"><i class="edge-line"></i> Dependency</div>
+      <div class="side-footer"><div id="projectName">Loading…</div><small id="graphVersion">Graph v—</small></div>
+    </aside>
+
+    <main class="main">
+      <section id="universeView" class="view active">
+        <div class="stats" id="stats"></div>
+        <canvas id="universe"></canvas>
+        <div class="cluster-legend" id="clusterLegend"></div>
+        <div class="canvas-controls">
+          <button id="zoomOut">−</button><button id="zoomIn">＋</button><button id="fitView">⌖</button>
+        </div>
+        <div class="hint">Drag to pan · scroll to zoom · click a planet to inspect</div>
+      </section>
+      <section id="changesView" class="view changes-view"><div class="changes-header"><h2>Repository Changes</h2><p>Incremental index events recorded by StellarCode.</p></div><div id="changesList" class="changes-list"></div></section>
+    </main>
+
+    <aside id="inspector" class="inspector empty">
+      <div class="empty-state"><span class="empty-orbit">◌</span><h3>Select a planet</h3><p>Inspect purpose, symbols, dependencies and impact.</p></div>
+    </aside>
+  </div>
+
+  <div id="palette" class="palette-backdrop hidden">
+    <div class="palette">
+      <div class="palette-input-wrap"><span>⌕</span><input id="searchInput" autocomplete="off" placeholder="Search file, symbol, or describe a task…" /><kbd>esc</kbd></div>
+      <div id="searchResults" class="search-results"><div class="search-empty">Type to navigate the code universe.</div></div>
+      <div class="palette-footer"><span>↵ focus</span><span>AI context results are ranked without an LLM</span></div>
+    </div>
+  </div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

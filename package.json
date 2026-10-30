@@ -1,0 +1,21 @@
+{
+  "name": "stellarcode",
+  "version": "0.3.0-mvp",
+  "description": "A living map of your codebase for humans and AI agents.",
+  "type": "module",
+  "bin": {
+    "stellar": "./src/cli.js"
+  },
+  "scripts": {
+    "test": "node --test --test-reporter=spec tests/*.test.js",
+    "demo:init": "node src/cli.js init fixtures/sample",
+    "demo:scan": "node src/cli.js scan fixtures/sample",
+    "demo:serve": "node src/cli.js serve fixtures/sample --port 7432",
+    "benchmark:report": "node src/cli.js benchmark report benchmark/baseline.example.jsonl benchmark/stellar.example.jsonl"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "license": "MIT",
+  "keywords": ["codebase", "graph", "mcp", "ai", "repository", "developer-tools"]
+}

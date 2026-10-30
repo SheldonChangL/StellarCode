@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "stellar_context Response",
+  "type": "object",
+  "required": ["query", "graphVersion", "primary", "related", "tests"],
+  "properties": {
+    "query": {"type": "string"},
+    "graphVersion": {"type": "integer"},
+    "primary": {"$ref": "#/$defs/items"},
+    "related": {"$ref": "#/$defs/items"},
+    "tests": {"$ref": "#/$defs/items"}
+  },
+  "$defs": {
+    "items": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["path", "reason"],
+        "properties": {
+          "path": {"type": "string"},
+          "lines": {
+            "type": "array",
+            "prefixItems": [{"type": "integer"}, {"type": "integer"}],
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "reason": {"type": "string", "maxLength": 240}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "baseline": {
+    "tasks": 12,
+    "successRate": 100,
+    "avgToolCalls": 19.75,
+    "avgDiscoveryTokens": 10200,
+    "medianFirstRelevantMs": 8900,
+    "avgFilesOpened": 11.5
+  },
+  "stellar": {
+    "tasks": 12,
+    "successRate": 100,
+    "avgToolCalls": 8,
+    "avgDiscoveryTokens": 4650,
+    "medianFirstRelevantMs": 3450,
+    "avgFilesOpened": 5
+  },
+  "delta": {
+    "toolCallReductionPct": 59.49367088607595,
+    "discoveryTokenReductionPct": 54.41176470588235,
+    "firstRelevantReductionPct": 61.23595505617978,
+    "successRateDeltaPoints": 0
+  },
+  "acceptance": {
+    "discoveryToolCalls": true,
+    "discoveryTokens": true,
+    "firstRelevantTime": true,
+    "successRate": true
+  },
+  "mvpThresholdsMet": true
+}

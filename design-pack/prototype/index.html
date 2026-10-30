@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>StellarCode — Universe Prototype</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand"><img src="../ui/assets/stellarcode-symbol.svg" alt="" /><span>StellarCode</span></div>
+      <button class="project-switcher">my-project <span>⌄</span></button>
+      <button id="searchButton" class="search-button"><span>⌕</span><span>Search files or symbols…</span><kbd>⌘K</kbd></button>
+      <div class="top-actions"><span class="status-dot"></span><span>Index up to date</span><button class="icon-button" aria-label="Settings">⚙</button></div>
+    </header>
+
+    <aside class="sidebar">
+      <section>
+        <div class="eyebrow">PROJECT</div>
+        <button class="tree-row active"><span>▾ src</span><span>94</span></button>
+        <button class="tree-row"><span>tests</span><span>31</span></button>
+        <button class="tree-row"><span>docs</span><span>18</span></button>
+        <button class="tree-row"><span>infra</span><span>9</span></button>
+      </section>
+      <section>
+        <div class="eyebrow">RELATIONS</div>
+        <label class="check"><input type="checkbox" checked /> imports</label>
+        <label class="check"><input type="checkbox" checked /> references</label>
+        <label class="check"><input type="checkbox" checked /> tests</label>
+        <label class="check"><input type="checkbox" /> all edges</label>
+      </section>
+      <section>
+        <div class="eyebrow">RECENT</div>
+        <div class="metric-card"><strong>23</strong><span>files changed</span></div>
+        <div class="metric-card"><strong>541</strong><span>relations</span></div>
+      </section>
+    </aside>
+
+    <main class="canvas-wrap">
+      <div class="canvas-toolbar">
+        <div class="segmented"><button class="selected" data-mode="universe">Universe</button><button data-mode="focus">Focus</button><button data-mode="impact">Impact</button></div>
+        <div class="zoom-hint">Scroll to zoom · Drag to pan</div>
+      </div>
+      <svg id="universe" viewBox="0 0 1000 700" role="img" aria-label="Interactive repository universe">
+        <defs>
+          <radialGradient id="nebulaA"><stop offset="0" stop-color="#315e9d" stop-opacity=".18"/><stop offset=".6" stop-color="#7d55d6" stop-opacity=".08"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+          <radialGradient id="nebulaB"><stop offset="0" stop-color="#2188a8" stop-opacity=".14"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+          <filter id="glow"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="soft"><feGaussianBlur stdDeviation="24"/></filter>
+        </defs>
+        <rect width="1000" height="700" class="space" />
+        <circle cx="530" cy="335" r="280" fill="url(#nebulaA)" filter="url(#soft)"/>
+        <circle cx="230" cy="175" r="150" fill="url(#nebulaB)" filter="url(#soft)"/>
+        <g class="stars-bg" opacity=".6"></g>
+        <g id="edges"></g>
+        <g id="nodes"></g>
+        <g id="clusterLabels"></g>
+      </svg>
+      <div class="legend"><span><i class="dot core"></i> core</span><span><i class="dot file"></i> file</span><span><i class="dot test"></i> test</span><span><i class="line"></i> dependency</span></div>
+    </main>
+
+    <aside class="inspector" id="inspector">
+      <div class="eyebrow">FILE</div>
+      <h1 id="fileName">AuthService.ts</h1>
+      <div class="path" id="filePath">src/auth/AuthService.ts</div>
+      <p class="purpose" id="filePurpose">Coordinates login, logout, and token refresh behavior.</p>
+
+      <div class="stats">
+        <div><strong id="loc">214</strong><span>LOC</span></div>
+        <div><strong id="inbound">8</strong><span>IN</span></div>
+        <div><strong id="outbound">3</strong><span>OUT</span></div>
+      </div>
+
+      <section class="inspect-section">
+        <div class="section-title">SYMBOLS</div>
+        <div id="symbols" class="chips"></div>
+      </section>
+      <section class="inspect-section">
+        <div class="section-title">DEPENDS ON</div>
+        <ul id="depends"></ul>
+      </section>
+      <section class="inspect-section">
+        <div class="section-title">USED BY</div>
+        <ul id="usedBy"></ul>
+      </section>
+      <section class="inspect-section">
+        <div class="section-title">RECENT CHANGE</div>
+        <div class="change-card"><span class="change-dot"></span><div><strong id="changeTitle">Fix refresh retry after 401</strong><small id="changeTime">Today · 14:32</small></div></div>
+      </section>
+      <button id="impactButton" class="primary-button">Show Impact</button>
+    </aside>
+
+    <footer class="bottombar">
+      <button class="bottom-tab active">Universe</button><button class="bottom-tab">Relations</button><button class="bottom-tab">Changes</button>
+      <div class="graph-meta">Graph v42 · 182 files · 541 relations</div>
+    </footer>
+  </div>
+
+  <div id="palette" class="palette-backdrop hidden">
+    <div class="palette">
+      <div class="palette-input"><span>⌕</span><input id="searchInput" placeholder="Search StellarCode" /></div>
+      <div class="palette-label">RESULTS</div>
+      <div id="searchResults"></div>
+      <div class="palette-footer"><span>↑↓ navigate</span><span>↵ focus</span><span>esc close</span></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

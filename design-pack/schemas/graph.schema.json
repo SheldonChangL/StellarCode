@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "StellarCode Graph Export",
+  "type": "object",
+  "required": ["projectId", "graphVersion", "nodes", "edges"],
+  "properties": {
+    "projectId": {"type": "string"},
+    "graphVersion": {"type": "integer", "minimum": 1},
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "label"],
+        "properties": {
+          "id": {"type": "string"},
+          "kind": {"enum": ["folder", "file", "symbol"]},
+          "label": {"type": "string"},
+          "path": {"type": "string"},
+          "importance": {"type": "number", "minimum": 0, "maximum": 1},
+          "summary": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "target", "type"],
+        "properties": {
+          "source": {"type": "string"},
+          "target": {"type": "string"},
+          "type": {"enum": ["contains", "imports", "references", "tests", "calls", "extends", "implements", "cochange"]},
+          "weight": {"type": "number"},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+        }
+      }
+    }
+  }
+}

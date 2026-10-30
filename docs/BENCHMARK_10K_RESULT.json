@@ -1,0 +1,9 @@
+{
+  "files": 10000,
+  "fullMs": 7301,
+  "warmMs": 163,
+  "noChange": true,
+  "fastPath": "git-clean",
+  "targetWarmMs": 500,
+  "passesWarmTarget": true
+}
