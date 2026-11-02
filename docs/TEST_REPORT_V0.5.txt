@@ -1,0 +1,53 @@
+
+> stellarcode@0.5.0 test
+> node --test --test-reporter=spec tests/*.test.js
+
+(node:16291) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ platform adapter resolves standard application data locations (1.93559ms)
+✔ init is idempotent and repo metadata is tiny/path-independent (618.875817ms)
+✔ moving a repo keeps UUID and refreshes registry path (420.596234ms)
+(node:16297) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ full index extracts known TS/JS/Python symbols and dependencies (938.656352ms)
+✔ same-name JavaScript declarations on the same line receive unique symbol IDs (639.423309ms)
+✔ incremental sync is graph-equivalent to clean full reindex (1304.176644ms)
+✔ warm no-change sync preserves graph version and reparses nothing (1014.476096ms)
+✔ query service narrows search, related, impact and context (1537.793858ms)
+(node:16298) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ local read-only API and universe shell are served from real index (1668.002058ms)
+(node:16375) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ MCP initialize/list/call exposes compact StellarCode tools (1004.293895ms)
+✔ benchmark reporter evaluates MVP acceptance thresholds (484.651935ms)
+(node:16417) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ CLI documents and recognizes stellar search as an alias (1054.712659ms)
+✔ Chinese login query expands deterministically to indexed auth/login symbols (1453.788136ms)
+✔ architecture-overview query favors entry points and structural core (898.531386ms)
+✔ no-evidence task returns no primary files instead of importance fallback (776.913664ms)
+✔ recognized Chinese intent with no repository evidence still returns no match (728.042376ms)
+(node:16477) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ installed CLI wrapper suppresses only the sqlite experimental warning on help (722.834837ms)
+✔ v0.4 architecture classifier separates app entry from nested module entry (6.695179ms)
+✔ v0.4 graph exposes galaxy/module hierarchy and architecture roles (962.466934ms)
+✔ architecture context returns an app entry plus structural core instead of nested barrel files (703.334219ms)
+✔ v0.4 web shell is galaxy-first and architecture API is available (1064.05191ms)
+(node:16597) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ v0.5 registry automatically transitions missing -> orphaned without deleting index (799.9297ms)
+✔ moving a registered repo is recovered automatically when StellarCode is used at the new path (655.259157ms)
+✔ global UI lists projects and lazily syncs a selected repository (890.426019ms)
+✔ global UI marks a deleted repository missing and refuses project queries while preserving registry (652.325872ms)
+✔ global MCP can discover projects and query by project UUID outside a repo (746.143609ms)
+✔ gc preserves orphan indexes by default and purges only when explicitly requested (602.005968ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10739.539034

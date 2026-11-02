@@ -10,6 +10,15 @@ export async function openDatabase(file) {
   return db
 }
 
+function tableColumns(db, table) {
+  return new Set(db.prepare(`PRAGMA table_info(${table})`).all().map(row => row.name))
+}
+
+function ensureColumn(db, table, definition) {
+  const name = definition.trim().split(/\s+/)[0]
+  if (!tableColumns(db, table).has(name)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${definition}`)
+}
+
 export function migrateRegistry(db) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS schema_meta (
@@ -27,6 +36,13 @@ export function migrateRegistry(db) {
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_projects_repo_path ON projects(repo_path);
   `)
+  // v0.5 registry lifecycle columns. ALTERs keep v0.4 registries compatible.
+  ensureColumn(db, 'projects', 'last_accessed_at TEXT')
+  ensureColumn(db, 'projects', 'last_indexed_at TEXT')
+  ensureColumn(db, 'projects', 'last_git_head TEXT')
+  ensureColumn(db, 'projects', 'missing_since TEXT')
+  ensureColumn(db, 'projects', 'orphaned_at TEXT')
+  ensureColumn(db, 'projects', 'last_error TEXT')
   db.prepare(`INSERT INTO schema_meta(key,value) VALUES('schema_version',?)
     ON CONFLICT(key) DO UPDATE SET value=excluded.value`).run(String(DB_SCHEMA_VERSION))
 }

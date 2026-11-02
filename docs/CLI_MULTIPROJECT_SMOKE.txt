@@ -1,0 +1,24 @@
+$ stellar init Alpha && stellar scan Alpha
+Initialized StellarCode project
+Project: /tmp/tmp.zzbL42Hfyg/Alpha
+Project ID: 440ddbcb-6f9a-4d72-b569-a0f6ab51860d
+Index DB: /tmp/tmp.zzbL42Hfyg/home/.local/share/stellarcode/projects/440ddbcb-6f9a-4d72-b569-a0f6ab51860d/index.db
+  "files": 8,
+  "symbols": 24,
+  "edges": 35,
+  "durationMs": 220,
+
+$ stellar init Beta && stellar scan Beta
+Initialized StellarCode project
+Project: /tmp/tmp.zzbL42Hfyg/Beta
+Project ID: 8189949a-18e5-4693-9529-5701972f7e34
+Index DB: /tmp/tmp.zzbL42Hfyg/home/.local/share/stellarcode/projects/8189949a-18e5-4693-9529-5701972f7e34/index.db
+  "files": 8,
+  "symbols": 24,
+  "edges": 35,
+  "durationMs": 326,
+
+$ stellar projects
+NAME   STATUS     FILES  LAST INDEXED  PATH
+Beta   active         8  10/30/2026, 9:15:20 AM /tmp/tmp.zzbL42Hfyg/Beta
+Alpha  active         8  10/30/2026, 9:15:19 AM /tmp/tmp.zzbL42Hfyg/Alpha

@@ -1,146 +1,208 @@
-# StellarCode v0.4
+# StellarCode v0.5
 
-> **A living map of your codebase.** Humans explore the universe; AI agents query the map before reading source.
+**A living map of your codebases for humans and AI agents.**
 
-This package contains the runnable **M0–M3 MVP plus the v0.4 Universe UX/architecture rewrite**, and preserves the original design/spec/mockup pack under `design-pack/`.
-
-## v0.4 highlights
-
-- **Galaxy → Module → File** navigation instead of rendering every file at once.
-- **Graph-on-demand**: no global dependency spiderweb; edges appear on Focus/Impact only.
-- Cross-module dependencies become contextual **external satellites**.
-- Deterministic architecture roles: App Entry, Module Entry, Domain Core, Service, UI, Infrastructure, Test, Config, Docs, Source.
-- `package.json`/framework-aware application-entry hints.
-- `stellar architecture` CLI command.
-- `stellar_architecture` MCP tool.
-- Architecture queries no longer treat every nested `index.ts` as an application entry.
-- Installed CLI hides only the noisy Node 22 `node:sqlite` ExperimentalWarning.
-- Existing StellarCode project IDs and databases remain compatible.
-
-See `docs/V0.4_RELEASE.md` and `docs/V0.4_UI_QA.md`.
-
-## M0 — Foundation
-
-- Cross-platform application data path adapter (macOS/Linux/Windows).
-- Stable repo identity in `.stellar/project.json`.
-- Global registry DB + isolated per-project `index.db`.
-- Idempotent `stellar init`, dry-run, optional agent-rule installer.
-- Three-OS GitHub Actions CI matrix.
-
-## M1 — Repository index engine
-
-- TypeScript, JavaScript and Python source indexing.
-- Ignore rules, binary/size filtering, SHA-256 content state.
-- Deterministic symbol/import extraction with no LLM/API key.
-- Import/test/reference graph + reverse dependencies.
-- Git HEAD/status/activity and rename hints.
-- Incremental add/modify/delete sync.
-- Importance scoring.
-- Git-clean fast path for warm queries.
-- **Zero-token maintenance**.
-
-## M2 — Universe UI
-
-- Local-only HTTP server (`127.0.0.1`).
-- Galaxy-first hierarchical navigation.
-- Canvas starfield and deterministic layout.
-- Search, breadcrumbs, zoom/pan, floating inspector.
-- Architecture role visual language.
-- Focus mode and cross-module external satellites.
-- Bounded Impact mode.
-- Changes view.
-
-## M3 — AI Gateway
-
-MCP tools:
-
-```text
-stellar_search
-stellar_file
-stellar_symbol
-stellar_related
-stellar_impact
-stellar_context
-stellar_architecture
-```
-
-Responses contain indexed metadata and line locations, not full source bodies.
+v0.5 changes StellarCode from a per-repository web server into a **multi-project local knowledge service**. Run `stellar init` once in each repository, then use one global UI/MCP service from anywhere.
 
 ## Requirements
 
-- Node.js **22.5+**.
-- Git is recommended.
-- Runtime has no npm dependencies.
+- Node.js 22.5+
+- Git recommended
+- macOS, Linux, or Windows
 
-## Quick start
+No npm runtime dependencies are required.
+
+## Install locally
 
 ```bash
-cd StellarCode_v0.4
-npm test
+npm install
 npm link
+```
 
-cd /path/to/your/repo
+## First-time project registration
+
+Inside each repository:
+
+```bash
 stellar init --install-agent-rule
 stellar scan
+```
+
+The repo only receives:
+
+```text
+.stellar/project.json
+```
+
+The index remains outside the repo in the OS application-data directory.
+
+## Global workflow
+
+List every registered project from anywhere:
+
+```bash
+stellar projects
+```
+
+Start one UI server for every project:
+
+```bash
+stellar ui
+```
+
+Open:
+
+```text
+http://127.0.0.1:7432
+```
+
+Selecting a project performs a lazy sync before its graph/query data is returned. Idle projects have no background file watcher.
+
+## Query a project
+
+From inside a registered repo:
+
+```bash
+stellar search login
+stellar context "modify the login flow"
 stellar architecture
-stellar search "login"
-stellar context "找出這個專案的主要入口與核心模組"
-stellar serve
 ```
 
-Open the printed URL (default `http://127.0.0.1:7432`).
+From anywhere:
 
-If the repository was already initialized with v0.3.x, you do **not** need to delete `.stellar/` or the Application Support database. Install/link v0.4 and run `stellar serve` or `stellar sync` normally.
+```bash
+stellar search login --project JetBook
+stellar context "modify the login flow" --project JetBook
+stellar architecture --project JetBook
+```
 
-## CLI
+A project selector may be a display name, UUID/UUID prefix, or repository path.
+
+## Global MCP
+
+Run once from any directory:
+
+```bash
+stellar mcp
+```
+
+v0.5 exposes:
+
+- `stellar_projects`
+- `stellar_search`
+- `stellar_file`
+- `stellar_symbol`
+- `stellar_related`
+- `stellar_impact`
+- `stellar_context`
+- `stellar_architecture`
+
+AI agents can first call `stellar_projects`, then pass `project` or `projectId` to another tool. If MCP is launched for a specific repo, that repo may still be used as the default.
+
+## Zero-manual-maintenance lifecycle
+
+Registered projects move through:
 
 ```text
-stellar init [path] [--dry-run] [--install-agent-rule]
-stellar scan [path] [--json]
-stellar sync [path] [--json]
-stellar status [path] [--json]
-stellar search <query> [path] [--json]
-stellar find <query> [path] [--json]
-stellar file <relative-path> [project-path] [--json]
-stellar symbol <query> [project-path] [--json]
-stellar related <path-or-symbol> [project-path] [--json]
-stellar impact <path-or-symbol> [project-path] [--depth N] [--json]
-stellar context <task> [project-path] [--json]
-stellar architecture [project-path] [--json]
-stellar serve [path] [--port 7432]
-stellar mcp [path]
-stellar agent-rule
-stellar benchmark report <baseline.jsonl> <stellar.jsonl>
+ACTIVE -> IDLE -> MISSING -> ORPHANED
 ```
 
-## Storage policy
+- **ACTIVE**: recently accessed through UI/MCP/query.
+- **IDLE**: registered and available, but not recently used.
+- **MISSING**: the repository root or its project UUID is unavailable.
+- **ORPHANED**: missing for the configured grace period (default 30 days).
 
-Repository-local identity only:
+StellarCode never scans your Home directory to rediscover projects. It checks only paths already present in the registry.
+
+When a repository is moved, its `.stellar/project.json` UUID moves with it. The first StellarCode command used at the new location automatically refreshes the global registry path and reuses the existing index.
+
+When a repository is deleted, the global registry marks it missing on the next UI/MCP/projects health check. The index is preserved. Once orphaned, reconstructable cache may be deleted automatically, but **`index.db` is never automatically purged**.
+
+Explicit cleanup is available:
+
+```bash
+stellar gc
+stellar remove JetBook
+stellar remove JetBook --purge
+stellar gc --purge-orphaned
+```
+
+`--purge` is intentionally explicit because source indexes may be useful after temporary disk/network failures.
+
+## Storage
+
+macOS:
 
 ```text
-repo/
-└── .stellar/
-    └── project.json
+~/Library/Application Support/StellarCode/
 ```
 
-Application data:
+Linux:
 
 ```text
-macOS   ~/Library/Application Support/StellarCode/
-Linux   ~/.local/share/stellarcode/
-Windows %LOCALAPPDATA%\StellarCode\
+~/.local/share/stellarcode/
 ```
 
-Each project has an isolated `index.db`; source code is never copied into the database.
+Windows:
 
-## Parser note
+```text
+%LOCALAPPDATA%\StellarCode\
+```
 
-The current MVP parser is dependency-free and deterministic rather than Tree-sitter/LSP based. It is sufficient for the included TS/JS/Python fixture and current navigation experiments, but production parser depth remains a post-MVP upgrade. See `docs/KNOWN_LIMITATIONS.md`.
+Layout:
 
-## Verification
+```text
+StellarCode/
+├── registry.db
+└── projects/
+    ├── <uuid-A>/index.db
+    └── <uuid-B>/index.db
+```
+
+Every project has an independent index database. Source files are never copied into StellarCode.
+
+## Commands
+
+```text
+stellar init [path]
+stellar projects
+stellar ui
+stellar scan [path]
+stellar sync [path]
+stellar status [path] [--project NAME_OR_ID]
+stellar search <query> [--project NAME_OR_ID]
+stellar file <path> [--project NAME_OR_ID]
+stellar symbol <query> [--project NAME_OR_ID]
+stellar related <target> [--project NAME_OR_ID]
+stellar impact <target> [--project NAME_OR_ID]
+stellar context <task> [--project NAME_OR_ID]
+stellar architecture [--project NAME_OR_ID]
+stellar remove <project> [--purge]
+stellar gc [--purge-orphaned]
+stellar mcp
+stellar serve [path]   # legacy single-project mode when path is supplied
+```
+
+## v0.5 design constraints
+
+1. **One global service, not one watcher/server per repo.**
+2. **Lazy synchronization instead of always-on watchers.**
+3. **Zero-token maintenance.** Indexing, lifecycle, and relation updates are deterministic.
+4. **Zero-manual-maintenance for normal repo deletion/move.**
+5. **No Home-directory crawling.** Only registered paths are checked.
+6. **Repository remains source of truth.** StellarCode stores metadata/graph knowledge, not source snapshots.
+7. **Conservative deletion.** Rebuildable cache may be reclaimed; durable indexes require explicit purge.
+
+## Validation
 
 ```bash
 npm test
 ```
 
-v0.4 adds regression coverage for architecture classification, hierarchy payloads, nested barrel handling and the architecture API/MCP surface.
+v0.5 ships regression coverage for multi-project registry, lazy global UI sync, global MCP, moved repositories, deleted repositories, missing/orphan lifecycle, and conservative GC.
+
+See:
+
+- `docs/V0.5_RELEASE.md`
+- `docs/V0.5_ARCHITECTURE.md`
+- `docs/IMPLEMENTATION_STATUS_V0.5.md`

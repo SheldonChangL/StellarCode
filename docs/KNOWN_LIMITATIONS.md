@@ -1,17 +1,20 @@
 # Known Limitations
 
-1. **Parser scope.** The shipped parser is deterministic and dependency-free, not Tree-sitter. It targets common TypeScript/JavaScript/Python declaration/import syntax. Complex decorators, path aliases, conditional exports, macro/codegen patterns and exotic syntax can be incomplete.
-2. **Module resolution.** MVP resolves relative TS/JS imports and common Python module paths. `tsconfig` aliases, package exports and framework-specific resolution are not yet modeled.
-3. **Call graph.** Function call edges are not broadly inferred. MVP focuses on file imports, imported symbol references and tests.
-4. **Node.js requirement.** Built-in `node:sqlite` requires Node 22.5+ and may print an experimental warning on Node 22.
-5. **UI scale validation.** Payload limits and visual LOD are implemented, but a formal 5k-node browser performance benchmark is not included in this execution environment.
-6. **M3 token proof.** The benchmark reporter is real; the bundled example telemetry is synthetic. Run the 12-task suite with your Claude/Codex workflow before claiming token savings.
-7. **Daemon/watchers.** Global daemon + active-project watcher is M4. M0–M3 uses lazy sync before queries, avoiding per-repo background watchers.
+## v0.5 Multi-Project Core
 
-## v0.4 architecture/UI limitations
+- `stellar ui` is an **on-demand global service**, not yet an OS login daemon. It stops when the process stops.
+- StellarCode intentionally does **not** crawl Home or mounted volumes to rediscover moved repositories. A moved repo is recovered automatically the first time StellarCode is used from its new location because the UUID in `.stellar/project.json` is path-independent.
+- Idle projects use lazy synchronization rather than always-on filesystem watchers. This keeps background CPU/file-descriptor usage near zero, but a project is refreshed on access rather than at the exact instant an idle file changes.
+- Missing/orphaned indexes are deliberately retained until explicit purge. This is conservative for external disks/network mounts but can leave storage allocated until `stellar remove --purge` or `stellar gc --purge-orphaned` is requested.
+- The global UI is functional project switching plus the v0.4 Universe. UI/visual hierarchy is not the focus of v0.5.
 
-- Architecture roles are deterministic heuristics, not semantic proof. Package metadata and common framework/path conventions improve precision, but unusual repository layouts can still be misclassified.
-- Galaxy/module hierarchy is path-derived. Monorepos with custom workspace semantics may eventually need explicit workspace metadata adapters.
-- The File layer intentionally renders one module at a time. Cross-module relations appear on demand as external satellites rather than expanding the whole repository.
-- Impact currently follows indexed reverse import/test dependencies. Dynamic runtime wiring, reflection, generated registries and dependency injection that are invisible to the deterministic parser may be absent.
-- The canvas renderer is 2D by design in v0.4. Three.js/3D is intentionally deferred until navigation usefulness is validated.
+## Indexing / Code Intelligence
+
+- The current TypeScript/JavaScript/Python parser is deterministic and dependency-free, not Tree-sitter/LSP-grade semantic analysis.
+- Relative imports are resolved; package aliases/path mappings and framework-specific dynamic imports are not fully modeled.
+- Call graphs are not yet complete runtime call graphs.
+- File-purpose summaries are deterministic metadata summaries; no LLM summary is required for index maintenance.
+
+## AI Benchmark
+
+The benchmark harness exists, but real Claude/Codex token savings must be measured with actual agent telemetry on representative repositories before claiming a production percentage reduction.

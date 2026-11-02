@@ -14,10 +14,10 @@ import { makeWorkspace } from './helpers.js'
 const execFileAsync = promisify(execFile)
 
 
-test('installed v0.4 CLI wrapper suppresses only the sqlite experimental warning on help', async () => {
+test('installed CLI wrapper suppresses only the sqlite experimental warning on help', async () => {
   const bin = new URL('../bin/stellar.js', import.meta.url)
   const result = await execFileAsync(process.execPath, [bin.pathname, 'help'])
-  assert.match(result.stdout, /StellarCode 0\.4\.0/)
+  assert.match(result.stdout, /StellarCode 0\.5\.0/)
   assert.equal(result.stderr, '')
 })
 
@@ -66,7 +66,7 @@ test('v0.4 web shell is galaxy-first and architecture API is available', async (
     const created=await createWebServer(w.repo,{port:0,host:'127.0.0.1',dirs:w.dirs});server=created.server
     const html=await (await fetch(created.url+'/')).text()
     assert.match(html,/StellarCode Universe/)
-    assert.match(html,/version">0\.4/)
+    assert.match(html,/version">0\.5/)
     const architecture=await (await fetch(created.url+'/api/architecture')).json()
     assert.ok(Array.isArray(architecture.entries))
     assert.ok(Array.isArray(architecture.modules))

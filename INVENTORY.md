@@ -1,34 +1,40 @@
-# StellarCode v0.4 Inventory
+# StellarCode v0.5 Inventory
 
-Files (before inventory/checksum manifests): 132
+Release: **0.5.0 — Multi-Project Core**
 
-## Top-level contents
+Packaged files (before SHA manifest): 144
 
-- (root): 6 files
-- .github: 1 files
-- benchmark: 5 files
-- bin: 1 files
-- design-pack: 57 files
-- docs: 23 files
-- fixtures: 9 files
-- scripts: 1 files
-- src: 22 files
-- tests: 7 files
+## Functional core
 
-## Verification
+- `src/storage/registry.js` — machine-wide registry, project lifecycle, move recovery support, GC/purge
+- `src/core/global-runtime.js` — resolve project by path/name/UUID and availability guard
+- `src/web/global-server.js` — one HTTP server for every registered project, lazy sync on access
+- `src/mcp/server.js` — global MCP plus `stellar_projects`
+- `src/cli.js` — `projects`, `ui`, `remove`, `gc`, project-aware query commands
+- `src/indexer/sync.js` — deterministic incremental index and registry index timestamps
 
-- Runtime version: 0.4.0
-- Automated tests: 21/21 passed in delivery run
-- Visual QA: synthetic 481-file / 19-module repository
-- Full per-file SHA-256 manifest: SHA256SUMS.txt
+## Global UI
 
-## Key v0.4 additions
+- `src/web/public/dashboard.html`
+- `src/web/public/dashboard.js`
+- `src/web/public/dashboard.css`
+- Existing v0.4 Universe remains available per project at `/project/<uuid>`.
 
-- src/query/architecture.js
-- Galaxy → Module → File Universe UI
-- stellar architecture CLI command
-- stellar_architecture MCP tool
-- External relation satellites + bounded Impact visualization
-- docs/V0.4_RELEASE.md
-- docs/V0.4_UI_QA.md
-- docs/screenshots/v0.4-*.png
+## Validation
+
+- 27 automated tests: **27 pass / 0 fail**
+- Multi-project CLI smoke test: `docs/CLI_MULTIPROJECT_SMOKE.txt`
+- Test report: `docs/TEST_REPORT_V0.5.txt`
+- npm packaging report: `docs/NPM_PACK_DRY_RUN_V0.5.txt`
+
+## v0.5 docs
+
+- `README.md`
+- `docs/V0.5_RELEASE.md`
+- `docs/V0.5_ARCHITECTURE.md`
+- `docs/IMPLEMENTATION_STATUS_V0.5.md`
+- `docs/KNOWN_LIMITATIONS.md`
+
+## Previous design / implementation assets
+
+The package retains the full earlier design pack, M0–M3 implementation docs, v0.4 Universe assets/screenshots, benchmark fixtures, and original MVP design ZIP.

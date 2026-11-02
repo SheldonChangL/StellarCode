@@ -1,30 +1,34 @@
 #!/usr/bin/env node
 import path from 'node:path'
 import process from 'node:process'
-import { initializeProject, readProjectMetadata, findProjectRoot } from './core/project.js'
+import { initializeProject } from './core/project.js'
 import { openProjectStore, projectMeta } from './storage/project-store.js'
 import { syncProject } from './indexer/sync.js'
 import { resolveProject } from './core/runtime.js'
+import { resolveAnyProject } from './core/global-runtime.js'
 import { searchProject, fileDetail, related, impact, contextForTask, symbolLookup, architectureOverview } from './query/query-service.js'
 import { createWebServer } from './web/server.js'
+import { createGlobalWebServer } from './web/global-server.js'
 import { startMcpServer } from './mcp/server.js'
 import { benchmarkReport } from './benchmark/report.js'
 import { installAgentRule, AGENT_RULE } from './core/agent-rule.js'
 import { appDirectories } from './platform/paths.js'
+import { projectSummaries, removeRegisteredProject, garbageCollect, reconcileProjects } from './storage/registry.js'
 import { StellarError } from './core/errors.js'
 
 function help() {
-  console.log(`StellarCode 0.4.0\n\nUsage:\n  stellar init [path] [--dry-run] [--install-agent-rule]\n  stellar scan [path] [--json]\n  stellar sync [path] [--json]\n  stellar status [path] [--json]\n  stellar search <query> [path] [--json]\n  stellar find <query> [path] [--json]  # alias\n  stellar file <relative-path> [project-path] [--json]\n  stellar symbol <query> [project-path] [--json]\n  stellar related <path-or-symbol> [project-path] [--json]\n  stellar impact <path-or-symbol> [project-path] [--depth N] [--json]\n  stellar context <task> [project-path] [--json]\n  stellar architecture [project-path] [--json]\n  stellar serve [path] [--port 7432]\n  stellar mcp [path]\n  stellar agent-rule\n  stellar benchmark report <baseline.jsonl> <stellar.jsonl>\n`)
+  console.log(`StellarCode 0.5.0\n\nUsage:\n  stellar init [path] [--dry-run] [--install-agent-rule]\n  stellar projects [--json]\n  stellar ui [--port 7432]\n  stellar scan [path] [--json]\n  stellar sync [path] [--json]\n  stellar status [path] [--project NAME_OR_ID] [--json]\n  stellar search <query> [path] [--project NAME_OR_ID] [--json]\n  stellar find <query> [path] [--project NAME_OR_ID] [--json]  # alias\n  stellar file <relative-path> [project-path] [--project NAME_OR_ID] [--json]\n  stellar symbol <query> [project-path] [--project NAME_OR_ID] [--json]\n  stellar related <path-or-symbol> [project-path] [--project NAME_OR_ID] [--json]\n  stellar impact <path-or-symbol> [project-path] [--project NAME_OR_ID] [--depth N] [--json]\n  stellar context <task> [project-path] [--project NAME_OR_ID] [--json]\n  stellar architecture [project-path] [--project NAME_OR_ID] [--json]\n  stellar remove <project> [--purge] [--json]\n  stellar gc [--purge-orphaned] [--json]\n  stellar mcp [project-path]\n  stellar serve [project-path] [--port 7432]  # legacy single-project when path is supplied; otherwise global UI\n  stellar agent-rule\n  stellar benchmark report <baseline.jsonl> <stellar.jsonl>\n\nGlobal v0.5 workflow:\n  Run 'stellar init' once per repo. Then run 'stellar ui' from anywhere.\n`)
 }
 
 function hasFlag(args, flag) { return args.includes(flag) }
 function flagValue(args, flag, fallback) { const i=args.indexOf(flag); return i>=0 && args[i+1] ? args[i+1] : fallback }
-function positional(args) { const out=[]; for(let i=0;i<args.length;i++){if(args[i].startsWith('--')){if(!['--json','--dry-run','--install-agent-rule'].includes(args[i]))i++;continue}out.push(args[i])} return out }
+function positional(args) { const out=[]; for(let i=0;i<args.length;i++){if(args[i].startsWith('--')){if(!['--json','--dry-run','--install-agent-rule','--purge','--purge-orphaned'].includes(args[i]))i++;continue}out.push(args[i])} return out }
 function print(value, json = false) {
   if (json) console.log(JSON.stringify(value, null, 2))
   else if (typeof value === 'string') console.log(value)
   else console.log(JSON.stringify(value, null, 2))
 }
+function projectReference(args, fallback) { return flagValue(args, '--project', fallback) }
 
 async function cmdInit(args) {
   const pos = positional(args)
@@ -42,9 +46,22 @@ async function cmdInit(args) {
   console.log(`${result.created ? 'Initialized' : 'Already initialized'} StellarCode project\nProject: ${root}\nProject ID: ${result.metadata.projectId}\nIndex DB: ${registration.db_path}${rules.length?`\nAgent rule: ${rules.join(', ')}`:''}`)
 }
 
+async function cmdProjects(args) {
+  const rows = await projectSummaries()
+  if (hasFlag(args,'--json')) return print(rows,true)
+  if (!rows.length) return console.log('No StellarCode projects registered. Run `stellar init` inside a repository.')
+  const nameWidth = Math.min(28, Math.max(4, ...rows.map(r=>r.name.length)))
+  console.log(`${'NAME'.padEnd(nameWidth)}  STATUS     FILES  LAST INDEXED  PATH`)
+  for (const row of rows) {
+    const when = row.lastIndexedAt ? new Date(row.lastIndexedAt).toLocaleString() : 'never'
+    console.log(`${row.name.slice(0,nameWidth).padEnd(nameWidth)}  ${row.status.padEnd(10)} ${String(row.counts.files).padStart(5)}  ${when.padEnd(18)} ${row.path}`)
+  }
+}
+
 async function cmdStatus(args) {
-  const rootArg = positional(args)[0] ?? process.cwd()
-  const { root, metadata } = await resolveProject(rootArg)
+  const pos = positional(args)
+  const ref = projectReference(args, pos[0] ?? process.cwd())
+  const { root, metadata } = await resolveAnyProject(ref)
   const { db, registration } = await openProjectStore(root, metadata)
   const meta = projectMeta(db)
   const counts = {
@@ -58,54 +75,87 @@ async function cmdStatus(args) {
   print(result, hasFlag(args,'--json'))
 }
 
+async function queryRoot(args, fallback) {
+  const ref = projectReference(args, fallback)
+  return (await resolveAnyProject(ref)).root
+}
+
 async function main() {
   const [, , command, ...args] = process.argv
   if (!command || ['help','--help','-h'].includes(command)) return help()
   if (command === 'init') return cmdInit(args)
+  if (command === 'projects') return cmdProjects(args)
+  if (command === 'ui') {
+    await reconcileProjects()
+    const {server,url}=await createGlobalWebServer({port:Number(flagValue(args,'--port',7432))})
+    console.log(`✦ StellarCode Global\n${url}\nAll registered projects are available from this one service.\nPress Ctrl+C to stop.`)
+    const stop=()=>server.close(()=>process.exit(0));process.on('SIGINT',stop);process.on('SIGTERM',stop)
+    return
+  }
   if (command === 'scan' || command === 'sync') {
-    const root = (await resolveProject(positional(args)[0] ?? process.cwd())).root
+    const pos=positional(args)
+    const root = await queryRoot(args, pos[0] ?? process.cwd())
     const result = await syncProject(root, { force: command === 'scan' })
     return print(result, hasFlag(args,'--json'))
   }
   if (command === 'status') return cmdStatus(args)
   if (command === 'find' || command === 'search') {
     const pos=positional(args); if(!pos[0])throw new StellarError(`${command} requires a query`,'USAGE',2)
-    return print(await searchProject(pos[1]??process.cwd(),pos[0],{limit:10}),hasFlag(args,'--json'))
+    const root=await queryRoot(args,pos[1]??process.cwd())
+    return print(await searchProject(root,pos[0],{limit:10}),hasFlag(args,'--json'))
   }
   if (command === 'file') {
     const pos=positional(args); if(!pos[0])throw new StellarError('file requires a project-relative path','USAGE',2)
-    return print(await fileDetail(pos[1]??process.cwd(),pos[0]),hasFlag(args,'--json'))
+    const root=await queryRoot(args,pos[1]??process.cwd())
+    return print(await fileDetail(root,pos[0]),hasFlag(args,'--json'))
   }
   if (command === 'symbol') {
     const pos=positional(args); if(!pos[0])throw new StellarError('symbol requires a query','USAGE',2)
-    return print(await symbolLookup(pos[1]??process.cwd(),pos[0]),hasFlag(args,'--json'))
+    const root=await queryRoot(args,pos[1]??process.cwd())
+    return print(await symbolLookup(root,pos[0]),hasFlag(args,'--json'))
   }
   if (command === 'related') {
     const pos=positional(args); if(!pos[0])throw new StellarError('related requires a target','USAGE',2)
-    return print(await related(pos[1]??process.cwd(),pos[0]),hasFlag(args,'--json'))
+    const root=await queryRoot(args,pos[1]??process.cwd())
+    return print(await related(root,pos[0]),hasFlag(args,'--json'))
   }
   if (command === 'impact') {
     const pos=positional(args); if(!pos[0])throw new StellarError('impact requires a target','USAGE',2)
-    return print(await impact(pos[1]??process.cwd(),pos[0],{depth:Number(flagValue(args,'--depth',3))}),hasFlag(args,'--json'))
+    const root=await queryRoot(args,pos[1]??process.cwd())
+    return print(await impact(root,pos[0],{depth:Number(flagValue(args,'--depth',3))}),hasFlag(args,'--json'))
   }
   if (command === 'context') {
     const pos=positional(args); if(!pos[0])throw new StellarError('context requires a task string','USAGE',2)
-    return print(await contextForTask(pos[1]??process.cwd(),pos[0],{limit:8}),hasFlag(args,'--json'))
+    const root=await queryRoot(args,pos[1]??process.cwd())
+    return print(await contextForTask(root,pos[0],{limit:8}),hasFlag(args,'--json'))
   }
   if (command === 'architecture') {
-    const root=(await resolveProject(positional(args)[0]??process.cwd())).root
+    const pos=positional(args);const root=await queryRoot(args,pos[0]??process.cwd())
     return print(await architectureOverview(root),hasFlag(args,'--json'))
   }
+  if (command === 'remove') {
+    const pos=positional(args);if(!pos[0])throw new StellarError('remove requires a project name or UUID','USAGE',2)
+    return print(await removeRegisteredProject(pos[0],{purge:hasFlag(args,'--purge')}),hasFlag(args,'--json'))
+  }
+  if (command === 'gc') return print(await garbageCollect({purgeOrphaned:hasFlag(args,'--purge-orphaned')}),hasFlag(args,'--json'))
   if (command === 'serve') {
-    const root=(await resolveProject(positional(args)[0]??process.cwd())).root
+    const pos=positional(args)
+    if (!pos[0]) {
+      const {server,url}=await createGlobalWebServer({port:Number(flagValue(args,'--port',7432))})
+      console.log(`✦ StellarCode Global\n${url}\nPress Ctrl+C to stop.`)
+      const stop=()=>server.close(()=>process.exit(0));process.on('SIGINT',stop);process.on('SIGTERM',stop)
+      return
+    }
+    const root=(await resolveProject(pos[0])).root
     await syncProject(root)
     const {server,url}=await createWebServer(root,{port:Number(flagValue(args,'--port',7432))})
-    console.log(`✦ StellarCode Universe\n${url}\nProject: ${root}\nPress Ctrl+C to stop.`)
+    console.log(`✦ StellarCode Universe (legacy single-project mode)\n${url}\nProject: ${root}\nPress Ctrl+C to stop.`)
     const stop=()=>server.close(()=>process.exit(0));process.on('SIGINT',stop);process.on('SIGTERM',stop)
     return
   }
   if (command === 'mcp') {
-    const root=(await resolveProject(positional(args)[0]??process.cwd())).root
+    const pos=positional(args)
+    const root = pos[0] ? (await resolveAnyProject(pos[0])).root : null
     return startMcpServer({projectPath:root})
   }
   if (command === 'agent-rule') return console.log(AGENT_RULE)

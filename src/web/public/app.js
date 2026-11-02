@@ -6,6 +6,7 @@ const searchInput = $('#searchInput')
 const searchResults = $('#searchResults')
 const tooltip = $('#tooltip')
 const inspector = $('#inspector')
+const PROJECT_ID = location.pathname.match(/^\/project\/([^/]+)/)?.[1] ?? new URLSearchParams(location.search).get('project')
 
 const ROLE_COLORS = {
   'application-entry':'#ffd166','domain-core':'#9c7cff','service':'#78a7ff','ui':'#61dfff',
@@ -22,7 +23,10 @@ function galaxyColor(id){return GALAXY_COLORS[hash(id)%GALAXY_COLORS.length]}
 function roleColor(role){return ROLE_COLORS[role]||ROLE_COLORS.source}
 function clamp(value,min,max){return Math.max(min,Math.min(max,value))}
 function esc(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
-async function api(url){const response=await fetch(url);if(!response.ok){const body=await response.json().catch(()=>({}));throw new Error(body.message||response.statusText)}return response.json()}
+async function api(url){
+  const target = PROJECT_ID && url.startsWith('/api/') ? `/api/projects/${encodeURIComponent(PROJECT_ID)}${url.slice(4)}` : url
+  const response=await fetch(target);if(!response.ok){const body=await response.json().catch(()=>({}));throw new Error(body.message||response.statusText)}return response.json()
+}
 
 function resize(){
   const rect=canvas.getBoundingClientRect(), dpr=Math.min(devicePixelRatio||1,2)

@@ -7,6 +7,7 @@ import { nextGraphVersion, openProjectStore, projectMeta } from '../storage/proj
 import { withTransaction } from '../storage/db.js'
 import { readProjectMetadata } from '../core/project.js'
 import { SUPPORTED_EXTENSIONS } from '../core/constants.js'
+import { markProjectIndexed } from '../storage/registry.js'
 
 function edgeId(source, target, type) {
   return crypto.createHash('sha1').update(`${source}|${target}|${type}`).digest('hex')
@@ -166,6 +167,7 @@ export async function syncProject(root, options = {}) {
         const symbols = db.prepare('SELECT COUNT(*) c FROM symbols').get().c
         const edges = db.prepare('SELECT COUNT(*) c FROM edges').get().c
         db.close()
+        await markProjectIndexed(metadata.projectId, { ...options, gitHead: head })
         return {
           projectId: metadata.projectId, graphVersion: metaBefore?.graph_version ?? 0, added: 0, modified: 0, deleted: 0,
           changedFiles: 0, files: total, symbols, edges, warnings: [], git: { head, statusCount: status.length },
@@ -196,6 +198,7 @@ export async function syncProject(root, options = {}) {
     const symbols = db.prepare('SELECT COUNT(*) c FROM symbols').get().c
     const edges = db.prepare('SELECT COUNT(*) c FROM edges').get().c
     db.close()
+    await markProjectIndexed(metadata.projectId, { ...options, gitHead: head })
     return {
       projectId: metadata.projectId, graphVersion: metaBefore?.graph_version ?? 0, added: 0, modified: 0, deleted: 0,
       changedFiles: 0, files: total, symbols, edges, warnings, git: { head, statusCount: 0 },
@@ -274,6 +277,7 @@ export async function syncProject(root, options = {}) {
   const symbols = db.prepare('SELECT COUNT(*) c FROM symbols').get().c
   const edges = db.prepare('SELECT COUNT(*) c FROM edges').get().c
   db.close()
+  await markProjectIndexed(metadata.projectId, { ...options, gitHead: head })
   return {
     projectId: metadata.projectId,
     graphVersion,
