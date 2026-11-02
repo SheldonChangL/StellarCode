@@ -1,40 +1,161 @@
-# StellarCode v0.5 Inventory
+# StellarCode v0.5.1 Inventory
 
-Release: **0.5.0 — Multi-Project Core**
+Total files (excluding this inventory and SHA256SUMS): 157
 
-Packaged files (before SHA manifest): 144
-
-## Functional core
-
-- `src/storage/registry.js` — machine-wide registry, project lifecycle, move recovery support, GC/purge
-- `src/core/global-runtime.js` — resolve project by path/name/UUID and availability guard
-- `src/web/global-server.js` — one HTTP server for every registered project, lazy sync on access
-- `src/mcp/server.js` — global MCP plus `stellar_projects`
-- `src/cli.js` — `projects`, `ui`, `remove`, `gc`, project-aware query commands
-- `src/indexer/sync.js` — deterministic incremental index and registry index timestamps
-
-## Global UI
-
+- `.github/workflows/ci.yml`
+- `.gitignore`
+- `AGENTS.md`
+- `LICENSE`
+- `README.md`
+- `benchmark/README.md`
+- `benchmark/baseline.example.jsonl`
+- `benchmark/example-report-v051.html`
+- `benchmark/example-report-v051.json`
+- `benchmark/example-report.json`
+- `benchmark/stellar.example.jsonl`
+- `benchmark/tasks.json`
+- `benchmark/tasks.v051.example.json`
+- `bin/stellar.js`
+- `design-pack/PROJECT_PLAN.md`
+- `design-pack/README.md`
+- `design-pack/docs/00_PRODUCT_VISION.md`
+- `design-pack/docs/01_SYSTEM_ARCHITECTURE.md`
+- `design-pack/docs/02_SOFTWARE_ARCHITECTURE.md`
+- `design-pack/docs/03_DATA_MODEL.md`
+- `design-pack/docs/04_INDEXING_SYNC.md`
+- `design-pack/docs/05_CLI_MCP_API.md`
+- `design-pack/docs/06_SECURITY_PRIVACY.md`
+- `design-pack/docs/07_VALIDATION_BENCHMARK.md`
+- `design-pack/docs/08_IMPLEMENTATION_HANDOFF.md`
+- `design-pack/docs/diagrams/roadmap.png`
+- `design-pack/docs/diagrams/roadmap.svg`
+- `design-pack/docs/diagrams/software-architecture.png`
+- `design-pack/docs/diagrams/software-architecture.svg`
+- `design-pack/docs/diagrams/system-architecture.png`
+- `design-pack/docs/diagrams/system-architecture.svg`
+- `design-pack/examples/context-response.json`
+- `design-pack/examples/graph.json`
+- `design-pack/examples/project.json`
+- `design-pack/milestones/M0_FOUNDATION.md`
+- `design-pack/milestones/M1_INDEX_ENGINE.md`
+- `design-pack/milestones/M2_UNIVERSE_UI.md`
+- `design-pack/milestones/M3_AI_GATEWAY_BENCHMARK.md`
+- `design-pack/milestones/M4_DAEMON_SCALE.md`
+- `design-pack/milestones/M5_ADVANCED_INTELLIGENCE.md`
+- `design-pack/original-zip/StellarCode_MVP_Design_Pack.zip`
+- `design-pack/prototype/app.js`
+- `design-pack/prototype/index.html`
+- `design-pack/prototype/styles.css`
+- `design-pack/schemas/context-response.schema.json`
+- `design-pack/schemas/graph.schema.json`
+- `design-pack/schemas/project.schema.json`
+- `design-pack/ui/ASSET_MANIFEST.md`
+- `design-pack/ui/DESIGN_TOKENS.json`
+- `design-pack/ui/UI_UX_SPEC.md`
+- `design-pack/ui/WIREFRAMES.md`
+- `design-pack/ui/assets/app-icon.svg`
+- `design-pack/ui/assets/icon-change.svg`
+- `design-pack/ui/assets/icon-impact.svg`
+- `design-pack/ui/assets/icon-search.svg`
+- `design-pack/ui/assets/icon-warning.svg`
+- `design-pack/ui/assets/node-folder.svg`
+- `design-pack/ui/assets/node-planet.svg`
+- `design-pack/ui/assets/node-star.svg`
+- `design-pack/ui/assets/node-test.svg`
+- `design-pack/ui/assets/starfield.svg`
+- `design-pack/ui/assets/stellarcode-logo.svg`
+- `design-pack/ui/assets/stellarcode-symbol.svg`
+- `design-pack/ui/mockup-focus.png`
+- `design-pack/ui/mockup-focus.svg`
+- `design-pack/ui/mockup-impact.png`
+- `design-pack/ui/mockup-impact.svg`
+- `design-pack/ui/mockup-universe.png`
+- `design-pack/ui/mockup-universe.svg`
+- `docs/BENCHMARK_10K_RESULT.json`
+- `docs/BENCHMARK_TASK_AUTHORING.md`
+- `docs/CLI_BENCHMARK_SMOKE_V0.5.1.txt`
+- `docs/CLI_MULTIPROJECT_SMOKE.txt`
+- `docs/DELIVERY_SUMMARY.md`
+- `docs/HOTFIX_0.3.1.md`
+- `docs/HOTFIX_0.3.2.md`
+- `docs/IMPLEMENTATION_STATUS.md`
+- `docs/IMPLEMENTATION_STATUS_V0.4.md`
+- `docs/IMPLEMENTATION_STATUS_V0.5.1.md`
+- `docs/IMPLEMENTATION_STATUS_V0.5.md`
+- `docs/IMPLEMENTED_ARCHITECTURE.md`
+- `docs/KNOWN_LIMITATIONS.md`
+- `docs/MCP_SETUP.md`
+- `docs/NPM_PACK_DRY_RUN.txt`
+- `docs/NPM_PACK_DRY_RUN_V0.4.txt`
+- `docs/NPM_PACK_DRY_RUN_V0.5.1.json`
+- `docs/NPM_PACK_DRY_RUN_V0.5.txt`
+- `docs/SECURITY.md`
+- `docs/SYNTAX_CHECK_V0.5.1.txt`
+- `docs/TEST_REPORT.txt`
+- `docs/TEST_REPORT_V0.4.txt`
+- `docs/TEST_REPORT_V0.5.1.txt`
+- `docs/TEST_REPORT_V0.5.txt`
+- `docs/V0.4_RELEASE.md`
+- `docs/V0.4_UI_QA.md`
+- `docs/V0.5.1_RELEASE.md`
+- `docs/V0.5.1_TOKEN_BENCHMARK.md`
+- `docs/V0.5_ARCHITECTURE.md`
+- `docs/V0.5_RELEASE.md`
+- `docs/screenshots/v0.4-files.png`
+- `docs/screenshots/v0.4-focus-external.png`
+- `docs/screenshots/v0.4-focus.png`
+- `docs/screenshots/v0.4-galaxies.png`
+- `docs/screenshots/v0.4-impact.png`
+- `docs/screenshots/v0.4-modules.png`
+- `docs/screenshots/v0.4-preview.html`
+- `fixtures/sample/README.md`
+- `fixtures/sample/python/session.py`
+- `fixtures/sample/python/token_store.py`
+- `fixtures/sample/src/auth/AuthService.ts`
+- `fixtures/sample/src/auth/TokenStore.ts`
+- `fixtures/sample/src/http/ApiClient.ts`
+- `fixtures/sample/src/index.ts`
+- `fixtures/sample/src/ui/LoginPage.tsx`
+- `fixtures/sample/tests/auth/AuthService.test.ts`
+- `package-lock.json`
+- `package.json`
+- `scripts/benchmark-10k.js`
+- `src/benchmark/agents.js`
+- `src/benchmark/report.js`
+- `src/benchmark/runner.js`
+- `src/benchmark/tasks.js`
+- `src/cli.js`
+- `src/core/agent-rule.js`
+- `src/core/constants.js`
+- `src/core/errors.js`
+- `src/core/global-runtime.js`
+- `src/core/project.js`
+- `src/core/runtime.js`
+- `src/indexer/git.js`
+- `src/indexer/parser.js`
+- `src/indexer/scanner.js`
+- `src/indexer/sync.js`
+- `src/mcp/server.js`
+- `src/platform/paths.js`
+- `src/query/architecture.js`
+- `src/query/query-service.js`
+- `src/storage/db.js`
+- `src/storage/project-store.js`
+- `src/storage/registry.js`
+- `src/web/global-server.js`
+- `src/web/public/app.js`
+- `src/web/public/dashboard.css`
 - `src/web/public/dashboard.html`
 - `src/web/public/dashboard.js`
-- `src/web/public/dashboard.css`
-- Existing v0.4 Universe remains available per project at `/project/<uuid>`.
-
-## Validation
-
-- 27 automated tests: **27 pass / 0 fail**
-- Multi-project CLI smoke test: `docs/CLI_MULTIPROJECT_SMOKE.txt`
-- Test report: `docs/TEST_REPORT_V0.5.txt`
-- npm packaging report: `docs/NPM_PACK_DRY_RUN_V0.5.txt`
-
-## v0.5 docs
-
-- `README.md`
-- `docs/V0.5_RELEASE.md`
-- `docs/V0.5_ARCHITECTURE.md`
-- `docs/IMPLEMENTATION_STATUS_V0.5.md`
-- `docs/KNOWN_LIMITATIONS.md`
-
-## Previous design / implementation assets
-
-The package retains the full earlier design pack, M0–M3 implementation docs, v0.4 Universe assets/screenshots, benchmark fixtures, and original MVP design ZIP.
+- `src/web/public/index.html`
+- `src/web/public/styles.css`
+- `src/web/server.js`
+- `tests/helpers.js`
+- `tests/m0-foundation.test.js`
+- `tests/m1-index.test.js`
+- `tests/m2-web.test.js`
+- `tests/m3-mcp-benchmark.test.js`
+- `tests/m3-query-regression.test.js`
+- `tests/v04-architecture-ui.test.js`
+- `tests/v05-multiproject.test.js`
+- `tests/v051-token-benchmark.test.js`

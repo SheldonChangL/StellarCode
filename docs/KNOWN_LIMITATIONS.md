@@ -17,4 +17,10 @@
 
 ## AI Benchmark
 
-The benchmark harness exists, but real Claude/Codex token savings must be measured with actual agent telemetry on representative repositories before claiming a production percentage reduction.
+v0.5.1 can execute controlled Claude/Codex A/B runs and reads the agents' reported token usage. Numeric savings still depend on the repository, task set, agent version, model, cache state, and account configuration.
+
+- The harness currently targets read-only repository-navigation tasks; editing-quality benchmarking is not yet the primary scope.
+- It requires a Git repository with a committed HEAD because each run uses a detached temporary worktree. Uncommitted changes are disclosed in the manifest but are not included in the benchmark snapshot.
+- Authentication/subscription/API quota is managed by the installed Claude/Codex CLI, not StellarCode.
+- Agent CLI output formats can evolve; adapters are regression-tested against fixtures but should be revalidated when upgrading major CLI versions.
+- The harness does not claim a universal token-saving percentage. The HTML report only marks the evidence gate PASS when token/navigation thresholds and answer-key correctness all pass.

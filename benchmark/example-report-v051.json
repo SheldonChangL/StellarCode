@@ -1,0 +1,331 @@
+{
+  "schemaVersion": 2,
+  "baselineFile": "/mnt/data/StellarCode_v0.5.1/benchmark/baseline.example.jsonl",
+  "stellarFile": "/mnt/data/StellarCode_v0.5.1/benchmark/stellar.example.jsonl",
+  "baseline": {
+    "runs": 12,
+    "verifiedRuns": 12,
+    "successRate": 100,
+    "totalInputTokens": 122400,
+    "avgInputTokens": 10200,
+    "totalOutputTokens": 0,
+    "avgOutputTokens": 0,
+    "totalToolCalls": 237,
+    "avgToolCalls": 19.75,
+    "totalSearchCalls": 0,
+    "avgSearchCalls": 0,
+    "totalFilesOpened": 138,
+    "avgFilesOpened": 11.5,
+    "totalSourceBytesRead": 0,
+    "medianFirstRelevantMs": 8900,
+    "totalCostUsd": 0,
+    "navigationInputTokens": 122400,
+    "navigationRuns": 12
+  },
+  "stellar": {
+    "runs": 12,
+    "verifiedRuns": 12,
+    "successRate": 100,
+    "totalInputTokens": 55800,
+    "avgInputTokens": 4650,
+    "totalOutputTokens": 0,
+    "avgOutputTokens": 0,
+    "totalToolCalls": 96,
+    "avgToolCalls": 8,
+    "totalSearchCalls": 0,
+    "avgSearchCalls": 0,
+    "totalFilesOpened": 60,
+    "avgFilesOpened": 5,
+    "totalSourceBytesRead": 0,
+    "medianFirstRelevantMs": 3450,
+    "totalCostUsd": 0,
+    "navigationInputTokens": 55800,
+    "navigationRuns": 12
+  },
+  "delta": {
+    "inputTokenReductionPct": 54.41176470588235,
+    "navigationInputTokenReductionPct": 54.41176470588235,
+    "toolCallReductionPct": 59.49367088607595,
+    "searchCallReductionPct": 0,
+    "filesOpenedReductionPct": 56.52173913043478,
+    "sourceBytesReductionPct": 0,
+    "firstRelevantReductionPct": 61.23595505617978,
+    "successRateDeltaPoints": 0
+  },
+  "correctnessVerified": true,
+  "acceptance": {
+    "overallInputTokens": true,
+    "navigationInputTokens": true,
+    "toolCalls": true,
+    "firstRelevantTime": true,
+    "successRate": true
+  },
+  "passGate": true,
+  "mvpThresholdsMet": true,
+  "pairs": [
+    {
+      "key": "bug-01#1",
+      "taskId": "bug-01",
+      "repetition": 1,
+      "baseline": {
+        "inputTokens": 9000,
+        "toolCalls": 22,
+        "searchCalls": 0,
+        "filesOpened": 10,
+        "firstRelevantMs": 8900,
+        "success": true
+      },
+      "stellar": {
+        "inputTokens": 4650,
+        "toolCalls": 8,
+        "searchCalls": 0,
+        "filesOpened": 5,
+        "firstRelevantMs": 3200,
+        "success": true
+      },
+      "inputTokenReductionPct": 48.333333333333336
+    },
+    {
+      "key": "bug-02#1",
+      "taskId": "bug-02",
+      "repetition": 1,
+      "baseline": {
+        "inputTokens": 9800,
+        "toolCalls": 18,
+        "searchCalls": 0,
+        "filesOpened": 11,
+        "firstRelevantMs": 9800,
+        "success": true
+      },
+      "stellar": {
+        "inputTokens": 5000,
+        "toolCalls": 9,
+        "searchCalls": 0,
+        "filesOpened": 6,
+        "firstRelevantMs": 3700,
+        "success": true
+      },
+      "inputTokenReductionPct": 48.97959183673469
+    },
+    {
+      "key": "dependency-01#1",
+      "taskId": "dependency-01",
+      "repetition": 1,
+      "baseline": {
+        "inputTokens": 10600,
+        "toolCalls": 20,
+        "searchCalls": 0,
+        "filesOpened": 12,
+        "firstRelevantMs": 9800,
+        "success": true
+      },
+      "stellar": {
+        "inputTokens": 5000,
+        "toolCalls": 9,
+        "searchCalls": 0,
+        "filesOpened": 6,
+        "firstRelevantMs": 3200,
+        "success": true
+      },
+      "inputTokenReductionPct": 52.83018867924528
+    },
+    {
+      "key": "dependency-02#1",
+      "taskId": "dependency-02",
+      "repetition": 1,
+      "baseline": {
+        "inputTokens": 11400,
+        "toolCalls": 21,
+        "searchCalls": 0,
+        "filesOpened": 13,
+        "firstRelevantMs": 8000,
+        "success": true
+      },
+      "stellar": {
+        "inputTokens": 4300,
+        "toolCalls": 7,
+        "searchCalls": 0,
+        "filesOpened": 4,
+        "firstRelevantMs": 3700,
+        "success": true
+      },
+      "inputTokenReductionPct": 62.28070175438597
+    },
+    {
+      "key": "feature-01#1",
+      "taskId": "feature-01",
+      "repetition": 1,
+      "baseline": {
+        "inputTokens": 10600,
+        "toolCalls": 19,
+        "searchCalls": 0,
+        "filesOpened": 12,
+        "firstRelevantMs": 8000,
+        "success": true
+      },
+      "stellar": {
+        "inputTokens": 4300,
+        "toolCalls": 7,
+        "searchCalls": 0,
+        "filesOpened": 4,
+        "firstRelevantMs": 3200,
+        "success": true
+      },
+      "inputTokenReductionPct": 59.43396226415094
+    },
+    {
+      "key": "feature-02#1",
+      "taskId": "feature-02",
+      "repetition": 1,
+      "baseline": {
+        "inputTokens": 11400,
+        "toolCalls": 20,
+        "searchCalls": 0,
+        "filesOpened": 13,
+        "firstRelevantMs": 8900,
+        "success": true
+      },
+      "stellar": {
+        "inputTokens": 4650,
+        "toolCalls": 8,
+        "searchCalls": 0,
+        "filesOpened": 5,
+        "firstRelevantMs": 3700,
+        "success": true
+      },
+      "inputTokenReductionPct": 59.210526315789465
+    },
+    {
+      "key": "locate-01#1",
+      "taskId": "locate-01",
+      "repetition": 1,
+      "baseline": {
+        "inputTokens": 9000,
+        "toolCalls": 18,
+        "searchCalls": 0,
+        "filesOpened": 10,
+        "firstRelevantMs": 8000,
+        "success": true
+      },
+      "stellar": {
+        "inputTokens": 4300,
+        "toolCalls": 7,
+        "searchCalls": 0,
+        "filesOpened": 4,
+        "firstRelevantMs": 3200,
+        "success": true
+      },
+      "inputTokenReductionPct": 52.22222222222223
+    },
+    {
+      "key": "locate-02#1",
+      "taskId": "locate-02",
+      "repetition": 1,
+      "baseline": {
+        "inputTokens": 9800,
+        "toolCalls": 19,
+        "searchCalls": 0,
+        "filesOpened": 11,
+        "firstRelevantMs": 8900,
+        "success": true
+      },
+      "stellar": {
+        "inputTokens": 4650,
+        "toolCalls": 8,
+        "searchCalls": 0,
+        "filesOpened": 5,
+        "firstRelevantMs": 3700,
+        "success": true
+      },
+      "inputTokenReductionPct": 52.55102040816326
+    },
+    {
+      "key": "regression-01#1",
+      "taskId": "regression-01",
+      "repetition": 1,
+      "baseline": {
+        "inputTokens": 10600,
+        "toolCalls": 18,
+        "searchCalls": 0,
+        "filesOpened": 12,
+        "firstRelevantMs": 8900,
+        "success": true
+      },
+      "stellar": {
+        "inputTokens": 4650,
+        "toolCalls": 8,
+        "searchCalls": 0,
+        "filesOpened": 5,
+        "firstRelevantMs": 3200,
+        "success": true
+      },
+      "inputTokenReductionPct": 56.132075471698116
+    },
+    {
+      "key": "regression-02#1",
+      "taskId": "regression-02",
+      "repetition": 1,
+      "baseline": {
+        "inputTokens": 11400,
+        "toolCalls": 19,
+        "searchCalls": 0,
+        "filesOpened": 13,
+        "firstRelevantMs": 9800,
+        "success": true
+      },
+      "stellar": {
+        "inputTokens": 5000,
+        "toolCalls": 9,
+        "searchCalls": 0,
+        "filesOpened": 6,
+        "firstRelevantMs": 3700,
+        "success": true
+      },
+      "inputTokenReductionPct": 56.14035087719298
+    },
+    {
+      "key": "test-01#1",
+      "taskId": "test-01",
+      "repetition": 1,
+      "baseline": {
+        "inputTokens": 9000,
+        "toolCalls": 21,
+        "searchCalls": 0,
+        "filesOpened": 10,
+        "firstRelevantMs": 9800,
+        "success": true
+      },
+      "stellar": {
+        "inputTokens": 5000,
+        "toolCalls": 9,
+        "searchCalls": 0,
+        "filesOpened": 6,
+        "firstRelevantMs": 3200,
+        "success": true
+      },
+      "inputTokenReductionPct": 44.44444444444444
+    },
+    {
+      "key": "test-02#1",
+      "taskId": "test-02",
+      "repetition": 1,
+      "baseline": {
+        "inputTokens": 9800,
+        "toolCalls": 22,
+        "searchCalls": 0,
+        "filesOpened": 11,
+        "firstRelevantMs": 8000,
+        "success": true
+      },
+      "stellar": {
+        "inputTokens": 4300,
+        "toolCalls": 7,
+        "searchCalls": 0,
+        "filesOpened": 4,
+        "firstRelevantMs": 3700,
+        "success": true
+      },
+      "inputTokenReductionPct": 56.12244897959183
+    }
+  ]
+}

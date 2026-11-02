@@ -1,0 +1,811 @@
+[
+  {
+    "id": "stellarcode@0.5.1",
+    "name": "stellarcode",
+    "version": "0.5.1",
+    "size": 10852817,
+    "unpackedSize": 11463597,
+    "shasum": "b705dee04858ec403ac195b55d75bb7d4388b711",
+    "integrity": "sha512-OW/2LfjJUXClFA/78a26HfJa7OwfFX9iYioGseS8ozZNhykfLe+lfvntO6olPL/bHwDGjBHPFaDwtoA/aitnZQ==",
+    "filename": "stellarcode-0.5.1.tgz",
+    "files": [
+      {
+        "path": ".github/workflows/ci.yml",
+        "size": 346,
+        "mode": 420
+      },
+      {
+        "path": "AGENTS.md",
+        "size": 456,
+        "mode": 420
+      },
+      {
+        "path": "INVENTORY.md",
+        "size": 1442,
+        "mode": 420
+      },
+      {
+        "path": "LICENSE",
+        "size": 1081,
+        "mode": 420
+      },
+      {
+        "path": "README.md",
+        "size": 6439,
+        "mode": 420
+      },
+      {
+        "path": "SHA256SUMS.txt",
+        "size": 14389,
+        "mode": 420
+      },
+      {
+        "path": "benchmark/baseline.example.jsonl",
+        "size": 1646,
+        "mode": 420
+      },
+      {
+        "path": "benchmark/example-report-v051.html",
+        "size": 3818,
+        "mode": 420
+      },
+      {
+        "path": "benchmark/example-report-v051.json",
+        "size": 8179,
+        "mode": 420
+      },
+      {
+        "path": "benchmark/example-report.json",
+        "size": 731,
+        "mode": 420
+      },
+      {
+        "path": "benchmark/README.md",
+        "size": 826,
+        "mode": 420
+      },
+      {
+        "path": "benchmark/stellar.example.jsonl",
+        "size": 1616,
+        "mode": 420
+      },
+      {
+        "path": "benchmark/tasks.json",
+        "size": 1964,
+        "mode": 420
+      },
+      {
+        "path": "benchmark/tasks.v051.example.json",
+        "size": 905,
+        "mode": 420
+      },
+      {
+        "path": "bin/stellar.js",
+        "size": 759,
+        "mode": 493
+      },
+      {
+        "path": "design-pack/docs/00_PRODUCT_VISION.md",
+        "size": 2052,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/docs/01_SYSTEM_ARCHITECTURE.md",
+        "size": 3798,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/docs/02_SOFTWARE_ARCHITECTURE.md",
+        "size": 2884,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/docs/03_DATA_MODEL.md",
+        "size": 2196,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/docs/04_INDEXING_SYNC.md",
+        "size": 2221,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/docs/05_CLI_MCP_API.md",
+        "size": 2412,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/docs/06_SECURITY_PRIVACY.md",
+        "size": 1291,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/docs/07_VALIDATION_BENCHMARK.md",
+        "size": 2165,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/docs/08_IMPLEMENTATION_HANDOFF.md",
+        "size": 2195,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/docs/diagrams/roadmap.png",
+        "size": 72081,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/docs/diagrams/roadmap.svg",
+        "size": 3084,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/docs/diagrams/software-architecture.png",
+        "size": 100123,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/docs/diagrams/software-architecture.svg",
+        "size": 3867,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/docs/diagrams/system-architecture.png",
+        "size": 122987,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/docs/diagrams/system-architecture.svg",
+        "size": 3179,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/examples/context-response.json",
+        "size": 570,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/examples/graph.json",
+        "size": 848,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/examples/project.json",
+        "size": 111,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/INVENTORY.md",
+        "size": 1599,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/milestones/M0_FOUNDATION.md",
+        "size": 1844,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/milestones/M1_INDEX_ENGINE.md",
+        "size": 2433,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/milestones/M2_UNIVERSE_UI.md",
+        "size": 2153,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/milestones/M3_AI_GATEWAY_BENCHMARK.md",
+        "size": 2165,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/milestones/M4_DAEMON_SCALE.md",
+        "size": 1833,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/milestones/M5_ADVANCED_INTELLIGENCE.md",
+        "size": 1487,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/original-zip/StellarCode_MVP_Design_Pack.zip",
+        "size": 2709259,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/PROJECT_PLAN.md",
+        "size": 1252,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/prototype/app.js",
+        "size": 8274,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/prototype/index.html",
+        "size": 5638,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/prototype/styles.css",
+        "size": 8571,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/README.md",
+        "size": 2586,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/schemas/context-response.schema.json",
+        "size": 905,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/schemas/graph.schema.json",
+        "size": 1261,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/schemas/project.schema.json",
+        "size": 478,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/SHA256SUMS.txt",
+        "size": 5179,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/ASSET_MANIFEST.md",
+        "size": 964,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/assets/app-icon.svg",
+        "size": 853,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/assets/icon-change.svg",
+        "size": 289,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/assets/icon-impact.svg",
+        "size": 326,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/assets/icon-search.svg",
+        "size": 235,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/assets/icon-warning.svg",
+        "size": 245,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/assets/node-folder.svg",
+        "size": 211,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/assets/node-planet.svg",
+        "size": 230,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/assets/node-star.svg",
+        "size": 160,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/assets/node-test.svg",
+        "size": 216,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/assets/starfield.svg",
+        "size": 645,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/assets/stellarcode-logo.svg",
+        "size": 660,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/assets/stellarcode-symbol.svg",
+        "size": 509,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/DESIGN_TOKENS.json",
+        "size": 1160,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/mockup-focus.png",
+        "size": 724984,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/mockup-focus.svg",
+        "size": 4560,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/mockup-impact.png",
+        "size": 843154,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/mockup-impact.svg",
+        "size": 3784,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/mockup-universe.png",
+        "size": 829684,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/mockup-universe.svg",
+        "size": 5709,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/UI_UX_SPEC.md",
+        "size": 4855,
+        "mode": 420
+      },
+      {
+        "path": "design-pack/ui/WIREFRAMES.md",
+        "size": 8675,
+        "mode": 420
+      },
+      {
+        "path": "docs/BENCHMARK_10K_RESULT.json",
+        "size": 154,
+        "mode": 420
+      },
+      {
+        "path": "docs/BENCHMARK_TASK_AUTHORING.md",
+        "size": 1874,
+        "mode": 420
+      },
+      {
+        "path": "docs/CLI_BENCHMARK_SMOKE_V0.5.1.txt",
+        "size": 2206,
+        "mode": 420
+      },
+      {
+        "path": "docs/CLI_MULTIPROJECT_SMOKE.txt",
+        "size": 891,
+        "mode": 420
+      },
+      {
+        "path": "docs/DELIVERY_SUMMARY.md",
+        "size": 1312,
+        "mode": 420
+      },
+      {
+        "path": "docs/HOTFIX_0.3.1.md",
+        "size": 1235,
+        "mode": 420
+      },
+      {
+        "path": "docs/HOTFIX_0.3.2.md",
+        "size": 1769,
+        "mode": 420
+      },
+      {
+        "path": "docs/IMPLEMENTATION_STATUS_V0.4.md",
+        "size": 1777,
+        "mode": 420
+      },
+      {
+        "path": "docs/IMPLEMENTATION_STATUS_V0.5.1.md",
+        "size": 1151,
+        "mode": 420
+      },
+      {
+        "path": "docs/IMPLEMENTATION_STATUS_V0.5.md",
+        "size": 1212,
+        "mode": 420
+      },
+      {
+        "path": "docs/IMPLEMENTATION_STATUS.md",
+        "size": 3038,
+        "mode": 420
+      },
+      {
+        "path": "docs/IMPLEMENTED_ARCHITECTURE.md",
+        "size": 2042,
+        "mode": 420
+      },
+      {
+        "path": "docs/KNOWN_LIMITATIONS.md",
+        "size": 2488,
+        "mode": 420
+      },
+      {
+        "path": "docs/MCP_SETUP.md",
+        "size": 930,
+        "mode": 420
+      },
+      {
+        "path": "docs/NPM_PACK_DRY_RUN_V0.4.txt",
+        "size": 6773,
+        "mode": 420
+      },
+      {
+        "path": "docs/NPM_PACK_DRY_RUN_V0.5.1.json",
+        "size": 0,
+        "mode": 420
+      },
+      {
+        "path": "docs/NPM_PACK_DRY_RUN_V0.5.txt",
+        "size": 7271,
+        "mode": 384
+      },
+      {
+        "path": "docs/NPM_PACK_DRY_RUN.txt",
+        "size": 6071,
+        "mode": 420
+      },
+      {
+        "path": "docs/screenshots/v0.4-files.png",
+        "size": 896454,
+        "mode": 420
+      },
+      {
+        "path": "docs/screenshots/v0.4-focus-external.png",
+        "size": 807827,
+        "mode": 420
+      },
+      {
+        "path": "docs/screenshots/v0.4-focus.png",
+        "size": 788308,
+        "mode": 420
+      },
+      {
+        "path": "docs/screenshots/v0.4-galaxies.png",
+        "size": 930448,
+        "mode": 420
+      },
+      {
+        "path": "docs/screenshots/v0.4-impact.png",
+        "size": 1029194,
+        "mode": 420
+      },
+      {
+        "path": "docs/screenshots/v0.4-modules.png",
+        "size": 907558,
+        "mode": 420
+      },
+      {
+        "path": "docs/screenshots/v0.4-preview.html",
+        "size": 240425,
+        "mode": 420
+      },
+      {
+        "path": "docs/SECURITY.md",
+        "size": 599,
+        "mode": 420
+      },
+      {
+        "path": "docs/SYNTAX_CHECK_V0.5.1.txt",
+        "size": 983,
+        "mode": 420
+      },
+      {
+        "path": "docs/TEST_REPORT_V0.4.txt",
+        "size": 3015,
+        "mode": 420
+      },
+      {
+        "path": "docs/TEST_REPORT_V0.5.1.txt",
+        "size": 4270,
+        "mode": 420
+      },
+      {
+        "path": "docs/TEST_REPORT_V0.5.txt",
+        "size": 3794,
+        "mode": 420
+      },
+      {
+        "path": "docs/TEST_REPORT.txt",
+        "size": 2372,
+        "mode": 420
+      },
+      {
+        "path": "docs/V0.4_RELEASE.md",
+        "size": 2926,
+        "mode": 420
+      },
+      {
+        "path": "docs/V0.4_UI_QA.md",
+        "size": 1215,
+        "mode": 420
+      },
+      {
+        "path": "docs/V0.5_ARCHITECTURE.md",
+        "size": 3239,
+        "mode": 420
+      },
+      {
+        "path": "docs/V0.5_RELEASE.md",
+        "size": 2192,
+        "mode": 420
+      },
+      {
+        "path": "docs/V0.5.1_RELEASE.md",
+        "size": 1544,
+        "mode": 420
+      },
+      {
+        "path": "docs/V0.5.1_TOKEN_BENCHMARK.md",
+        "size": 5447,
+        "mode": 420
+      },
+      {
+        "path": "fixtures/sample/python/session.py",
+        "size": 247,
+        "mode": 420
+      },
+      {
+        "path": "fixtures/sample/python/token_store.py",
+        "size": 170,
+        "mode": 420
+      },
+      {
+        "path": "fixtures/sample/README.md",
+        "size": 94,
+        "mode": 420
+      },
+      {
+        "path": "fixtures/sample/src/auth/AuthService.ts",
+        "size": 615,
+        "mode": 420
+      },
+      {
+        "path": "fixtures/sample/src/auth/TokenStore.ts",
+        "size": 318,
+        "mode": 420
+      },
+      {
+        "path": "fixtures/sample/src/http/ApiClient.ts",
+        "size": 259,
+        "mode": 420
+      },
+      {
+        "path": "fixtures/sample/src/index.ts",
+        "size": 141,
+        "mode": 420
+      },
+      {
+        "path": "fixtures/sample/src/ui/LoginPage.tsx",
+        "size": 215,
+        "mode": 420
+      },
+      {
+        "path": "fixtures/sample/tests/auth/AuthService.test.ts",
+        "size": 358,
+        "mode": 420
+      },
+      {
+        "path": "package.json",
+        "size": 811,
+        "mode": 420
+      },
+      {
+        "path": "scripts/benchmark-10k.js",
+        "size": 1653,
+        "mode": 493
+      },
+      {
+        "path": "src/benchmark/agents.js",
+        "size": 9414,
+        "mode": 420
+      },
+      {
+        "path": "src/benchmark/report.js",
+        "size": 9933,
+        "mode": 420
+      },
+      {
+        "path": "src/benchmark/runner.js",
+        "size": 8607,
+        "mode": 420
+      },
+      {
+        "path": "src/benchmark/tasks.js",
+        "size": 3326,
+        "mode": 420
+      },
+      {
+        "path": "src/cli.js",
+        "size": 12862,
+        "mode": 493
+      },
+      {
+        "path": "src/core/agent-rule.js",
+        "size": 1003,
+        "mode": 420
+      },
+      {
+        "path": "src/core/constants.js",
+        "size": 692,
+        "mode": 420
+      },
+      {
+        "path": "src/core/errors.js",
+        "size": 211,
+        "mode": 420
+      },
+      {
+        "path": "src/core/global-runtime.js",
+        "size": 2295,
+        "mode": 420
+      },
+      {
+        "path": "src/core/project.js",
+        "size": 1997,
+        "mode": 420
+      },
+      {
+        "path": "src/core/runtime.js",
+        "size": 972,
+        "mode": 420
+      },
+      {
+        "path": "src/indexer/git.js",
+        "size": 1472,
+        "mode": 420
+      },
+      {
+        "path": "src/indexer/parser.js",
+        "size": 9010,
+        "mode": 420
+      },
+      {
+        "path": "src/indexer/scanner.js",
+        "size": 4127,
+        "mode": 420
+      },
+      {
+        "path": "src/indexer/sync.js",
+        "size": 14329,
+        "mode": 420
+      },
+      {
+        "path": "src/mcp/server.js",
+        "size": 6346,
+        "mode": 420
+      },
+      {
+        "path": "src/platform/paths.js",
+        "size": 1661,
+        "mode": 420
+      },
+      {
+        "path": "src/query/architecture.js",
+        "size": 7647,
+        "mode": 420
+      },
+      {
+        "path": "src/query/query-service.js",
+        "size": 22520,
+        "mode": 420
+      },
+      {
+        "path": "src/storage/db.js",
+        "size": 5703,
+        "mode": 420
+      },
+      {
+        "path": "src/storage/project-store.js",
+        "size": 1170,
+        "mode": 420
+      },
+      {
+        "path": "src/storage/registry.js",
+        "size": 9633,
+        "mode": 420
+      },
+      {
+        "path": "src/web/global-server.js",
+        "size": 5356,
+        "mode": 420
+      },
+      {
+        "path": "src/web/public/app.js",
+        "size": 26491,
+        "mode": 420
+      },
+      {
+        "path": "src/web/public/dashboard.css",
+        "size": 2514,
+        "mode": 420
+      },
+      {
+        "path": "src/web/public/dashboard.html",
+        "size": 913,
+        "mode": 420
+      },
+      {
+        "path": "src/web/public/dashboard.js",
+        "size": 1737,
+        "mode": 420
+      },
+      {
+        "path": "src/web/public/index.html",
+        "size": 3169,
+        "mode": 420
+      },
+      {
+        "path": "src/web/public/styles.css",
+        "size": 11165,
+        "mode": 420
+      },
+      {
+        "path": "src/web/server.js",
+        "size": 3377,
+        "mode": 420
+      },
+      {
+        "path": "tests/helpers.js",
+        "size": 1581,
+        "mode": 420
+      },
+      {
+        "path": "tests/m0-foundation.test.js",
+        "size": 2238,
+        "mode": 420
+      },
+      {
+        "path": "tests/m1-index.test.js",
+        "size": 5492,
+        "mode": 420
+      },
+      {
+        "path": "tests/m2-web.test.js",
+        "size": 1255,
+        "mode": 420
+      },
+      {
+        "path": "tests/m3-mcp-benchmark.test.js",
+        "size": 2451,
+        "mode": 420
+      },
+      {
+        "path": "tests/m3-query-regression.test.js",
+        "size": 4030,
+        "mode": 420
+      },
+      {
+        "path": "tests/v04-architecture-ui.test.js",
+        "size": 4016,
+        "mode": 420
+      },
+      {
+        "path": "tests/v05-multiproject.test.js",
+        "size": 6130,
+        "mode": 420
+      },
+      {
+        "path": "tests/v051-token-benchmark.test.js",
+        "size": 6181,
+        "mode": 420
+      }
+    ],
+    "entryCount": 159,
+    "bundled": []
+  }
+]

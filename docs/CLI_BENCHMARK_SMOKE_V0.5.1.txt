@@ -1,0 +1,76 @@
+$ stellar init <repo>
+Initialized StellarCode project
+Project: /tmp/tmp.GZJOonmgHS/repo
+Project ID: 480f42ed-aabc-4510-b078-714755abd9f0
+Index DB: /tmp/tmp.GZJOonmgHS/data/projects/480f42ed-aabc-4510-b078-714755abd9f0/index.db
+
+$ stellar benchmark init <repo>
+{
+  "file": "/tmp/tmp.GZJOonmgHS/repo/.stellar/benchmark/tasks.json",
+  "created": true,
+  "message": "Benchmark task template created. Edit expectedFiles and set enabled=true for real tasks."
+}
+
+$ stellar benchmark doctor --agent codex
+[
+  {
+    "agent": "codex",
+    "bin": "/tmp/tmp.GZJOonmgHS/fake-codex.mjs",
+    "available": true,
+    "compatible": true,
+    "missingFlags": [],
+    "version": "codex fake 1.0",
+    "exitCode": 0
+  }
+]
+
+$ stellar benchmark run <repo> --agent codex --mode both
+{
+  "outDir": "/tmp/tmp.GZJOonmgHS/out",
+  "files": {
+    "baseline": "/tmp/tmp.GZJOonmgHS/out/baseline.jsonl",
+    "stellar": "/tmp/tmp.GZJOonmgHS/out/stellar.jsonl"
+  },
+  "manifest": {
+    "schemaVersion": 1,
+    "createdAt": "2026-11-02T01:15:04.432Z",
+    "agent": "codex",
+    "agentVersion": "codex fake 1.0",
+    "model": null,
+    "projectRoot": "/tmp/tmp.GZJOonmgHS/repo",
+    "projectCommit": "a61d3c3fda4017629e2a6ba5f11b9a8f683ce036",
+    "projectDirtyCount": 0,
+    "tasksFile": "/tmp/tmp.GZJOonmgHS/repo/.stellar/benchmark/tasks.json",
+    "taskCount": 1,
+    "repeat": 1,
+    "modes": [
+      "baseline",
+      "stellar"
+    ],
+    "files": {
+      "baseline": "/tmp/tmp.GZJOonmgHS/out/baseline.jsonl",
+      "stellar": "/tmp/tmp.GZJOonmgHS/out/stellar.jsonl"
+    },
+    "isolation": {
+      "freshAgentSession": true,
+      "detachedWorktree": true,
+      "stellarRulesRemovedFromWorktree": true,
+      "userMcpConfigIgnored": true,
+      "stellarIndexBuiltBeforeTimedRun": true
+    }
+  },
+  "report": {
+    "passGate": true,
+    "delta": {
+      "inputTokenReductionPct": 61.81818181818181,
+      "navigationInputTokenReductionPct": 61.81818181818181,
+      "toolCallReductionPct": 50,
+      "searchCallReductionPct": 100,
+      "filesOpenedReductionPct": 0,
+      "sourceBytesReductionPct": 0,
+      "firstRelevantReductionPct": 46.57534246575342,
+      "successRateDeltaPoints": 0
+    },
+    "correctnessVerified": true
+  }
+}

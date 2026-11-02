@@ -1,6 +1,6 @@
 {
   "name": "stellarcode",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "A living map of your codebase for humans and AI agents.",
   "type": "module",
   "bin": {
@@ -11,7 +11,8 @@
     "demo:init": "node src/cli.js init fixtures/sample",
     "demo:scan": "node src/cli.js scan fixtures/sample",
     "demo:serve": "node src/cli.js ui --port 7432",
-    "benchmark:report": "node src/cli.js benchmark report benchmark/baseline.example.jsonl benchmark/stellar.example.jsonl"
+    "benchmark:report": "node src/cli.js benchmark report benchmark/baseline.example.jsonl benchmark/stellar.example.jsonl",
+    "benchmark:doctor": "node src/cli.js benchmark doctor --json"
   },
   "engines": {
     "node": ">=22.5.0"

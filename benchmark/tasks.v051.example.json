@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "notes": "Example only. Build repository-specific answer keys before making claims.",
+  "tasks": [
+    {
+      "id": "sample-login",
+      "enabled": true,
+      "category": "navigation",
+      "prompt": "Find the login implementation and identify the main authentication service file.",
+      "expectedFiles": ["src/auth/AuthService.ts"],
+      "expectedMatch": "any"
+    },
+    {
+      "id": "sample-token",
+      "enabled": true,
+      "category": "navigation",
+      "prompt": "Find where authentication tokens are stored and refreshed.",
+      "expectedFiles": ["src/auth/TokenStore.ts"],
+      "expectedMatch": "any"
+    },
+    {
+      "id": "sample-login-ui",
+      "enabled": true,
+      "category": "navigation",
+      "prompt": "Find the UI component that submits login credentials.",
+      "expectedFiles": ["src/ui/LoginPage.tsx"],
+      "expectedMatch": "any"
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+
+> stellarcode@0.5.1 test
+> node --test --test-reporter=spec tests/*.test.js
+
+(node:6715) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ platform adapter resolves standard application data locations (1.185707ms)
+✔ init is idempotent and repo metadata is tiny/path-independent (105.817381ms)
+✔ moving a repo keeps UUID and refreshes registry path (89.83278ms)
+(node:6716) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ full index extracts known TS/JS/Python symbols and dependencies (170.741522ms)
+✔ same-name JavaScript declarations on the same line receive unique symbol IDs (132.612409ms)
+✔ incremental sync is graph-equivalent to clean full reindex (244.79836ms)
+✔ warm no-change sync preserves graph version and reparses nothing (138.095224ms)
+✔ query service narrows search, related, impact and context (291.922016ms)
+(node:6717) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ local read-only API and universe shell are served from real index (349.686756ms)
+(node:6788) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ MCP initialize/list/call exposes compact StellarCode tools (194.881598ms)
+✔ benchmark reporter evaluates MVP acceptance thresholds (64.461525ms)
+(node:6832) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ CLI documents and recognizes stellar search as an alias (171.618067ms)
+✔ Chinese login query expands deterministically to indexed auth/login symbols (213.06177ms)
+✔ architecture-overview query favors entry points and structural core (176.074142ms)
+✔ no-evidence task returns no primary files instead of importance fallback (145.286348ms)
+✔ recognized Chinese intent with no repository evidence still returns no match (157.576449ms)
+(node:6875) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ installed CLI wrapper suppresses only the sqlite experimental warning on help (98.216216ms)
+✔ v0.4 architecture classifier separates app entry from nested module entry (2.230105ms)
+✔ v0.4 graph exposes galaxy/module hierarchy and architecture roles (161.807536ms)
+✔ architecture context returns an app entry plus structural core instead of nested barrel files (145.641454ms)
+✔ v0.4 web shell is galaxy-first and architecture API is available (200.071476ms)
+(node:6990) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ v0.5 registry automatically transitions missing -> orphaned without deleting index (165.296922ms)
+✔ moving a registered repo is recovered automatically when StellarCode is used at the new path (145.501071ms)
+✔ global UI lists projects and lazily syncs a selected repository (208.763418ms)
+✔ global UI marks a deleted repository missing and refuses project queries while preserving registry (125.985456ms)
+✔ global MCP can discover projects and query by project UUID outside a repo (136.433892ms)
+✔ gc preserves orphan indexes by default and purges only when explicitly requested (143.842678ms)
+(node:7049) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ v0.5.1 app directories support benchmark isolation overrides (1.352054ms)
+✔ v0.5.1 benchmark init creates disabled answer-key template (74.546492ms)
+✔ v0.5.1 runs paired Codex A/B sessions and reports real usage fields (400.446271ms)
+✔ v0.5.1 normalizes Claude cache usage into effective input tokens (358.207114ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2212.297218

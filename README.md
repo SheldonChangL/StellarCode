@@ -1,8 +1,8 @@
-# StellarCode v0.5
+# StellarCode v0.5.1
 
 **A living map of your codebases for humans and AI agents.**
 
-v0.5 changes StellarCode from a per-repository web server into a **multi-project local knowledge service**. Run `stellar init` once in each repository, then use one global UI/MCP service from anywhere.
+v0.5 changed StellarCode from a per-repository web server into a **multi-project local knowledge service**. v0.5.1 adds a controlled Claude/Codex A/B harness that measures whether StellarCode actually saves input tokens without reducing correctness. Run `stellar init` once in each repository, then use one global UI/MCP service from anywhere.
 
 ## Requirements
 
@@ -129,6 +129,35 @@ stellar gc --purge-orphaned
 
 `--purge` is intentionally explicit because source indexes may be useful after temporary disk/network failures.
 
+
+## Prove token savings
+
+Create a hidden-answer-key benchmark file:
+
+```bash
+stellar benchmark init
+```
+
+Edit `.stellar/benchmark/tasks.json`, enable 10–20 real navigation tasks, then check your local agents:
+
+```bash
+stellar benchmark doctor --agent all
+```
+
+Run paired fresh-session A/B tests:
+
+```bash
+stellar benchmark run --agent codex --mode both --repeat 3
+# or
+stellar benchmark run --agent claude --mode both --repeat 3
+```
+
+Each run produces `baseline.jsonl`, `stellar.jsonl`, `manifest.json`, `report.json`, and a standalone `report.html` under `.stellar/benchmark/runs/`.
+
+The report refuses to claim success unless correctness is answer-key verified. Default evidence gates are >=20% overall input-token reduction, >=50% navigation-token reduction, >=40% tool-call reduction, >=40% faster first relevant file, and no >5-point correctness regression.
+
+See `docs/V0.5.1_TOKEN_BENCHMARK.md`.
+
 ## Storage
 
 macOS:
@@ -181,9 +210,13 @@ stellar remove <project> [--purge]
 stellar gc [--purge-orphaned]
 stellar mcp
 stellar serve [path]   # legacy single-project mode when path is supplied
+stellar benchmark init
+stellar benchmark doctor --agent all
+stellar benchmark run --agent codex|claude --mode both --repeat 3
+stellar benchmark report baseline.jsonl stellar.jsonl --html report.html
 ```
 
-## v0.5 design constraints
+## v0.5/v0.5.1 design constraints
 
 1. **One global service, not one watcher/server per repo.**
 2. **Lazy synchronization instead of always-on watchers.**
@@ -206,3 +239,7 @@ See:
 - `docs/V0.5_RELEASE.md`
 - `docs/V0.5_ARCHITECTURE.md`
 - `docs/IMPLEMENTATION_STATUS_V0.5.md`
+- `docs/V0.5.1_TOKEN_BENCHMARK.md`
+- `docs/IMPLEMENTATION_STATUS_V0.5.1.md`
+- `docs/V0.5.1_RELEASE.md`
+- `docs/BENCHMARK_TASK_AUTHORING.md`
