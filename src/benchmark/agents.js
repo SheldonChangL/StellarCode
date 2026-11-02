@@ -42,6 +42,16 @@ function codexUsage(raw = {}) {
   }
 }
 
+function estimateTokens(value) { return Math.ceil(Buffer.byteLength(String(value ?? ''), 'utf8') / 4) }
+
+function interactionKind(input) {
+  const text=flattenStrings(input).join(' ').toLowerCase()
+  if (/\bstellar\s+context\b/.test(text)) return 'stellarContext'
+  if (/\bstellar\s+source\b/.test(text)) return 'stellarSource'
+  if (/\b(cat|sed|head|tail|awk|bat|less|more)\b|\bread[_-]?file\b/.test(text)) return 'nativeSourceRead'
+  return 'otherTool'
+}
+
 export function agentBinary(agent, env = process.env) {
   if (agent === 'claude') return env.STELLAR_BENCH_CLAUDE_BIN || 'claude'
   if (agent === 'codex') return env.STELLAR_BENCH_CODEX_BIN || 'codex'
@@ -80,7 +90,7 @@ Repository source is the source of truth. Before making implementation claims, y
 Benchmark condition: BASELINE. StellarCode is disabled. Use your normal repository exploration tools (search, grep, file reads, directory inspection) as needed. Do not list a file in the final answer unless you opened its source.`
   return `${common}
 
-Benchmark condition: STELLAR. Before any broad repository search, run: stellar context ${JSON.stringify(task.prompt)} --json. Treat StellarCode metadata only as navigation evidence, never as source-of-truth. You must read source before answering. The context response includes read ranges for primary matches. You MUST read at least one primary source range before answering, preferably with: stellar source <path> --lines START:END --json (native file Read is also acceptable). Read additional primary files when your answer depends on them. Do not answer from summaries alone. Do not fall back to broad find/tree/grep/rg unless StellarCode has insufficient evidence.`
+Benchmark condition: STELLAR. Before any broad repository search, run: stellar context ${JSON.stringify(task.prompt)} --compact --max-files 2 --max-lines 160 --max-bytes 8000 --json. Treat StellarCode metadata only as navigation evidence, never as source-of-truth. You must read source before implementation claims. Read only the returned primary source ranges first, preferably with: stellar source <path> --lines START:END --json. Start with the smallest returned evidence set. If a concrete unanswered question remains, run the same compact context with --depth 1 before reading another range. Do not answer from summaries alone. Do not fall back to broad find/tree/grep/rg unless StellarCode cannot provide useful targets.`
 }
 
 export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, onEvent, diagnosticDir, diagnostic = {} }) {
@@ -106,7 +116,7 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
   if (diagnosticDir) {
     await fs.mkdir(diagnosticDir,{recursive:true,mode:0o700})
     await fs.writeFile(path.join(diagnosticDir,'diagnostic.json'),JSON.stringify({...diagnostic,promptSent:prompt,cwd,PATH:env.PATH,agentBinary:bin,args},null,2)+'\n',{mode:0o600})
-    for (const name of ['raw-events.jsonl','stdout.log','stderr.log','event-times.jsonl']) outputFiles.push(openSync(path.join(diagnosticDir,name),'w',0o600))
+    for (const name of ['raw-events.jsonl','stdout.log','stderr.log','event-times.jsonl','interactions.jsonl']) outputFiles.push(openSync(path.join(diagnosticDir,name),'w',0o600))
   }
   const closeOutputs=()=>{for(const fd of outputFiles.splice(0))closeSync(fd)}
   const started=performance.now()
@@ -114,7 +124,8 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
   const metrics={toolCalls:0,searchCalls:0,stellarCalls:0,filesMentioned:new Set(),filesOpened:new Set(),sourceReads:[],sourceBytesRead:0,firstRelevantMs:null,usage:{inputTokens:0,uncachedInputTokens:0,cachedInputTokens:0,cacheWriteInputTokens:0,outputTokens:0,reasoningOutputTokens:0},costUsd:null,finalText:'',structured:null,rawEvents:0}
   const pending=new Set()
   const commands=[]
-  const toolInputs=new Map()
+  const toolInputs=new Map(), interactions=[]
+  let interactionSequence=0
   const countTool=(input,name)=>{
     const joined=[name,...flattenStrings(input)].join(' ')
     metrics.toolCalls++
@@ -123,8 +134,13 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
     if(typeof input==='string')commands.push(input)
     else if(input?.command)commands.push(input.command)
   }
-  const observe=(input,output,ok,via)=>{
+  const observe=(input,output,ok,via,startedAt=null)=>{
     const atMs=Math.round(performance.now()-started)
+    const request=flattenStrings(input).join('\n'),response=flattenStrings(output).join('\n')
+    const name=typeof input==='string'?input.slice(0,120):(input?.tool??input?.name??via)
+    const interaction={sequence:++interactionSequence,tool:name,kind:interactionKind(input),requestBytes:Buffer.byteLength(request),responseBytes:Buffer.byteLength(response),estimatedRequestTokens:estimateTokens(request),estimatedResponseTokens:estimateTokens(response),durationMs:startedAt==null?null:Math.max(0,atMs-startedAt),success:Boolean(ok)}
+    interactions.push(interaction)
+    if(outputFiles.length)writeSync(outputFiles[4],JSON.stringify(interaction)+'\n')
     const evidenceVia=/\bstellar\s+source\b|stellar_source/.test(flattenStrings(input).join(' '))?'stellar':via
     const p=completedEvidence({input,output,ok,cwd,atMs,via:evidenceVia}).then(e=>{
       for(const file of e.discovered)metrics.filesMentioned.add(file)
@@ -157,15 +173,16 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
         const item=event.item
         if (event.type==='item.started' && item && ['command_execution','mcp_tool_call','web_search','file_change','file_read','read_file','tool_call'].includes(item.type)) {
           const input=item.command??{tool:item.tool,input:item.arguments??item.input??item}
-          toolInputs.set(item.id,input)
+          toolInputs.set(item.id,{input,startedAt:Math.round(performance.now()-started)})
           countTool(input,item.tool??item.type)
         }
         if(event.type==='item.completed' && item && item.type!=='agent_message') {
-          const input=toolInputs.get(item.id)??item.command??item.arguments??item.input
+          const recorded=toolInputs.get(item.id)
+          const input=recorded?.input??item.command??item.arguments??item.input
           if(input) {
             const output=item.aggregated_output??item.result??item.output??item.content
             const ok=item.type==='command_execution'?item.exit_code===0:item.status!=='failed'&&!item.error&&!item.is_error&&item.result?.isError!==true
-            observe(input,output,ok,item.type)
+            observe(input,output,ok,item.type,recorded?.startedAt)
           }
         }
         if(event.type==='item.completed' && item?.type==='agent_message' && item.text) metrics.finalText=item.text
@@ -179,13 +196,13 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
         if(event.type==='user' && Array.isArray(event.message?.content)) {
           for(const block of event.message.content) if(block.type==='tool_result') {
             const tool=toolInputs.get(block.tool_use_id)
-            if(tool)observe(tool.input,block.content,!block.is_error,tool.name)
+            if(tool)observe(tool.input,block.content,!block.is_error,tool.name,tool.startedAt)
           }
         }
         const content=event?.message?.content
         if (event.type==='assistant' && Array.isArray(content)) {
           for (const block of content) if(block?.type==='tool_use') {
-            toolInputs.set(block.id,{name:block.name,input:block.input})
+            toolInputs.set(block.id,{name:block.name,input:block.input,startedAt:Math.round(performance.now()-started)})
             countTool(block.input,block.name)
           }
         }
@@ -198,7 +215,19 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
       await Promise.allSettled([...pending])
       const durationMs=Math.round(performance.now()-started)
       const structured=metrics.structured ?? finalJsonFromText(metrics.finalText)
-      resolve({exitCode:code,stdout,stderr,durationMs,startedAtEpochMs,commands,metrics:{...metrics,filesMentioned:[...metrics.filesMentioned].sort(),filesOpened:[...metrics.filesOpened].sort(),structured}})
+      if(diagnosticDir) {
+        const estimated={benchmarkPrompt:estimateTokens(prompt),stellarContextRequest:0,stellarContextResponse:0,stellarSourceRequest:0,stellarSourceResponse:0,nativeSourceReads:0,otherToolInputs:0,otherToolOutputs:0}
+        for(const interaction of interactions) {
+          if(interaction.kind==='stellarContext') { estimated.stellarContextRequest+=interaction.estimatedRequestTokens;estimated.stellarContextResponse+=interaction.estimatedResponseTokens }
+          else if(interaction.kind==='stellarSource') { estimated.stellarSourceRequest+=interaction.estimatedRequestTokens;estimated.stellarSourceResponse+=interaction.estimatedResponseTokens }
+          else if(interaction.kind==='nativeSourceRead') estimated.nativeSourceReads+=interaction.estimatedResponseTokens
+          else { estimated.otherToolInputs+=interaction.estimatedRequestTokens;estimated.otherToolOutputs+=interaction.estimatedResponseTokens }
+        }
+        estimated.knownTotal=Object.values(estimated).reduce((sum,value)=>sum+value,0)
+        estimated.unattributedVsProvider=Math.max(0,metrics.usage.inputTokens-estimated.knownTotal)
+        await fs.writeFile(path.join(diagnosticDir,'token-attribution.json'),JSON.stringify({providerReported:{inputTokens:metrics.usage.inputTokens,cachedInputTokens:metrics.usage.cachedInputTokens,outputTokens:metrics.usage.outputTokens},estimated:{...estimated,note:'Estimated from UTF-8 bytes divided by four; provider input includes model context and tool schema that cannot be attributed exactly.'},interactions},null,2)+'\n')
+      }
+      resolve({exitCode:code,stdout,stderr,durationMs,startedAtEpochMs,commands,metrics:{...metrics,interactions,filesMentioned:[...metrics.filesMentioned].sort(),filesOpened:[...metrics.filesOpened].sort(),structured}})
     })
   })
 }

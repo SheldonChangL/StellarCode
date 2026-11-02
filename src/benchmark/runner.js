@@ -47,6 +47,31 @@ function judgeAnswer(task, structured) {
   return {...verdict,answerFiles:verdict.observed}
 }
 
+async function sourceCoverage(root, reads) {
+  const byPath=new Map()
+  for(const read of reads) {
+    const ranges=byPath.get(read.path)??[];ranges.push(read);byPath.set(read.path,ranges)
+  }
+  let uniqueLines=0,uniqueBytes=0
+  for(const [file,ranges] of byPath) {
+    ranges.sort((a,b)=>a.startLine-b.startLine)
+    let active=null
+    const merged=[]
+    for(const range of ranges) {
+      if(!active || range.startLine>active.endLine+1) { if(active)merged.push(active); active={...range} }
+      else if(range.endLine>active.endLine) active.endLine=range.endLine
+    }
+    if(active)merged.push(active)
+    const source=(await fs.readFile(path.join(root,file),'utf8')).split(/\r?\n/)
+    for(const range of merged) {
+      uniqueLines+=range.endLine-range.startLine+1
+      const excerpt=source.slice(range.startLine-1,range.endLine).join('\n')
+      uniqueBytes+=Buffer.byteLength(excerpt)+(range.endLine<source.length?1:0)
+    }
+  }
+  return {uniqueSourceLinesRead:uniqueLines,uniqueSourceBytesRead:uniqueBytes}
+}
+
 async function sanitizeStellarAgentRules(root) {
   for (const name of ['AGENTS.md','CLAUDE.md']) {
     const file = path.join(root, name)
@@ -131,12 +156,13 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
           const groundedSuccess=result.exitCode===0 && answer.success===true && grounding.success===true
           const firstRelevantCandidates=(result.metrics.sourceReads??[]).filter(read=>task.expectedFiles.includes(read.path)).map(read=>read.atMs).filter(v=>v!=null&&Number.isFinite(v))
           const firstRelevantMs=firstRelevantCandidates.length?Math.min(...firstRelevantCandidates):null
+          const coverage=await sourceCoverage(worktree,result.metrics.sourceReads??[])
           const row={
             schemaVersion:2,taskId:task.id,repetition:r,category:task.category,mode:condition,agent,agentVersion:agentInfo.version,model:model??null,
             projectCommit:commit,projectDirtyCount:dirty,exitCode:result.exitCode,durationMs:result.durationMs,firstRelevantMs,firstRelevantSourceMs:firstRelevantMs,
             inputTokens:result.metrics.usage.inputTokens,uncachedInputTokens:result.metrics.usage.uncachedInputTokens,cachedInputTokens:result.metrics.usage.cachedInputTokens,cacheWriteInputTokens:result.metrics.usage.cacheWriteInputTokens,
             outputTokens:result.metrics.usage.outputTokens,reasoningOutputTokens:result.metrics.usage.reasoningOutputTokens,costUsd:result.metrics.costUsd,
-            toolCalls:result.metrics.toolCalls,searchCalls:result.metrics.searchCalls,stellarCalls:result.metrics.stellarCalls,filesOpened:sourceReadPaths.length,filesOpenedList:sourceReadPaths,filesActuallyRead:sourceReadPaths,sourceReads:result.metrics.sourceReads??[],sourceBytesRead:result.metrics.sourceBytesRead,
+            toolCalls:result.metrics.toolCalls,searchCalls:result.metrics.searchCalls,stellarCalls:result.metrics.stellarCalls,filesOpened:sourceReadPaths.length,filesOpenedList:sourceReadPaths,filesActuallyRead:sourceReadPaths,sourceReads:result.metrics.sourceReads??[],rawSourceBytesRead:result.metrics.sourceBytesRead,sourceBytesRead:coverage.uniqueSourceBytesRead,...coverage,
             verified:answer.verified,success:groundedSuccess,
             discoveryVerified:discovery.verified,discoverySuccess:result.exitCode===0?discovery.success:false,discoveredExpectedFiles:discovery.matched,
             sourceGroundingVerified:grounding.verified,sourceGrounded:result.exitCode===0?grounding.success:false,groundedExpectedFiles:grounding.matched,

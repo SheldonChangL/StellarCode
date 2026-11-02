@@ -17,7 +17,7 @@ const tools = [
   { name:'stellar_symbol', description:'Resolve a symbol name to file and line ranges.', inputSchema:{type:'object',properties:{query:{type:'string'},limit:{type:'integer',minimum:1,maximum:30},...projectFields},required:['query'],additionalProperties:false} },
   { name:'stellar_related', description:'Return direct incoming/outgoing repository relationships for a file or symbol.', inputSchema:{type:'object',properties:{target:{type:'string'},limit:{type:'integer',minimum:1,maximum:100},...projectFields},required:['target'],additionalProperties:false} },
   { name:'stellar_impact', description:'Bounded reverse dependency traversal showing likely impacted files/tests.', inputSchema:{type:'object',properties:{target:{type:'string'},depth:{type:'integer',minimum:1,maximum:6},limit:{type:'integer',minimum:1,maximum:200},...projectFields},required:['target'],additionalProperties:false} },
-  { name:'stellar_context', description:'Recommend the smallest relevant reading set for a coding task, including source-grounding ranges. Metadata locates code; it does not replace source verification.', inputSchema:{type:'object',properties:{task:{type:'string'},limit:{type:'integer',minimum:1,maximum:12},...projectFields},required:['task'],additionalProperties:false} },
+  { name:'stellar_context', description:'Return up to three compact primary source ranges. Metadata is navigation evidence; read source before factual claims.', inputSchema:{type:'object',properties:{task:{type:'string'},...projectFields},required:['task'],additionalProperties:false} },
   { name:'stellar_source', description:'Read a bounded repository source excerpt after StellarCode locates a file. Use this before implementation claims instead of answering from metadata alone.', inputSchema:{type:'object',properties:{path:{type:'string'},lines:{type:'string',description:'Line range START:END, e.g. 47:116'},...projectFields},required:['path'],additionalProperties:false} },
   { name:'stellar_architecture', description:'Return deterministic application entries, structural core files, role counts, galaxies and modules.', inputSchema:{type:'object',properties:{...projectFields},additionalProperties:false} }
 ]
@@ -36,7 +36,7 @@ async function invoke(name, args = {}, defaultProject = null, queryOptions = {})
   if (name === 'stellar_symbol') return symbolLookup(project, args.query, { ...queryOptions, limit: args.limit ?? 10 })
   if (name === 'stellar_related') return related(project, args.target, { ...queryOptions, limit: args.limit ?? 30 })
   if (name === 'stellar_impact') return impact(project, args.target, { ...queryOptions, depth: args.depth ?? 3, limit: args.limit ?? 50 })
-  if (name === 'stellar_context') return contextForTask(project, args.task, { ...queryOptions, limit: args.limit ?? 8 })
+  if (name === 'stellar_context') return contextForTask(project,args.task,{...queryOptions,compact:true,maxFiles:3,maxLines:300,maxBytes:12000})
   if (name === 'stellar_source') return sourceExcerpt(project, args.path, { ...queryOptions, lines: args.lines })
   if (name === 'stellar_architecture') return architectureOverview(project, queryOptions)
   throw new Error(`Unknown tool: ${name}`)
@@ -47,7 +47,7 @@ function write(message, output = process.stdout) { output.write(JSON.stringify(m
 export async function handleMcpMessage(message, { defaultProject = null, queryOptions = {} } = {}) {
   const { id, method, params } = message
   if (method === 'initialize') {
-    return { jsonrpc:'2.0', id, result:{ protocolVersion: params?.protocolVersion || PROTOCOL_VERSION, capabilities:{ tools:{ listChanged:false } }, serverInfo:{ name:'stellarcode', version:'0.5.2' }, instructions:'StellarCode is global. Use stellar_projects to discover repositories and stellar_context before broad source search. Stellar metadata is navigation evidence only: read repository source with stellar_source or the native file reader before factual implementation claims.' } }
+    return { jsonrpc:'2.0', id, result:{ protocolVersion: params?.protocolVersion || PROTOCOL_VERSION, capabilities:{ tools:{ listChanged:false } }, serverInfo:{ name:'stellarcode', version:'0.5.3' }, instructions:'StellarCode is global. Use stellar_projects to discover repositories and stellar_context before broad source search. Stellar metadata is navigation evidence only: read repository source with stellar_source or the native file reader before factual implementation claims.' } }
   }
   if (method === 'ping') return { jsonrpc:'2.0', id, result:{} }
   if (method === 'tools/list') return { jsonrpc:'2.0', id, result:{ tools } }

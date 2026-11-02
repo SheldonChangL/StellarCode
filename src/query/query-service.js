@@ -236,7 +236,11 @@ export async function impact(projectPath, target, options = {}) {
 }
 
 export async function contextForTask(projectPath, task, options = {}) {
-  const limit = Math.min(Number(options.limit ?? 8), 12)
+  const compact=Boolean(options.compact)
+  const depth=Math.max(0,Math.min(2,Number(options.depth??0)))
+  const limit=Math.min(Math.max(Number(options.maxFiles??options.limit??(compact?3:8)),1),12)
+  const maxLines=Math.min(Math.max(Number(options.maxLines??300),20),1000)
+  const maxBytes=Math.min(Math.max(Number(options.maxBytes??12_000),512),100_000)
   return withFreshProjectDb(projectPath, async ({ db, root }) => {
     const profile = queryProfile(task)
     const qTokens = profile.terms
@@ -282,13 +286,27 @@ export async function contextForTask(projectPath, task, options = {}) {
         const lexical = qTokens.length ? scoreText(`${v.file.path} ${v.file.summary ?? ''}`, qTokens) : 0
         const evidence = lexical * 2 + symbolScore * 3
         const recent = v.file.git_activity > 0 ? Math.min(1, v.file.git_activity / 20) : 0
-        return { ...v, evidence, score: evidence + (evidence > 0 ? v.file.importance * 2 + recent : 0) + (v.file.is_test ? -1 : 0) }
+        const actionBoundary=/(^|\/)actions?\//.test(v.file.path)?20:0
+        return { ...v, evidence, score: evidence + (evidence > 0 ? v.file.importance * 2 + recent + actionBoundary : 0) + (v.file.is_test ? -1 : 0) }
       }).filter(v => v.evidence > 0).sort((a, b) => b.score - a.score || a.file.path.localeCompare(b.file.path))
-      primaryRanked = ranked.filter(v => !v.file.is_test).slice(0, Math.min(3, limit)).map(v => ({ ...v, category: 'primary' }))
+      primaryRanked = ranked.filter(v => !v.file.is_test && !/(^|\/)types?(\/|$)/.test(v.file.path)).slice(0, Math.min(3, limit)).map(v => ({ ...v, category: 'primary' }))
+      // A server action imported by a client-side flow is a concrete behavior boundary.
+      // Prefer it over lower-ranked configuration files without exposing a full neighbor set.
+      const selectedIds=new Set(primaryRanked.map(v=>v.file.file_id))
+      for(const primary of [...primaryRanked]) {
+        const actions=db.prepare(`SELECT f.* FROM edges e JOIN files f ON f.file_id=e.target_id WHERE e.source_id=? AND e.edge_type='imports'`).all(primary.file.file_id)
+        const action=actions.find(file=>!selectedIds.has(file.file_id)&&/(^|\/)actions?\//.test(file.path))
+        if(!action) continue
+        const candidate={file:action,architecture:classifyArchitecture(action,hints),score:primary.score*0.9,evidence:primary.evidence,ownSymbols:symbolsByFile.get(action.file_id)??[],category:'primary'}
+        const replaceAt=primaryRanked.length-1
+        if(replaceAt>=0) { selectedIds.delete(primaryRanked[replaceAt].file.file_id);primaryRanked[replaceAt]=candidate;selectedIds.add(action.file_id) }
+        break
+      }
     }
 
     const selected = new Map(primaryRanked.map(v => [v.file.file_id, v]))
     for (const primary of primaryRanked) {
+      if(compact && depth===0) break
       const neighbors = db.prepare(`SELECT f.*, e.edge_type FROM edges e JOIN files f ON f.file_id=e.target_id
         WHERE e.source_id=? AND e.edge_type IN ('imports','tests')
         UNION
@@ -324,17 +342,18 @@ export async function contextForTask(projectPath, task, options = {}) {
 
     const makeEntry = v => {
       const matchingSymbols = qTokens.length ? v.ownSymbols.filter(symbol => scoreText(`${symbol.name} ${symbol.qualified_name}`, qTokens) > 0) : []
-      const symbolEvidence = matchingSymbols
-        .sort((a, b) => a.start_line - b.start_line)
-        .slice(0, 3)
+      const rankedSymbols=[...matchingSymbols].sort((a,b)=>scoreText(`${b.name} ${b.qualified_name}`,qTokens)-scoreText(`${a.name} ${a.qualified_name}`,qTokens)||a.start_line-b.start_line)
+      const symbolEvidence = rankedSymbols
+        .slice(0, 1)
         .map(symbol => ({ name: symbol.name, qualifiedName: symbol.qualified_name, kind: symbol.kind, lines: [symbol.start_line, symbol.end_line] }))
-      const exactLines = matchingSymbols.length
-        ? [Math.min(...matchingSymbols.map(symbol => symbol.start_line)), Math.max(...matchingSymbols.map(symbol => symbol.end_line))]
+      const exactLines = rankedSymbols.length
+        ? [rankedSymbols[0].start_line, rankedSymbols[0].end_line]
         : undefined
       const fileLines = Math.max(1, Number(v.file.line_count ?? 1))
-      const readLines = exactLines
-        ? [Math.max(1, exactLines[0] - 6), Math.min(fileLines, exactLines[1] + 10)]
-        : [1, Math.min(fileLines, 140)]
+      let readLines=exactLines?[Math.max(1,exactLines[0]-6),Math.min(fileLines,exactLines[1]+8)]:[1,Math.min(fileLines,80)]
+      readLines[1]=Math.min(readLines[1],readLines[0]+maxLines-1)
+      const estimatedLineBytes=Math.max(1,Math.ceil(Number(v.file.size_bytes??0)/fileLines))
+      readLines[1]=Math.min(readLines[1],readLines[0]+Math.max(1,Math.floor(maxBytes/estimatedLineBytes))-1)
       let reason
       if (profile.architectureOverview && v.category === 'primary') reason = `${v.architecture.roleLabel}: ${v.architecture.reason}; importance ${Number(v.file.importance).toFixed(2)}`
       else if (matchingSymbols.length) reason = `Matches symbols: ${matchingSymbols.slice(0, 3).map(symbol => symbol.qualified_name).join(', ')}`
@@ -342,6 +361,7 @@ export async function contextForTask(projectPath, task, options = {}) {
       else reason = `Matches query terms: ${qTokens.filter(term => scoreText(`${v.file.path} ${v.file.summary ?? ''}`, [term]) > 0).slice(0, 4).join(', ') || 'symbol match'}`
       return {
         path: v.file.path,
+        score:v.score,
         role: v.architecture.role,
         ...(exactLines ? { lines: exactLines } : {}),
         ...(symbolEvidence.length ? { symbols: symbolEvidence } : {}),
@@ -357,8 +377,12 @@ export async function contextForTask(projectPath, task, options = {}) {
     const values = [...selected.values()].sort((a, b) => b.score - a.score)
     const meta = db.prepare('SELECT graph_version FROM project_meta LIMIT 1').get()
     const primary = values.filter(v => v.category === 'primary').slice(0, 3).map(makeEntry)
-    const relatedFiles = values.filter(v => v.category === 'related').slice(0, 4).map(makeEntry)
-    const tests = values.filter(v => v.category === 'tests').slice(0, 3).map(makeEntry)
+    const relatedFiles=compact?[]:values.filter(v=>v.category==='related').slice(0,4).map(makeEntry)
+    const tests=compact?[]:values.filter(v=>v.category==='tests').slice(0,3).map(makeEntry)
+    if(compact) {
+      const expanded=depth>0?relatedFiles:[]
+      return {targets:[...primary,...expanded].slice(0,limit).map(v=>({path:v.path,lines:v.read.lines,symbol:v.symbols?.[0]?.qualifiedName??null,confidence:primary.length?Number((v.score/(primary[0].score||1)).toFixed(2)):0})),depth,more:values.length>primary.length+expanded.length}
+    }
     return {
       query: task,
       graphVersion: meta?.graph_version ?? 0,

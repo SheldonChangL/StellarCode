@@ -123,7 +123,7 @@ test('a failed debug sample retains its worktree, real executable and metadata-o
     assert.equal(diagnostic.worktreeRetained,true)
     assert.equal(diagnostic.projectResolved,true)
     assert.equal(diagnostic.stellarAvailable,true)
-    assert.equal(diagnostic.stellarVersion,'StellarCode 0.5.2')
+    assert.equal(diagnostic.stellarVersion,'StellarCode 0.5.3')
     const status=JSON.parse(execFileSync(diagnostic.stellarExecutable,['status','--json'],{cwd:diagnostic.worktreeRoot,encoding:'utf8'}))
     assert.equal(status.projectId,diagnostic.projectId)
     assert.deepEqual(diagnostic.filesActuallyRead,[])
@@ -142,5 +142,18 @@ test('correctness gate requires all layers at 100 percent independently of perfo
     assert.equal(report.passGate,true);assert.equal(report.mvpThresholdsMet,false)
     await fs.writeFile(stellar,JSON.stringify({...row,sourceGrounded:false,success:false})+'\n')
     report=await benchmarkReport(baseline,stellar);assert.equal(report.passGate,false)
+  } finally {await fs.rm(dir,{recursive:true,force:true})}
+})
+
+test('token attribution keeps only the final Codex turn usage rather than summing events', async () => {
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'stellar-attribution-'))
+  try {
+    const fake=path.join(dir,'codex')
+    await fs.writeFile(fake,`#!/usr/bin/env node\nconsole.log(JSON.stringify({type:'turn.completed',usage:{input_tokens:100,output_tokens:1}}));console.log(JSON.stringify({type:'turn.completed',usage:{input_tokens:150,output_tokens:2}}));`,{mode:0o755})
+    const result=await runAgent({agent:'codex',task:{prompt:'Find code'},mode:'baseline',cwd:dir,env:{...process.env,STELLAR_BENCH_CODEX_BIN:fake},diagnosticDir:path.join(dir,'diagnostic')})
+    assert.equal(result.metrics.usage.inputTokens,150)
+    const attribution=JSON.parse(await fs.readFile(path.join(dir,'diagnostic/token-attribution.json')))
+    assert.equal(attribution.providerReported.inputTokens,150)
+    assert.ok(attribution.estimated.unattributedVsProvider>=0)
   } finally {await fs.rm(dir,{recursive:true,force:true})}
 })

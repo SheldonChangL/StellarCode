@@ -86,3 +86,18 @@ test('v0.5.2 benchmark trace records source evidence without copying source cont
     await w.cleanup()
   }
 })
+
+test('compact context is bounded and progressively omits related files', async () => {
+  const w=await makeWorkspace()
+  try {
+    await initializeProject(w.repo);await syncProject(w.repo,{dirs:w.dirs,force:true})
+    const verbose=await contextForTask(w.repo,'Find the login implementation',{dirs:w.dirs,sync:false})
+    const compact=await contextForTask(w.repo,'Find the login implementation',{dirs:w.dirs,sync:false,compact:true,maxFiles:2,maxLines:60,maxBytes:4000})
+    assert.ok(compact.targets.length<=2)
+    assert.ok(compact.targets.every(target=>target.lines[1]-target.lines[0]+1<=60))
+    assert.equal('related' in compact,false)
+    assert.equal('queryProfile' in compact,false)
+    assert.ok(Buffer.byteLength(JSON.stringify(compact))<Buffer.byteLength(JSON.stringify(verbose)))
+    assert.ok(compact.targets[0].symbol)
+  } finally {await w.cleanup()}
+})

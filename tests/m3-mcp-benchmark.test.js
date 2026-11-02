@@ -22,7 +22,7 @@ test('MCP initialize/list/call exposes compact StellarCode tools', async () => {
     assert.ok(list.result.tools.some(tool=>tool.name==='stellar_source'))
     const call=await handleMcpMessage({jsonrpc:'2.0',id:3,method:'tools/call',params:{name:'stellar_context',arguments:{task:'fix refresh token retry after 401'}}},{defaultProject:w.repo,queryOptions:{dirs:w.dirs}})
     assert.equal(call.result.isError,false)
-    assert.ok(call.result.structuredContent.result.primary.some(v=>v.path==='src/auth/AuthService.ts'))
+    assert.ok(call.result.structuredContent.result.targets.some(v=>v.path==='src/auth/AuthService.ts'))
   } finally { await w.cleanup() }
 })
 
