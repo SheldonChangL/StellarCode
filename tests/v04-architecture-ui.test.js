@@ -17,7 +17,7 @@ const execFileAsync = promisify(execFile)
 test('installed CLI wrapper suppresses only the sqlite experimental warning on help', async () => {
   const bin = new URL('../bin/stellar.js', import.meta.url)
   const result = await execFileAsync(process.execPath, [bin.pathname, 'help'])
-  assert.match(result.stdout, /StellarCode 0\.5\.1/)
+  assert.match(result.stdout, /StellarCode 0\.5\.2/)
   assert.equal(result.stderr, '')
 })
 

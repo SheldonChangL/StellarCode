@@ -56,3 +56,7 @@ Use `all` only when the task genuinely requires all listed files; otherwise it c
 ## What v0.5.1 does not benchmark
 
 The runner is intentionally read-only. Do not use tasks such as "implement feature X" or "fix bug Y" yet. Those require a separate edit-quality benchmark with tests/build outcomes in addition to token usage.
+
+## v0.5.2 grounding note
+
+The v0.5.2 benchmark does not accept a correct-looking file name unless the run also reads answer-key source. Keep `expectedFiles` focused on files that actually contain the implementation evidence an agent should inspect. Avoid using barrel files or metadata-only files as the sole answer key when the task asks about implementation behavior.

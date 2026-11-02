@@ -24,3 +24,10 @@ v0.5.1 can execute controlled Claude/Codex A/B runs and reads the agents' report
 - Authentication/subscription/API quota is managed by the installed Claude/Codex CLI, not StellarCode.
 - Agent CLI output formats can evolve; adapters are regression-tested against fixtures but should be revalidated when upgrading major CLI versions.
 - The harness does not claim a universal token-saving percentage. The HTML report only marks the evidence gate PASS when token/navigation thresholds and answer-key correctness all pass.
+
+## v0.5.2 source-grounding limits
+
+- Source grounding is detected from explicit native Read operations, read-like shell commands, or `stellar source` / `stellar_source`. Extremely custom scripts that read files indirectly may not be classified as source reads.
+- `stellar source` is intentionally line-bounded (default/max limits) and does not persist source bodies in StellarCode databases.
+- Benchmark answer correctness is currently answer-key file correctness, not semantic grading of every sentence in the prose summary. Grounded success therefore proves the agent found and read the expected implementation file, not that every explanation sentence is perfect.
+- JS/TS symbol extraction is deterministic and regex-based rather than Tree-sitter/LSP. v0.5.2 corrects class-method line ranges, but complex syntax can still produce incomplete symbol ranges.

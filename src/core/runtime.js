@@ -14,7 +14,7 @@ export async function resolveProject(input = process.cwd()) {
 
 export async function withFreshProjectDb(input, fn, options = {}) {
   const { root, metadata } = await resolveProject(input)
-  if (options.sync !== false) await syncProject(root, options)
+  if (options.sync !== false && !process.env.STELLAR_BENCH_INDEX_FILE) await syncProject(root, options)
   const { db, registration } = await openProjectStore(root, metadata, options)
   try {
     return await fn({ db, root, metadata, registration })

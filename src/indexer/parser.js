@@ -125,8 +125,12 @@ function parseJsTs(text, file) {
           if (['if','for','while','switch','catch','constructor'].includes(methodName)) {
             if (methodName !== 'constructor') continue
           }
-          const absoluteIndex = brace + 1 + mm.index
+          const methodNameOffset = mm[0].indexOf(methodName)
+          const absoluteIndex = brace + 1 + mm.index + Math.max(0, methodNameOffset)
           const methodLine = lineAt(masked, absoluteIndex)
+          const openOffset = mm[0].lastIndexOf('{')
+          const methodOpen = brace + 1 + mm.index + Math.max(0, openOffset)
+          const methodEndLine = methodOpen >= 0 ? lineAt(masked, findBlockEnd(masked, methodOpen)) : methodLine
           symbols.push({
             symbolId: makeSymbolId(file, 'method', `${name}.${methodName}`, methodLine, absoluteIndex),
             fileId: file.fileId,
@@ -134,7 +138,7 @@ function parseJsTs(text, file) {
             name: methodName,
             kind: 'method',
             startLine: methodLine,
-            endLine: methodLine,
+            endLine: methodEndLine,
             exported: Boolean(match[1]),
             signature: text.split(/\r?\n/)[methodLine - 1]?.trim().slice(0, 300) ?? null
           })

@@ -4,8 +4,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { initializeProject } from '../core/project.js'
-import { syncProject } from '../indexer/sync.js'
+import { prepareBenchmarkSnapshot } from './snapshot.js'
 import { runAgent, commandVersion } from './agents.js'
 import { loadBenchmarkTasks, benchmarkConfigPath } from './tasks.js'
 import { StellarError } from '../core/errors.js'
@@ -14,31 +13,39 @@ const execFileAsync=promisify(execFile)
 
 async function git(root,args) { return (await execFileAsync('git',['-C',root,...args],{maxBuffer:10*1024*1024})).stdout.trim() }
 
-async function writeShim(binDir, mode, stellarBin) {
+function shellQuote(value) {return "'"+String(value).replaceAll("'", "'\\''")+"'"}
+
+async function writeShim(binDir, mode, stellarBin, snapshot) {
   await fs.mkdir(binDir,{recursive:true})
   const file=path.join(binDir,process.platform==='win32'?'stellar.cmd':'stellar')
   if(process.platform==='win32') {
     const body=mode==='stellar' ? `@echo off\r\n"${process.execPath}" "${stellarBin}" %*\r\n` : '@echo off\r\necho StellarCode disabled for baseline benchmark 1>&2\r\nexit /b 64\r\n'
     await fs.writeFile(file,body)
   } else {
-    const body=mode==='stellar' ? `#!/bin/sh\nexec ${JSON.stringify(process.execPath)} ${JSON.stringify(stellarBin)} "$@"\n` : '#!/bin/sh\necho "StellarCode disabled for baseline benchmark" >&2\nexit 64\n'
+    const body=mode==='stellar' ? `#!/bin/sh\n${snapshot ? `export STELLAR_BENCH_INDEX_FILE=${shellQuote(snapshot.indexFile)}\n` : ''}exec ${shellQuote(process.execPath)} ${shellQuote(stellarBin)} "$@"\n` : '#!/bin/sh\necho "StellarCode disabled for baseline benchmark" >&2\nexit 64\n'
     await fs.writeFile(file,body,{mode:0o755})
   }
   return file
 }
 
+function normalizePath(value) { return String(value).replaceAll('\\','/').replace(/^\.\//,'') }
+
 function answerFiles(structured) {
-  return Array.isArray(structured?.files) ? structured.files.map(v=>String(v).replaceAll('\\','/').replace(/^\.\//,'')) : []
+  return Array.isArray(structured?.files) ? structured.files.map(normalizePath) : []
 }
 
-function judge(task, structured) {
-  if (!task.expectedFiles.length) return {verified:false,success:null,matched:[],missing:[]}
-  const got=new Set(answerFiles(structured))
+function judgePaths(task, paths) {
+  if (!task.expectedFiles.length) return {verified:false,success:null,matched:[],missing:[],observed:[...new Set(paths)]}
+  const got=new Set(paths.map(normalizePath))
   const matched=task.expectedFiles.filter(v=>got.has(v))
   const success=task.expectedMatch==='all' ? matched.length===task.expectedFiles.length : matched.length>0
-  return {verified:true,success,matched,missing:task.expectedFiles.filter(v=>!got.has(v)),answerFiles:[...got]}
+  return {verified:true,success,matched,missing:task.expectedFiles.filter(v=>!got.has(v)),observed:[...got]}
 }
 
+function judgeAnswer(task, structured) {
+  const verdict=judgePaths(task,answerFiles(structured))
+  return {...verdict,answerFiles:verdict.observed}
+}
 
 async function sanitizeStellarAgentRules(root) {
   for (const name of ['AGENTS.md','CLAUDE.md']) {
@@ -67,7 +74,7 @@ export async function benchmarkDoctor({agents=['claude','codex'],env=process.env
   return results
 }
 
-export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='both',model,limit,repeat=1,outDir,stellarBin,env=process.env,onProgress}) {
+export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='both',model,limit,repeat=1,outDir,stellarBin,env=process.env,onProgress,keepWorktreeOnFailure=false}) {
   const configFile=tasksFile ?? await benchmarkConfigPath(projectRoot)
   const {tasks:allTasks}=await loadBenchmarkTasks(configFile)
   const tasks=Number(limit)>0?allTasks.slice(0,Number(limit)):allTasks
@@ -94,34 +101,67 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
       for(const condition of ordered) {
         const base=await fs.mkdtemp(path.join(os.tmpdir(),'stellar-bench-'))
         const {worktree,cleanup}=await makeWorktree(projectRoot,base)
+        let failed=true
+        const diagnosticDir=path.join(destination,'diagnostics',encodeURIComponent(task.id),`${condition}-${r}`)
+        await fs.mkdir(diagnosticDir,{recursive:true,mode:0o700})
+        await fs.writeFile(path.join(diagnosticDir,'diagnostic.json'),JSON.stringify({mode:condition,taskId:task.id,projectRoot,worktreeRoot:worktree,agentVersion:agentInfo.version},null,2)+'\n',{mode:0o600})
         try {
           const dirs={data:path.join(base,'stellar-data'),cache:path.join(base,'stellar-cache'),logs:path.join(base,'stellar-logs')}
-          const binDir=path.join(base,'bin');await writeShim(binDir,condition,stellarBin)
-          const childEnv={...env,PATH:`${binDir}${path.delimiter}${env.PATH??''}`,STELLAR_DATA_DIR:dirs.data,STELLAR_CACHE_DIR:dirs.cache,STELLAR_LOG_DIR:dirs.logs}
+          const snapshot=condition==='stellar'?await prepareBenchmarkSnapshot(projectRoot,worktree,base,commit,env):null
+          const binDir=path.join(base,'bin');const stellarExecutable=await writeShim(binDir,condition,stellarBin,snapshot)
+          const childEnv={...env,PATH:`${binDir}${path.delimiter}${env.PATH??''}`,STELLAR_DATA_DIR:dirs.data,STELLAR_CACHE_DIR:dirs.cache,STELLAR_LOG_DIR:dirs.logs,STELLAR_BENCH_TRACE_FILE:'',STELLAR_BENCH_INDEX_FILE:snapshot?.indexFile??''}
+          let preflight={stellarAvailable:false,stellarVersion:null,projectResolved:false}
           if(condition==='stellar') {
-            const init=await initializeProject(worktree)
-            await syncProject(worktree,{force:true,dirs})
-            void init
+            const checks=[]
+            for(const args of [['--version'],['status','--json'],['projects','--json']]) {
+              const {stdout,stderr}=await execFileAsync(stellarExecutable,args,{cwd:worktree,env:childEnv})
+              checks.push({command:['stellar',...args],stdout,stderr})
+            }
+            const status=JSON.parse(checks[1].stdout)
+            if(status.projectId!==snapshot.projectId || status.lastIndexedHead!==commit)throw new Error('Benchmark preflight project/index mismatch')
+            preflight={stellarAvailable:true,stellarVersion:checks[0].stdout.trim(),projectResolved:true,projectId:status.projectId,indexFile:status.dbPath,checks}
           }
           onProgress?.({phase:'start',task:task.id,mode:condition,repetition:r,completed,total})
-          const result=await runAgent({agent,task,mode:condition,cwd:worktree,env:childEnv,model,maxTurns:task.maxTurns})
-          const verdict=judge(task,result.metrics.structured)
+          const result=await runAgent({agent,task:{prompt:task.prompt},mode:condition,cwd:worktree,env:childEnv,model,maxTurns:task.maxTurns,diagnosticDir,diagnostic:{mode:condition,taskId:task.id,agentVersion:agentInfo.version,stellarExecutable,projectRoot,worktreeRoot:worktree,...preflight,snapshot}})
+          const discoveryPaths=[...new Set(result.metrics.filesMentioned??[])]
+          const sourceReadPaths=[...new Set(result.metrics.filesOpened??[])]
+          const discovery=judgePaths(task,discoveryPaths)
+          const grounding=judgePaths(task,sourceReadPaths)
+          const answer=judgeAnswer(task,result.metrics.structured)
+          const groundedSuccess=result.exitCode===0 && answer.success===true && grounding.success===true
+          const firstRelevantCandidates=(result.metrics.sourceReads??[]).filter(read=>task.expectedFiles.includes(read.path)).map(read=>read.atMs).filter(v=>v!=null&&Number.isFinite(v))
+          const firstRelevantMs=firstRelevantCandidates.length?Math.min(...firstRelevantCandidates):null
           const row={
-            schemaVersion:1,taskId:task.id,repetition:r,category:task.category,mode:condition,agent,agentVersion:agentInfo.version,model:model??null,
-            projectCommit:commit,projectDirtyCount:dirty,exitCode:result.exitCode,durationMs:result.durationMs,firstRelevantMs:result.metrics.firstRelevantMs,
+            schemaVersion:2,taskId:task.id,repetition:r,category:task.category,mode:condition,agent,agentVersion:agentInfo.version,model:model??null,
+            projectCommit:commit,projectDirtyCount:dirty,exitCode:result.exitCode,durationMs:result.durationMs,firstRelevantMs,firstRelevantSourceMs:firstRelevantMs,
             inputTokens:result.metrics.usage.inputTokens,uncachedInputTokens:result.metrics.usage.uncachedInputTokens,cachedInputTokens:result.metrics.usage.cachedInputTokens,cacheWriteInputTokens:result.metrics.usage.cacheWriteInputTokens,
             outputTokens:result.metrics.usage.outputTokens,reasoningOutputTokens:result.metrics.usage.reasoningOutputTokens,costUsd:result.metrics.costUsd,
-            toolCalls:result.metrics.toolCalls,searchCalls:result.metrics.searchCalls,stellarCalls:result.metrics.stellarCalls,filesOpened:result.metrics.filesOpened.length,filesOpenedList:result.metrics.filesOpened,sourceBytesRead:result.metrics.sourceBytesRead,
-            verified:verdict.verified,success:result.exitCode===0?verdict.success:false,matchedExpectedFiles:verdict.matched,missingExpectedFiles:verdict.missing,answerFiles:verdict.answerFiles??[],
+            toolCalls:result.metrics.toolCalls,searchCalls:result.metrics.searchCalls,stellarCalls:result.metrics.stellarCalls,filesOpened:sourceReadPaths.length,filesOpenedList:sourceReadPaths,filesActuallyRead:sourceReadPaths,sourceReads:result.metrics.sourceReads??[],sourceBytesRead:result.metrics.sourceBytesRead,
+            verified:answer.verified,success:groundedSuccess,
+            discoveryVerified:discovery.verified,discoverySuccess:result.exitCode===0?discovery.success:false,discoveredExpectedFiles:discovery.matched,
+            sourceGroundingVerified:grounding.verified,sourceGrounded:result.exitCode===0?grounding.success:false,groundedExpectedFiles:grounding.matched,
+            answerVerified:answer.verified,answerSuccess:result.exitCode===0?answer.success:false,matchedExpectedFiles:answer.matched,missingExpectedFiles:answer.missing,answerFiles:answer.answerFiles??[],
             final:result.metrics.structured??result.metrics.finalText,stderr:result.exitCode===0?'':result.stderr.slice(0,4000)
           }
+          failed=!groundedSuccess
+          const diagnosticFile=path.join(diagnosticDir,'diagnostic.json')
+          const diagnostic=JSON.parse(await fs.readFile(diagnosticFile,'utf8'))
+          await fs.writeFile(diagnosticFile,JSON.stringify({...diagnostic,worktreeRetained:failed&&keepWorktreeOnFailure,commands:result.commands,
+            stellarContextCalls:result.commands.filter(c=>/\bstellar\s+context\b/.test(c)),stellarSourceCalls:result.commands.filter(c=>/\bstellar\s+source\b/.test(c)),
+            filesActuallyRead:sourceReadPaths,sourceRangesRead:result.metrics.sourceReads,nativeSourceReads:result.metrics.sourceReads.filter(read=>read.via!=='stellar'),firstRelevantSourceMs:firstRelevantMs,
+            discoverySuccess:row.discoverySuccess,sourceGrounded:row.sourceGrounded,answerSuccess:row.answerSuccess,success:row.success},null,2)+'\n')
           await fs.appendFile(files[condition],JSON.stringify(row)+'\n')
           completed++;onProgress?.({phase:'done',task:task.id,mode:condition,repetition:r,completed,total,row})
-        } finally { await cleanup() }
+        } catch(error) {
+          const file=path.join(diagnosticDir,'diagnostic.json')
+          const diagnostic=JSON.parse(await fs.readFile(file,'utf8'))
+          await fs.writeFile(file,JSON.stringify({...diagnostic,error:error.message,worktreeRetained:keepWorktreeOnFailure},null,2)+'\n')
+          throw error
+        } finally { if(!failed||!keepWorktreeOnFailure)await cleanup() }
       }
     }
   }
-  const manifest={schemaVersion:1,createdAt:new Date().toISOString(),agent,agentVersion:agentInfo.version,model:model??null,projectRoot,projectCommit:commit,projectDirtyCount:dirty,tasksFile:configFile,taskCount:tasks.length,repeat,modes,files,isolation:{freshAgentSession:true,detachedWorktree:true,stellarRulesRemovedFromWorktree:true,userMcpConfigIgnored:true,stellarIndexBuiltBeforeTimedRun:true}}
+  const manifest={schemaVersion:2,createdAt:new Date().toISOString(),agent,agentVersion:agentInfo.version,model:model??null,projectRoot,projectCommit:commit,projectDirtyCount:dirty,tasksFile:configFile,taskCount:tasks.length,repeat,modes,files,isolation:{freshAgentSession:true,detachedWorktree:true,stellarRulesRemovedFromWorktree:true,stellarContractInjectedViaPrompt:true,stableProjectIdentity:true,readOnlyIndexSnapshot:true,userMcpConfigIgnored:true,stellarIndexPreparedBeforeTimedRun:true,sourceGroundingRequired:true,rawAgentTelemetryPersisted:true}}
   await fs.writeFile(path.join(destination,'manifest.json'),JSON.stringify(manifest,null,2)+'\n')
   return {outDir:destination,files,manifest}
 }

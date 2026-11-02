@@ -6,7 +6,7 @@ import { openProjectStore, projectMeta } from './storage/project-store.js'
 import { syncProject } from './indexer/sync.js'
 import { resolveProject } from './core/runtime.js'
 import { resolveAnyProject } from './core/global-runtime.js'
-import { searchProject, fileDetail, related, impact, contextForTask, symbolLookup, architectureOverview } from './query/query-service.js'
+import { searchProject, fileDetail, related, impact, contextForTask, symbolLookup, architectureOverview, sourceExcerpt } from './query/query-service.js'
 import { createWebServer } from './web/server.js'
 import { createGlobalWebServer } from './web/global-server.js'
 import { startMcpServer } from './mcp/server.js'
@@ -17,15 +17,17 @@ import { installAgentRule, AGENT_RULE } from './core/agent-rule.js'
 import { appDirectories } from './platform/paths.js'
 import { projectSummaries, removeRegisteredProject, garbageCollect, reconcileProjects } from './storage/registry.js'
 import { StellarError } from './core/errors.js'
+import { traceCliResult } from './core/benchmark-trace.js'
 
 function help() {
-  console.log(`StellarCode 0.5.1\n\nUsage:\n  stellar init [path] [--dry-run] [--install-agent-rule]\n  stellar projects [--json]\n  stellar ui [--port 7432]\n  stellar scan [path] [--json]\n  stellar sync [path] [--json]\n  stellar status [path] [--project NAME_OR_ID] [--json]\n  stellar search <query> [path] [--project NAME_OR_ID] [--json]\n  stellar find <query> [path] [--project NAME_OR_ID] [--json]  # alias\n  stellar file <relative-path> [project-path] [--project NAME_OR_ID] [--json]\n  stellar symbol <query> [project-path] [--project NAME_OR_ID] [--json]\n  stellar related <path-or-symbol> [project-path] [--project NAME_OR_ID] [--json]\n  stellar impact <path-or-symbol> [project-path] [--project NAME_OR_ID] [--depth N] [--json]\n  stellar context <task> [project-path] [--project NAME_OR_ID] [--json]\n  stellar architecture [project-path] [--project NAME_OR_ID] [--json]\n  stellar remove <project> [--purge] [--json]\n  stellar gc [--purge-orphaned] [--json]\n  stellar mcp [project-path]\n  stellar serve [project-path] [--port 7432]  # legacy single-project when path is supplied; otherwise global UI\n  stellar agent-rule\n  stellar benchmark init [project-path] [--force]\n  stellar benchmark doctor [--agent claude|codex|all] [--json]\n  stellar benchmark run [project-path] --agent claude|codex [--mode baseline|stellar|both] [--model MODEL] [--repeat N] [--limit N] [--tasks FILE] [--out DIR] [--json]\n  stellar benchmark report <baseline.jsonl> <stellar.jsonl> [--html FILE] [--json-out FILE]\n\nGlobal v0.5 workflow:\n  Run 'stellar init' once per repo. Then run 'stellar ui' from anywhere.\n`)
+  console.log(`StellarCode 0.5.2\n\nUsage:\n  stellar init [path] [--dry-run] [--install-agent-rule]\n  stellar projects [--json]\n  stellar ui [--port 7432]\n  stellar scan [path] [--json]\n  stellar sync [path] [--json]\n  stellar status [path] [--project NAME_OR_ID] [--json]\n  stellar search <query> [path] [--project NAME_OR_ID] [--json]\n  stellar find <query> [path] [--project NAME_OR_ID] [--json]  # alias\n  stellar file <relative-path> [project-path] [--project NAME_OR_ID] [--json]\n  stellar symbol <query> [project-path] [--project NAME_OR_ID] [--json]\n  stellar related <path-or-symbol> [project-path] [--project NAME_OR_ID] [--json]\n  stellar impact <path-or-symbol> [project-path] [--project NAME_OR_ID] [--depth N] [--json]\n  stellar context <task> [project-path] [--project NAME_OR_ID] [--json]\n  stellar source <relative-path> [project-path] [--project NAME_OR_ID] [--lines START:END] [--json]\n  stellar architecture [project-path] [--project NAME_OR_ID] [--json]\n  stellar remove <project> [--purge] [--json]\n  stellar gc [--purge-orphaned] [--json]\n  stellar mcp [project-path]\n  stellar serve [project-path] [--port 7432]  # legacy single-project when path is supplied; otherwise global UI\n  stellar agent-rule\n  stellar benchmark init [project-path] [--force]\n  stellar benchmark doctor [--agent claude|codex|all] [--json]\n  stellar benchmark run [project-path] --agent claude|codex [--mode baseline|stellar|both] [--model MODEL] [--repeat N] [--limit N] [--tasks FILE] [--out DIR] [--keep-worktree-on-failure] [--json]\n  stellar benchmark report <baseline.jsonl> <stellar.jsonl> [--html FILE] [--json-out FILE]\n\nGlobal v0.5 workflow:\n  Run 'stellar init' once per repo. Then run 'stellar ui' from anywhere.\n`)
 }
 
 function hasFlag(args, flag) { return args.includes(flag) }
 function flagValue(args, flag, fallback) { const i=args.indexOf(flag); return i>=0 && args[i+1] ? args[i+1] : fallback }
-function positional(args) { const out=[]; for(let i=0;i<args.length;i++){if(args[i].startsWith('--')){if(!['--json','--dry-run','--install-agent-rule','--purge','--purge-orphaned','--force'].includes(args[i]))i++;continue}out.push(args[i])} return out }
+function positional(args) { const out=[]; for(let i=0;i<args.length;i++){if(args[i].startsWith('--')){if(!['--json','--dry-run','--install-agent-rule','--purge','--purge-orphaned','--force','--keep-worktree-on-failure'].includes(args[i]))i++;continue}out.push(args[i])} return out }
 function print(value, json = false) {
+  traceCliResult(process.argv[2], process.argv.slice(3), value)
   if (json) console.log(JSON.stringify(value, null, 2))
   else if (typeof value === 'string') console.log(value)
   else console.log(JSON.stringify(value, null, 2))
@@ -49,6 +51,12 @@ async function cmdInit(args) {
 }
 
 async function cmdProjects(args) {
+  if(process.env.STELLAR_BENCH_INDEX_FILE) {
+    const {root,metadata}=await resolveProject()
+    const {db,registration}=await openProjectStore(root,metadata)
+    const meta=projectMeta(db);db.close()
+    return print([{projectId:metadata.projectId,path:root,dbPath:registration.db_path,lastIndexedHead:meta.last_indexed_head,readOnly:true}],hasFlag(args,'--json'))
+  }
   const rows = await projectSummaries()
   if (hasFlag(args,'--json')) return print(rows,true)
   if (!rows.length) return console.log('No StellarCode projects registered. Run `stellar init` inside a repository.')
@@ -85,6 +93,7 @@ async function queryRoot(args, fallback) {
 async function main() {
   const [, , command, ...args] = process.argv
   if (!command || ['help','--help','-h'].includes(command)) return help()
+  if (command === '--version' || command === '-v') return console.log('StellarCode 0.5.2')
   if (command === 'init') return cmdInit(args)
   if (command === 'projects') return cmdProjects(args)
   if (command === 'ui') {
@@ -130,6 +139,13 @@ async function main() {
     const pos=positional(args); if(!pos[0])throw new StellarError('context requires a task string','USAGE',2)
     const root=await queryRoot(args,pos[1]??process.cwd())
     return print(await contextForTask(root,pos[0],{limit:8}),hasFlag(args,'--json'))
+  }
+  if (command === 'source') {
+    const pos=positional(args); if(!pos[0])throw new StellarError('source requires a project-relative path','USAGE',2)
+    const root=await queryRoot(args,pos[1]??process.cwd())
+    const result=await sourceExcerpt(root,pos[0],{lines:flagValue(args,'--lines',undefined)})
+    if(!result)throw new StellarError(`Indexed source file not found: ${pos[0]}`,'SOURCE_NOT_FOUND',2)
+    return print(result,hasFlag(args,'--json'))
   }
   if (command === 'architecture') {
     const pos=positional(args);const root=await queryRoot(args,pos[0]??process.cwd())
@@ -179,7 +195,7 @@ async function main() {
       if(!agent)throw new StellarError('benchmark run requires --agent claude|codex','USAGE',2)
       const result=await runBenchmark({
         projectRoot:root,agent,mode:flagValue(args,'--mode','both'),model:flagValue(args,'--model',undefined),repeat:Number(flagValue(args,'--repeat',1)),limit:Number(flagValue(args,'--limit',0)),
-        tasksFile:flagValue(args,'--tasks',undefined),outDir:flagValue(args,'--out',undefined),
+        keepWorktreeOnFailure:hasFlag(args,'--keep-worktree-on-failure'),tasksFile:flagValue(args,'--tasks',undefined),outDir:flagValue(args,'--out',undefined),
         onProgress:hasFlag(args,'--json')?undefined:e=>{if(e.phase==='start')console.error(`[${e.completed+1}/${e.total}] ${e.mode} ${e.task}`)}
       })
       if(result.files.baseline&&result.files.stellar) {

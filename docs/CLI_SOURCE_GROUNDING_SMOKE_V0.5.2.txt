@@ -1,0 +1,171 @@
+$ stellar init <fixture>
+Initialized StellarCode project
+Project: /tmp/tmp.zb83sXPlRH/repo
+Project ID: bb22388e-86fa-4803-9937-2037c232564d
+Index DB: /tmp/tmp.zb83sXPlRH/data/projects/bb22388e-86fa-4803-9937-2037c232564d/index.db
+$ stellar scan <fixture> --json
+{
+  "projectId": "bb22388e-86fa-4803-9937-2037c232564d",
+  "graphVersion": 1,
+  "added": 8,
+  "modified": 0,
+  "deleted": 0,
+  "changedFiles": 8,
+  "files": 8,
+  "symbols": 24,
+  "edges": 35,
+  "warnings": [],
+  "git": {
+    "head": "8cd4ff4306082b1781ebf6b90ff58f0f5733385d",
+    "statusCount": 1
+  },
+  "durationMs": 49,
+  "dbPath": "/tmp/tmp.zb83sXPlRH/data/projects/bb22388e-86fa-4803-9937-2037c232564d/index.db"
+}
+$ stellar context "Find the login implementation" <fixture> --json
+{
+  "query": "Find the login implementation",
+  "graphVersion": 1,
+  "queryProfile": {
+    "terms": [
+      "login",
+      "implementation"
+    ],
+    "concepts": [],
+    "architectureOverview": false
+  },
+  "confidence": "lexical",
+  "sourceGrounding": {
+    "required": true,
+    "minimumPrimaryReads": 1,
+    "policy": "StellarCode metadata is navigation evidence, not source-of-truth. Read the recommended repository source range before making implementation claims."
+  },
+  "primary": [
+    {
+      "path": "src/auth/AuthService.ts",
+      "role": "service",
+      "lines": [
+        7,
+        11
+      ],
+      "symbols": [
+        {
+          "name": "login",
+          "qualifiedName": "AuthService.login",
+          "kind": "method",
+          "lines": [
+            7,
+            11
+          ]
+        }
+      ],
+      "reason": "Matches symbols: AuthService.login",
+      "read": {
+        "required": true,
+        "lines": [
+          1,
+          21
+        ],
+        "command": "stellar source \"src/auth/AuthService.ts\" --lines 1:21 --json"
+      }
+    },
+    {
+      "path": "src/http/ApiClient.ts",
+      "role": "infrastructure",
+      "lines": [
+        2,
+        4
+      ],
+      "symbols": [
+        {
+          "name": "login",
+          "qualifiedName": "ApiClient.login",
+          "kind": "method",
+          "lines": [
+            2,
+            4
+          ]
+        }
+      ],
+      "reason": "Matches symbols: ApiClient.login",
+      "read": {
+        "required": true,
+        "lines": [
+          1,
+          10
+        ],
+        "command": "stellar source \"src/http/ApiClient.ts\" --lines 1:10 --json"
+      }
+    },
+    {
+      "path": "src/ui/LoginPage.tsx",
+      "role": "ui",
+      "lines": [
+        3,
+        7
+      ],
+      "symbols": [
+        {
+          "name": "createLoginPage",
+          "qualifiedName": "createLoginPage",
+          "kind": "function",
+          "lines": [
+            3,
+            7
+          ]
+        }
+      ],
+      "reason": "Matches symbols: createLoginPage",
+      "read": {
+        "required": true,
+        "lines": [
+          1,
+          8
+        ],
+        "command": "stellar source \"src/ui/LoginPage.tsx\" --lines 1:8 --json"
+      }
+    }
+  ],
+  "related": [
+    {
+      "path": "src/auth/TokenStore.ts",
+      "role": "source",
+      "reason": "imports relation to a primary match",
+      "read": {
+        "required": false,
+        "lines": [
+          1,
+          21
+        ],
+        "command": "stellar source \"src/auth/TokenStore.ts\" --lines 1:21 --json"
+      }
+    }
+  ],
+  "tests": [
+    {
+      "path": "tests/auth/AuthService.test.ts",
+      "role": "test",
+      "reason": "imports relation to a primary match",
+      "read": {
+        "required": false,
+        "lines": [
+          1,
+          10
+        ],
+        "command": "stellar source \"tests/auth/AuthService.test.ts\" --lines 1:10 --json"
+      }
+    }
+  ]
+}
+$ stellar source src/auth/AuthService.ts <fixture> --lines 7:11 --json
+{
+  "path": "src/auth/AuthService.ts",
+  "lines": [
+    7,
+    11
+  ],
+  "lineCount": 5,
+  "content": "7:   async login(email: string, password: string) {\n8:     const result = await this.api.login(email, password)\n9:     this.tokens.save(result)\n10:     return result\n11:   }",
+  "sourceOfTruth": true,
+  "note": "This content was read from the repository working tree after StellarCode located the file."
+}

@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises'
 import path from 'node:path'
 import { withFreshProjectDb } from '../core/runtime.js'
 import { loadArchitectureHints, classifyArchitecture, architectureRank, hierarchyForPath, summarizeHierarchy } from './architecture.js'
@@ -323,15 +324,34 @@ export async function contextForTask(projectPath, task, options = {}) {
 
     const makeEntry = v => {
       const matchingSymbols = qTokens.length ? v.ownSymbols.filter(symbol => scoreText(`${symbol.name} ${symbol.qualified_name}`, qTokens) > 0) : []
-      const lines = matchingSymbols.length
+      const symbolEvidence = matchingSymbols
+        .sort((a, b) => a.start_line - b.start_line)
+        .slice(0, 3)
+        .map(symbol => ({ name: symbol.name, qualifiedName: symbol.qualified_name, kind: symbol.kind, lines: [symbol.start_line, symbol.end_line] }))
+      const exactLines = matchingSymbols.length
         ? [Math.min(...matchingSymbols.map(symbol => symbol.start_line)), Math.max(...matchingSymbols.map(symbol => symbol.end_line))]
         : undefined
+      const fileLines = Math.max(1, Number(v.file.line_count ?? 1))
+      const readLines = exactLines
+        ? [Math.max(1, exactLines[0] - 6), Math.min(fileLines, exactLines[1] + 10)]
+        : [1, Math.min(fileLines, 140)]
       let reason
       if (profile.architectureOverview && v.category === 'primary') reason = `${v.architecture.roleLabel}: ${v.architecture.reason}; importance ${Number(v.file.importance).toFixed(2)}`
       else if (matchingSymbols.length) reason = `Matches symbols: ${matchingSymbols.slice(0, 3).map(symbol => symbol.qualified_name).join(', ')}`
       else if (v.via) reason = `${v.via} relation to a primary match`
       else reason = `Matches query terms: ${qTokens.filter(term => scoreText(`${v.file.path} ${v.file.summary ?? ''}`, [term]) > 0).slice(0, 4).join(', ') || 'symbol match'}`
-      return { path: v.file.path, role: v.architecture.role, ...(lines ? { lines } : {}), reason }
+      return {
+        path: v.file.path,
+        role: v.architecture.role,
+        ...(exactLines ? { lines: exactLines } : {}),
+        ...(symbolEvidence.length ? { symbols: symbolEvidence } : {}),
+        reason,
+        read: {
+          required: v.category === 'primary',
+          lines: readLines,
+          command: `stellar source ${JSON.stringify(v.file.path)} --lines ${readLines[0]}:${readLines[1]} --json`
+        }
+      }
     }
 
     const values = [...selected.values()].sort((a, b) => b.score - a.score)
@@ -345,9 +365,54 @@ export async function contextForTask(projectPath, task, options = {}) {
       queryProfile: { terms: qTokens, concepts: profile.concepts, architectureOverview: profile.architectureOverview },
       confidence: primary.length ? (profile.architectureOverview ? 'structural' : 'lexical') : 'none',
       ...(primary.length ? {} : { noMatchReason: qTokens.length ? 'No indexed path, summary, or symbol matched the query.' : 'No deterministic query terms could be extracted.' }),
+      sourceGrounding: {
+        required: primary.length > 0,
+        minimumPrimaryReads: primary.length > 0 ? 1 : 0,
+        policy: 'StellarCode metadata is navigation evidence, not source-of-truth. Read the recommended repository source range before making implementation claims.'
+      },
       primary,
       related: relatedFiles,
       tests
+    }
+  }, options)
+}
+
+
+function parseLineRange(value, maxLine) {
+  if (!value) return [1, Math.min(maxLine, 160)]
+  if (Array.isArray(value) && value.length >= 2) {
+    const start = Math.max(1, Math.floor(Number(value[0]) || 1))
+    const end = Math.max(start, Math.floor(Number(value[1]) || start))
+    return [start, Math.min(maxLine, end)]
+  }
+  const match = String(value).match(/^(\d+)(?::|-)(\d+)$/)
+  if (!match) return [1, Math.min(maxLine, 160)]
+  const start = Math.max(1, Number(match[1]))
+  const end = Math.max(start, Number(match[2]))
+  return [start, Math.min(maxLine, end)]
+}
+
+export async function sourceExcerpt(projectPath, requestedPath, options = {}) {
+  const maxLines = Math.min(Math.max(Number(options.maxLines ?? 220), 20), 400)
+  return withFreshProjectDb(projectPath, async ({ db, root }) => {
+    let file = db.prepare('SELECT * FROM files WHERE path=?').get(String(requestedPath).replaceAll('\\', '/'))
+    if (!file) file = db.prepare('SELECT * FROM files WHERE name=? LIMIT 1').get(path.basename(String(requestedPath)))
+    if (!file) return null
+    const absolute = path.resolve(root, file.path)
+    const relative = path.relative(root, absolute)
+    if (relative.startsWith('..') || path.isAbsolute(relative)) throw new Error('Indexed file resolved outside repository root')
+    const text = await fs.readFile(absolute, 'utf8')
+    const allLines = text.split(/\r?\n/)
+    let [start, end] = parseLineRange(options.lines, allLines.length)
+    if (end - start + 1 > maxLines) end = start + maxLines - 1
+    const excerpt = allLines.slice(start - 1, end)
+    return {
+      path: file.path,
+      lines: [start, end],
+      lineCount: excerpt.length,
+      content: excerpt.map((line, index) => `${start + index}: ${line}`).join('\n'),
+      sourceOfTruth: true,
+      note: 'This content was read from the repository working tree after StellarCode located the file.'
     }
   }, options)
 }

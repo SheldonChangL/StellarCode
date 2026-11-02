@@ -1,0 +1,65 @@
+
+> stellarcode@0.5.2 test
+> node --test --test-reporter=spec tests/*.test.js
+
+(node:14839) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ platform adapter resolves standard application data locations (0.814577ms)
+✔ init is idempotent and repo metadata is tiny/path-independent (104.069548ms)
+✔ moving a repo keeps UUID and refreshes registry path (79.871054ms)
+(node:14840) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ full index extracts known TS/JS/Python symbols and dependencies (167.531759ms)
+✔ same-name JavaScript declarations on the same line receive unique symbol IDs (156.18671ms)
+✔ incremental sync is graph-equivalent to clean full reindex (255.477573ms)
+✔ warm no-change sync preserves graph version and reparses nothing (172.93591ms)
+✔ query service narrows search, related, impact and context (234.854591ms)
+(node:14841) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ local read-only API and universe shell are served from real index (310.288099ms)
+(node:14908) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ MCP initialize/list/call exposes compact StellarCode tools (201.470365ms)
+✔ benchmark reporter evaluates MVP acceptance thresholds (67.393196ms)
+(node:14952) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ CLI documents and recognizes stellar search as an alias (181.568202ms)
+✔ Chinese login query expands deterministically to indexed auth/login symbols (248.286532ms)
+✔ architecture-overview query favors entry points and structural core (154.302092ms)
+✔ no-evidence task returns no primary files instead of importance fallback (144.938252ms)
+✔ recognized Chinese intent with no repository evidence still returns no match (167.560628ms)
+(node:15002) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ installed CLI wrapper suppresses only the sqlite experimental warning on help (108.133209ms)
+✔ v0.4 architecture classifier separates app entry from nested module entry (1.688853ms)
+✔ v0.4 graph exposes galaxy/module hierarchy and architecture roles (169.241898ms)
+✔ architecture context returns an app entry plus structural core instead of nested barrel files (125.33084ms)
+✔ v0.4 web shell is galaxy-first and architecture API is available (247.843391ms)
+(node:15116) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ v0.5 registry automatically transitions missing -> orphaned without deleting index (178.204613ms)
+✔ moving a registered repo is recovered automatically when StellarCode is used at the new path (136.362977ms)
+✔ global UI lists projects and lazily syncs a selected repository (286.024578ms)
+✔ global UI marks a deleted repository missing and refuses project queries while preserving registry (158.227373ms)
+✔ global MCP can discover projects and query by project UUID outside a repo (182.049624ms)
+✔ gc preserves orphan indexes by default and purges only when explicitly requested (145.219354ms)
+(node:15178) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ v0.5.1 app directories support benchmark isolation overrides (1.137255ms)
+✔ v0.5.1 benchmark init creates disabled answer-key template (77.916136ms)
+✔ v0.5.1 runs paired Codex A/B sessions and reports real usage fields (485.031869ms)
+✔ v0.5.1 normalizes Claude cache usage into effective input tokens (384.190819ms)
+(node:15197) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ v0.5.2 context returns a bounded source-grounding read plan (208.594486ms)
+✔ v0.5.2 correct-looking answer without a source read fails grounded success (390.130094ms)
+✔ v0.5.2 reinstalling agent rule upgrades an existing StellarCode section (60.607291ms)
+✔ v0.5.2 benchmark trace records source evidence without copying source content (54.399637ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 35
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2372.644183

@@ -1,29 +1,9 @@
 import fs from 'node:fs/promises'
+import { openSync, writeSync, closeSync } from 'node:fs'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
 
-const SOURCE_EXT = /\.(?:[cm]?[jt]sx?|py|go|rs|java|kt|kts|swift|rb|php|cs|c|cc|cpp|h|hpp|vue|svelte)$/i
-
-function flattenStrings(value, out = []) {
-  if (typeof value === 'string') out.push(value)
-  else if (Array.isArray(value)) for (const v of value) flattenStrings(v, out)
-  else if (value && typeof value === 'object') for (const v of Object.values(value)) flattenStrings(v, out)
-  return out
-}
-
-function extractPaths(strings, cwd) {
-  const found = new Set()
-  for (const text of strings) {
-    const tokens = text.match(/(?:[A-Za-z]:)?[^\s'"`|<>]+/g) ?? []
-    for (let token of tokens) {
-      token = token.replace(/[),;:]$/,'').replace(/^\.\//,'')
-      if (!SOURCE_EXT.test(token)) continue
-      const abs = path.isAbsolute(token) ? token : path.join(cwd, token)
-      if (abs.startsWith(cwd)) found.add(path.relative(cwd, abs).replaceAll('\\','/'))
-    }
-  }
-  return found
-}
+import { completedEvidence, strings as flattenStrings } from './evidence.js'
 
 function parseJsonLine(line) {
   try { return JSON.parse(line) } catch { return null }
@@ -90,12 +70,20 @@ export async function commandVersion(agent, env = process.env) {
 }
 
 export function benchmarkPrompt(task, mode) {
-  const common = `You are running a repository-navigation benchmark. Work only inside the current repository. Do not modify files.\n\nTask: ${task.prompt}\n\nReturn a concise final JSON object with exactly these fields: {"summary":"...","files":["repo/relative/path"],"symbols":["name"]}. The files field must contain the key source files that support your answer.`
-  if (mode === 'baseline') return `${common}\n\nBenchmark condition: BASELINE. StellarCode is disabled. Use your normal repository exploration tools (search, grep, file reads, directory inspection) as needed.`
-  return `${common}\n\nBenchmark condition: STELLAR. Before any broad repository search, run: stellar context ${JSON.stringify(task.prompt)} --json. Use stellar search/file/related when helpful. Then read only the source files needed to verify the answer. Do not fall back to broad find/tree/grep/rg unless StellarCode has insufficient evidence.`
+  const common = `You are running a repository-navigation benchmark. Work only inside the current repository. Do not modify files.
+
+Task: ${task.prompt}
+
+Repository source is the source of truth. Before making implementation claims, you must read the relevant source file or source range. Return a concise final JSON object with exactly these fields: {"summary":"...","files":["repo/relative/path"],"symbols":["name"]}. The files field must contain only key source files you actually read during this run.`
+  if (mode === 'baseline') return `${common}
+
+Benchmark condition: BASELINE. StellarCode is disabled. Use your normal repository exploration tools (search, grep, file reads, directory inspection) as needed. Do not list a file in the final answer unless you opened its source.`
+  return `${common}
+
+Benchmark condition: STELLAR. Before any broad repository search, run: stellar context ${JSON.stringify(task.prompt)} --json. Treat StellarCode metadata only as navigation evidence, never as source-of-truth. You must read source before answering. The context response includes read ranges for primary matches. You MUST read at least one primary source range before answering, preferably with: stellar source <path> --lines START:END --json (native file Read is also acceptable). Read additional primary files when your answer depends on them. Do not answer from summaries alone. Do not fall back to broad find/tree/grep/rg unless StellarCode has insufficient evidence.`
 }
 
-export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, onEvent }) {
+export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, onEvent, diagnosticDir, diagnostic = {} }) {
   const prompt = benchmarkPrompt(task, mode)
   const bin = agentBinary(agent, env)
   let args
@@ -114,22 +102,35 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
     if (maxTurns) args.push('--max-turns',String(maxTurns))
   }
 
+  const outputFiles=[]
+  if (diagnosticDir) {
+    await fs.mkdir(diagnosticDir,{recursive:true,mode:0o700})
+    await fs.writeFile(path.join(diagnosticDir,'diagnostic.json'),JSON.stringify({...diagnostic,promptSent:prompt,cwd,PATH:env.PATH,agentBinary:bin,args},null,2)+'\n',{mode:0o600})
+    for (const name of ['raw-events.jsonl','stdout.log','stderr.log','event-times.jsonl']) outputFiles.push(openSync(path.join(diagnosticDir,name),'w',0o600))
+  }
+  const closeOutputs=()=>{for(const fd of outputFiles.splice(0))closeSync(fd)}
   const started=performance.now()
-  const metrics={toolCalls:0,searchCalls:0,stellarCalls:0,filesOpened:new Set(),sourceBytesRead:0,firstRelevantMs:null,usage:{inputTokens:0,uncachedInputTokens:0,cachedInputTokens:0,cacheWriteInputTokens:0,outputTokens:0,reasoningOutputTokens:0},costUsd:null,finalText:'',structured:null,rawEvents:0}
-  const expected=new Set(task.expectedFiles.map(v=>v.replaceAll('\\','/')))
-  const seenBytePaths=new Set()
+  const startedAtEpochMs=Date.now()
+  const metrics={toolCalls:0,searchCalls:0,stellarCalls:0,filesMentioned:new Set(),filesOpened:new Set(),sourceReads:[],sourceBytesRead:0,firstRelevantMs:null,usage:{inputTokens:0,uncachedInputTokens:0,cachedInputTokens:0,cacheWriteInputTokens:0,outputTokens:0,reasoningOutputTokens:0},costUsd:null,finalText:'',structured:null,rawEvents:0}
   const pending=new Set()
-
-  async function observeStrings(strings) {
-    const paths=extractPaths(strings,cwd)
-    for (const rel of paths) {
-      metrics.filesOpened.add(rel)
-      if (expected.has(rel) && metrics.firstRelevantMs===null) metrics.firstRelevantMs=Math.round(performance.now()-started)
-      if (!seenBytePaths.has(rel)) {
-        seenBytePaths.add(rel)
-        try { const st=await fs.stat(path.join(cwd,rel));metrics.sourceBytesRead+=st.size } catch {}
-      }
-    }
+  const commands=[]
+  const toolInputs=new Map()
+  const countTool=(input,name)=>{
+    const joined=[name,...flattenStrings(input)].join(' ')
+    metrics.toolCalls++
+    if(isSearchText(joined))metrics.searchCalls++
+    if(/\bstellar\b|stellar_/.test(joined))metrics.stellarCalls++
+    if(typeof input==='string')commands.push(input)
+    else if(input?.command)commands.push(input.command)
+  }
+  const observe=(input,output,ok,via)=>{
+    const atMs=Math.round(performance.now()-started)
+    const evidenceVia=/\bstellar\s+source\b|stellar_source/.test(flattenStrings(input).join(' '))?'stellar':via
+    const p=completedEvidence({input,output,ok,cwd,atMs,via:evidenceVia}).then(e=>{
+      for(const file of e.discovered)metrics.filesMentioned.add(file)
+      for(const read of e.reads){metrics.filesOpened.add(read.path);metrics.sourceReads.push(read);metrics.sourceBytesRead+=read.bytes}
+    })
+    pending.add(p);p.finally(()=>pending.delete(p))
   }
 
   function isSearchText(text) { return /(?:^|[\s;&|])(rg|grep|find|fd|tree|ls)(?:\s|$)/.test(text) || /search|glob|grep/i.test(text) }
@@ -137,9 +138,10 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
   return await new Promise((resolve,reject)=>{
     const child=spawn(bin,args,{cwd,env,stdio:['ignore','pipe','pipe']})
     let stdout='',stderr='',buffer=''
-    child.on('error',reject)
-    child.stderr.on('data',d=>{stderr+=d.toString()})
+    child.on('error',error=>{closeOutputs();reject(error)})
+    child.stderr.on('data',d=>{if(outputFiles.length)writeSync(outputFiles[2],d);stderr+=d.toString()})
     child.stdout.on('data',d=>{
+      if(outputFiles.length){writeSync(outputFiles[0],d);writeSync(outputFiles[1],d)}
       const text=d.toString();stdout+=text;buffer+=text
       const lines=buffer.split(/\r?\n/);buffer=lines.pop() ?? ''
       for (const line of lines) processLine(line)
@@ -148,17 +150,23 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
     async function processLine(line) {
       const event=parseJsonLine(line); if(!event)return
       metrics.rawEvents++
+      if(outputFiles.length)writeSync(outputFiles[3],JSON.stringify({event:metrics.rawEvents,atMs:Math.round(performance.now()-started),type:event.type,itemId:event.item?.id??null})+'\n')
       onEvent?.(event)
       if (agent==='codex') {
         if (event.type==='turn.completed' && event.usage) metrics.usage=codexUsage(event.usage)
         const item=event.item
-        if (event.type==='item.started' && item && ['command_execution','mcp_tool_call','web_search','file_change'].includes(item.type)) {
-          metrics.toolCalls++
-          const strings=flattenStrings(item)
-          const joined=strings.join(' ')
-          if(isSearchText(joined))metrics.searchCalls++
-          if(/\bstellar\b/.test(joined))metrics.stellarCalls++
-          { const p=observeStrings(strings);pending.add(p);p.finally(()=>pending.delete(p)) }
+        if (event.type==='item.started' && item && ['command_execution','mcp_tool_call','web_search','file_change','file_read','read_file','tool_call'].includes(item.type)) {
+          const input=item.command??{tool:item.tool,input:item.arguments??item.input??item}
+          toolInputs.set(item.id,input)
+          countTool(input,item.tool??item.type)
+        }
+        if(event.type==='item.completed' && item && item.type!=='agent_message') {
+          const input=toolInputs.get(item.id)??item.command??item.arguments??item.input
+          if(input) {
+            const output=item.aggregated_output??item.result??item.output??item.content
+            const ok=item.type==='command_execution'?item.exit_code===0:item.status!=='failed'&&!item.error&&!item.is_error&&item.result?.isError!==true
+            observe(input,output,ok,item.type)
+          }
         }
         if(event.type==='item.completed' && item?.type==='agent_message' && item.text) metrics.finalText=item.text
       } else {
@@ -168,15 +176,17 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
           metrics.finalText=event.result ?? metrics.finalText
           metrics.structured=event.structured_output ?? null
         }
+        if(event.type==='user' && Array.isArray(event.message?.content)) {
+          for(const block of event.message.content) if(block.type==='tool_result') {
+            const tool=toolInputs.get(block.tool_use_id)
+            if(tool)observe(tool.input,block.content,!block.is_error,tool.name)
+          }
+        }
         const content=event?.message?.content
         if (event.type==='assistant' && Array.isArray(content)) {
           for (const block of content) if(block?.type==='tool_use') {
-            metrics.toolCalls++
-            const strings=flattenStrings(block.input)
-            const joined=[block.name,...strings].join(' ')
-            if(isSearchText(joined))metrics.searchCalls++
-            if(/\bstellar\b/.test(joined))metrics.stellarCalls++
-            { const p=observeStrings(strings);pending.add(p);p.finally(()=>pending.delete(p)) }
+            toolInputs.set(block.id,{name:block.name,input:block.input})
+            countTool(block.input,block.name)
           }
         }
       }
@@ -184,10 +194,11 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
 
     child.on('close',async code=>{
       if(buffer.trim()) await processLine(buffer.trim())
+      closeOutputs()
       await Promise.allSettled([...pending])
       const durationMs=Math.round(performance.now()-started)
       const structured=metrics.structured ?? finalJsonFromText(metrics.finalText)
-      resolve({exitCode:code,stdout,stderr,durationMs,metrics:{...metrics,filesOpened:[...metrics.filesOpened].sort(),structured}})
+      resolve({exitCode:code,stdout,stderr,durationMs,startedAtEpochMs,commands,metrics:{...metrics,filesMentioned:[...metrics.filesMentioned].sort(),filesOpened:[...metrics.filesOpened].sort(),structured}})
     })
   })
 }

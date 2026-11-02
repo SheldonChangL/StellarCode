@@ -1,23 +1,29 @@
-# StellarCode v0.5.1 Inventory
+# StellarCode v0.5.2 Inventory
 
-Total files (excluding this inventory and SHA256SUMS): 157
+Total files: 172
 
 - `.github/workflows/ci.yml`
 - `.gitignore`
 - `AGENTS.md`
+- `INVENTORY.md`
 - `LICENSE`
 - `README.md`
+- `SHA256SUMS.txt`
 - `benchmark/README.md`
 - `benchmark/baseline.example.jsonl`
 - `benchmark/example-report-v051.html`
 - `benchmark/example-report-v051.json`
+- `benchmark/example-report-v052.html`
+- `benchmark/example-report-v052.json`
 - `benchmark/example-report.json`
 - `benchmark/stellar.example.jsonl`
 - `benchmark/tasks.json`
 - `benchmark/tasks.v051.example.json`
 - `bin/stellar.js`
+- `design-pack/INVENTORY.md`
 - `design-pack/PROJECT_PLAN.md`
 - `design-pack/README.md`
+- `design-pack/SHA256SUMS.txt`
 - `design-pack/docs/00_PRODUCT_VISION.md`
 - `design-pack/docs/01_SYSTEM_ARCHITECTURE.md`
 - `design-pack/docs/02_SOFTWARE_ARCHITECTURE.md`
@@ -75,12 +81,14 @@ Total files (excluding this inventory and SHA256SUMS): 157
 - `docs/BENCHMARK_TASK_AUTHORING.md`
 - `docs/CLI_BENCHMARK_SMOKE_V0.5.1.txt`
 - `docs/CLI_MULTIPROJECT_SMOKE.txt`
+- `docs/CLI_SOURCE_GROUNDING_SMOKE_V0.5.2.txt`
 - `docs/DELIVERY_SUMMARY.md`
 - `docs/HOTFIX_0.3.1.md`
 - `docs/HOTFIX_0.3.2.md`
 - `docs/IMPLEMENTATION_STATUS.md`
 - `docs/IMPLEMENTATION_STATUS_V0.4.md`
 - `docs/IMPLEMENTATION_STATUS_V0.5.1.md`
+- `docs/IMPLEMENTATION_STATUS_V0.5.2.md`
 - `docs/IMPLEMENTATION_STATUS_V0.5.md`
 - `docs/IMPLEMENTED_ARCHITECTURE.md`
 - `docs/KNOWN_LIMITATIONS.md`
@@ -88,17 +96,22 @@ Total files (excluding this inventory and SHA256SUMS): 157
 - `docs/NPM_PACK_DRY_RUN.txt`
 - `docs/NPM_PACK_DRY_RUN_V0.4.txt`
 - `docs/NPM_PACK_DRY_RUN_V0.5.1.json`
+- `docs/NPM_PACK_DRY_RUN_V0.5.2.json`
 - `docs/NPM_PACK_DRY_RUN_V0.5.txt`
 - `docs/SECURITY.md`
 - `docs/SYNTAX_CHECK_V0.5.1.txt`
+- `docs/SYNTAX_CHECK_V0.5.2.txt`
 - `docs/TEST_REPORT.txt`
 - `docs/TEST_REPORT_V0.4.txt`
 - `docs/TEST_REPORT_V0.5.1.txt`
+- `docs/TEST_REPORT_V0.5.2.txt`
 - `docs/TEST_REPORT_V0.5.txt`
 - `docs/V0.4_RELEASE.md`
 - `docs/V0.4_UI_QA.md`
 - `docs/V0.5.1_RELEASE.md`
 - `docs/V0.5.1_TOKEN_BENCHMARK.md`
+- `docs/V0.5.2_RELEASE.md`
+- `docs/V0.5.2_SOURCE_GROUNDED_BENCHMARK.md`
 - `docs/V0.5_ARCHITECTURE.md`
 - `docs/V0.5_RELEASE.md`
 - `docs/screenshots/v0.4-files.png`
@@ -126,6 +139,7 @@ Total files (excluding this inventory and SHA256SUMS): 157
 - `src/benchmark/tasks.js`
 - `src/cli.js`
 - `src/core/agent-rule.js`
+- `src/core/benchmark-trace.js`
 - `src/core/constants.js`
 - `src/core/errors.js`
 - `src/core/global-runtime.js`
@@ -159,3 +173,4 @@ Total files (excluding this inventory and SHA256SUMS): 157
 - `tests/v04-architecture-ui.test.js`
 - `tests/v05-multiproject.test.js`
 - `tests/v051-token-benchmark.test.js`
+- `tests/v052-source-grounding.test.js`

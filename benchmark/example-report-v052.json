@@ -1,0 +1,246 @@
+{
+  "schemaVersion": 3,
+  "baselineFile": "/mnt/data/StellarCode_v0.5.2/benchmark/.tmp-v052-baseline.jsonl",
+  "stellarFile": "/mnt/data/StellarCode_v0.5.2/benchmark/.tmp-v052-stellar.jsonl",
+  "baseline": {
+    "runs": 6,
+    "verifiedRuns": 6,
+    "successRate": 100,
+    "discoveryRate": 100,
+    "sourceGroundingRate": 100,
+    "answerSuccessRate": 100,
+    "totalInputTokens": 62100,
+    "avgInputTokens": 10350,
+    "totalOutputTokens": 3000,
+    "avgOutputTokens": 500,
+    "totalToolCalls": 120,
+    "avgToolCalls": 20,
+    "totalSearchCalls": 48,
+    "avgSearchCalls": 8,
+    "totalFilesOpened": 60,
+    "avgFilesOpened": 10,
+    "totalSourceBytesRead": 540000,
+    "medianFirstRelevantMs": 9000,
+    "totalCostUsd": 0,
+    "navigationInputTokens": 62100,
+    "navigationRuns": 6
+  },
+  "stellar": {
+    "runs": 6,
+    "verifiedRuns": 6,
+    "successRate": 100,
+    "discoveryRate": 100,
+    "sourceGroundingRate": 100,
+    "answerSuccessRate": 100,
+    "totalInputTokens": 29460,
+    "avgInputTokens": 4910,
+    "totalOutputTokens": 2880,
+    "avgOutputTokens": 480,
+    "totalToolCalls": 54,
+    "avgToolCalls": 9,
+    "totalSearchCalls": 6,
+    "avgSearchCalls": 1,
+    "totalFilesOpened": 18,
+    "avgFilesOpened": 3,
+    "totalSourceBytesRead": 108000,
+    "medianFirstRelevantMs": 4200,
+    "totalCostUsd": 0,
+    "navigationInputTokens": 29460,
+    "navigationRuns": 6
+  },
+  "delta": {
+    "inputTokenReductionPct": 52.56038647342996,
+    "navigationInputTokenReductionPct": 52.56038647342996,
+    "toolCallReductionPct": 55.00000000000001,
+    "searchCallReductionPct": 87.5,
+    "filesOpenedReductionPct": 70,
+    "sourceBytesReductionPct": 80,
+    "firstRelevantReductionPct": 53.333333333333336,
+    "discoveryRateDeltaPoints": 0,
+    "sourceGroundingRateDeltaPoints": 0,
+    "answerSuccessRateDeltaPoints": 0,
+    "successRateDeltaPoints": 0
+  },
+  "correctnessVerified": true,
+  "acceptance": {
+    "overallInputTokens": true,
+    "navigationInputTokens": true,
+    "toolCalls": true,
+    "firstRelevantTime": true,
+    "sourceGrounding": true,
+    "answerCorrectness": true,
+    "groundedSuccessRate": true
+  },
+  "passGate": true,
+  "mvpThresholdsMet": true,
+  "pairs": [
+    {
+      "key": "task-1#1",
+      "taskId": "task-1",
+      "repetition": 1,
+      "baseline": {
+        "inputTokens": 10100,
+        "toolCalls": 20,
+        "searchCalls": 8,
+        "filesOpened": 10,
+        "firstRelevantMs": 9000,
+        "discoverySuccess": true,
+        "sourceGrounded": true,
+        "answerSuccess": true,
+        "success": true
+      },
+      "stellar": {
+        "inputTokens": 4760,
+        "toolCalls": 9,
+        "searchCalls": 1,
+        "filesOpened": 3,
+        "firstRelevantMs": 4200,
+        "discoverySuccess": true,
+        "sourceGrounded": true,
+        "answerSuccess": true,
+        "success": true
+      },
+      "inputTokenReductionPct": 52.87128712871287
+    },
+    {
+      "key": "task-1#2",
+      "taskId": "task-1",
+      "repetition": 2,
+      "baseline": {
+        "inputTokens": 10200,
+        "toolCalls": 20,
+        "searchCalls": 8,
+        "filesOpened": 10,
+        "firstRelevantMs": 9000,
+        "discoverySuccess": true,
+        "sourceGrounded": true,
+        "answerSuccess": true,
+        "success": true
+      },
+      "stellar": {
+        "inputTokens": 4820,
+        "toolCalls": 9,
+        "searchCalls": 1,
+        "filesOpened": 3,
+        "firstRelevantMs": 4200,
+        "discoverySuccess": true,
+        "sourceGrounded": true,
+        "answerSuccess": true,
+        "success": true
+      },
+      "inputTokenReductionPct": 52.74509803921569
+    },
+    {
+      "key": "task-2#1",
+      "taskId": "task-2",
+      "repetition": 1,
+      "baseline": {
+        "inputTokens": 10300,
+        "toolCalls": 20,
+        "searchCalls": 8,
+        "filesOpened": 10,
+        "firstRelevantMs": 9000,
+        "discoverySuccess": true,
+        "sourceGrounded": true,
+        "answerSuccess": true,
+        "success": true
+      },
+      "stellar": {
+        "inputTokens": 4880,
+        "toolCalls": 9,
+        "searchCalls": 1,
+        "filesOpened": 3,
+        "firstRelevantMs": 4200,
+        "discoverySuccess": true,
+        "sourceGrounded": true,
+        "answerSuccess": true,
+        "success": true
+      },
+      "inputTokenReductionPct": 52.62135922330097
+    },
+    {
+      "key": "task-2#2",
+      "taskId": "task-2",
+      "repetition": 2,
+      "baseline": {
+        "inputTokens": 10400,
+        "toolCalls": 20,
+        "searchCalls": 8,
+        "filesOpened": 10,
+        "firstRelevantMs": 9000,
+        "discoverySuccess": true,
+        "sourceGrounded": true,
+        "answerSuccess": true,
+        "success": true
+      },
+      "stellar": {
+        "inputTokens": 4940,
+        "toolCalls": 9,
+        "searchCalls": 1,
+        "filesOpened": 3,
+        "firstRelevantMs": 4200,
+        "discoverySuccess": true,
+        "sourceGrounded": true,
+        "answerSuccess": true,
+        "success": true
+      },
+      "inputTokenReductionPct": 52.5
+    },
+    {
+      "key": "task-3#1",
+      "taskId": "task-3",
+      "repetition": 1,
+      "baseline": {
+        "inputTokens": 10500,
+        "toolCalls": 20,
+        "searchCalls": 8,
+        "filesOpened": 10,
+        "firstRelevantMs": 9000,
+        "discoverySuccess": true,
+        "sourceGrounded": true,
+        "answerSuccess": true,
+        "success": true
+      },
+      "stellar": {
+        "inputTokens": 5000,
+        "toolCalls": 9,
+        "searchCalls": 1,
+        "filesOpened": 3,
+        "firstRelevantMs": 4200,
+        "discoverySuccess": true,
+        "sourceGrounded": true,
+        "answerSuccess": true,
+        "success": true
+      },
+      "inputTokenReductionPct": 52.38095238095239
+    },
+    {
+      "key": "task-3#2",
+      "taskId": "task-3",
+      "repetition": 2,
+      "baseline": {
+        "inputTokens": 10600,
+        "toolCalls": 20,
+        "searchCalls": 8,
+        "filesOpened": 10,
+        "firstRelevantMs": 9000,
+        "discoverySuccess": true,
+        "sourceGrounded": true,
+        "answerSuccess": true,
+        "success": true
+      },
+      "stellar": {
+        "inputTokens": 5060,
+        "toolCalls": 9,
+        "searchCalls": 1,
+        "filesOpened": 3,
+        "firstRelevantMs": 4200,
+        "discoverySuccess": true,
+        "sourceGrounded": true,
+        "answerSuccess": true,
+        "success": true
+      },
+      "inputTokenReductionPct": 52.264150943396224
+    }
+  ]
+}

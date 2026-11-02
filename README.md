@@ -1,8 +1,8 @@
-# StellarCode v0.5.1
+# StellarCode v0.5.2
 
 **A living map of your codebases for humans and AI agents.**
 
-v0.5 changed StellarCode from a per-repository web server into a **multi-project local knowledge service**. v0.5.1 adds a controlled Claude/Codex A/B harness that measures whether StellarCode actually saves input tokens without reducing correctness. Run `stellar init` once in each repository, then use one global UI/MCP service from anywhere.
+v0.5 changed StellarCode from a per-repository web server into a **multi-project local knowledge service**. v0.5.1 added a controlled Claude/Codex A/B harness. v0.5.2 makes that benchmark source-grounded: StellarCode locates code, but the agent must read repository source before an answer counts as correct. Run `stellar init` once in each repository, then use one global UI/MCP service from anywhere.
 
 ## Requirements
 
@@ -65,6 +65,7 @@ From inside a registered repo:
 ```bash
 stellar search login
 stellar context "modify the login flow"
+stellar source src/actions/auth.ts --lines 47:116
 stellar architecture
 ```
 
@@ -96,6 +97,7 @@ v0.5 exposes:
 - `stellar_impact`
 - `stellar_context`
 - `stellar_architecture`
+- `stellar_source`
 
 AI agents can first call `stellar_projects`, then pass `project` or `projectId` to another tool. If MCP is launched for a specific repo, that repo may still be used as the default.
 
@@ -154,9 +156,9 @@ stellar benchmark run --agent claude --mode both --repeat 3
 
 Each run produces `baseline.jsonl`, `stellar.jsonl`, `manifest.json`, `report.json`, and a standalone `report.html` under `.stellar/benchmark/runs/`.
 
-The report refuses to claim success unless correctness is answer-key verified. Default evidence gates are >=20% overall input-token reduction, >=50% navigation-token reduction, >=40% tool-call reduction, >=40% faster first relevant file, and no >5-point correctness regression.
+The report now separates **Discovery**, **Source Grounding**, **Answer Correctness**, and **Grounded Success**. A final answer that names the right file but never reads the source fails the benchmark. Default evidence gates are >=20% overall input-token reduction, >=50% navigation-token reduction, >=40% tool-call reduction, >=40% faster first relevant source read, >=95% Stellar source-grounding rate, and no >5-point answer/grounded-success regression.
 
-See `docs/V0.5.1_TOKEN_BENCHMARK.md`.
+See `docs/V0.5.2_SOURCE_GROUNDED_BENCHMARK.md`.
 
 ## Storage
 
@@ -205,6 +207,7 @@ stellar symbol <query> [--project NAME_OR_ID]
 stellar related <target> [--project NAME_OR_ID]
 stellar impact <target> [--project NAME_OR_ID]
 stellar context <task> [--project NAME_OR_ID]
+stellar source <path> [--lines START:END] [--project NAME_OR_ID]
 stellar architecture [--project NAME_OR_ID]
 stellar remove <project> [--purge]
 stellar gc [--purge-orphaned]
@@ -216,7 +219,7 @@ stellar benchmark run --agent codex|claude --mode both --repeat 3
 stellar benchmark report baseline.jsonl stellar.jsonl --html report.html
 ```
 
-## v0.5/v0.5.1 design constraints
+## v0.5-v0.5.2 design constraints
 
 1. **One global service, not one watcher/server per repo.**
 2. **Lazy synchronization instead of always-on watchers.**
@@ -225,6 +228,7 @@ stellar benchmark report baseline.jsonl stellar.jsonl --html report.html
 5. **No Home-directory crawling.** Only registered paths are checked.
 6. **Repository remains source of truth.** StellarCode stores metadata/graph knowledge, not source snapshots.
 7. **Conservative deletion.** Rebuildable cache may be reclaimed; durable indexes require explicit purge.
+8. **Source-grounded answers.** Stellar metadata narrows where to read; repository source remains the evidence for implementation claims.
 
 ## Validation
 
@@ -240,6 +244,8 @@ See:
 - `docs/V0.5_ARCHITECTURE.md`
 - `docs/IMPLEMENTATION_STATUS_V0.5.md`
 - `docs/V0.5.1_TOKEN_BENCHMARK.md`
+- `docs/V0.5.2_SOURCE_GROUNDED_BENCHMARK.md`
+- `docs/V0.5.2_RELEASE.md`
 - `docs/IMPLEMENTATION_STATUS_V0.5.1.md`
 - `docs/V0.5.1_RELEASE.md`
 - `docs/BENCHMARK_TASK_AUTHORING.md`

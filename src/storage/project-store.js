@@ -1,8 +1,18 @@
 import path from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
 import { openDatabase, migrateProject } from './db.js'
 import { registerProject } from './registry.js'
 
 export async function openProjectStore(root, metadata, options = {}) {
+  const snapshotFile=process.env.STELLAR_BENCH_INDEX_FILE
+  if(snapshotFile) {
+    const db=new DatabaseSync(snapshotFile,{readOnly:true})
+    try {
+      const meta=projectMeta(db)
+      if(meta?.project_id!==metadata.projectId) throw new Error('Benchmark snapshot project identity mismatch')
+      return {db,registration:{project_id:metadata.projectId,repo_path:root,db_path:snapshotFile}}
+    } catch(error) {db.close();throw error}
+  }
   const registration = await registerProject(root, metadata, options)
   const db = await openDatabase(registration.db_path)
   migrateProject(db)
