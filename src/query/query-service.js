@@ -2,6 +2,8 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { withFreshProjectDb } from '../core/runtime.js'
 import { loadArchitectureHints, classifyArchitecture, architectureRank, hierarchyForPath, summarizeHierarchy } from './architecture.js'
+import { classifyIntent } from './intent.js'
+import { stemTerm, termMatch, termWeights, weightedScore, termCoverage, rankFileSymbols, focusRange, overlapLines, subtractTaken, allocateBudget, densestWindow, identifierPattern } from './precision.js'
 
 const QUERY_CONCEPTS = [
   { patterns: ['登入', '登錄', '登录', '登入流程', '登入功能', '登入頁'], terms: ['login', 'signin', 'sign-in', 'auth', 'authentication'] },
@@ -29,9 +31,11 @@ const STOP_WORDS = new Set([
   'find','show','tell','locate','modify','change','fix','file','files','code','project','repo','repository','flow',
   'please','where','which','what','how','need','should','first','look','at','about',
   // Task-instruction vocabulary: describes the requested answer, not the code.
-  'explain','identify','summarize','describe','implementation','implementations','responsibility','responsibilities',
+  'explain','identify','summarize','describe','implementation','implementations','implemented','responsibility','responsibilities',
   'each','why','their','its','it','they','them','without','making','directly','if','into','through','before','after',
-  'when','then','also','both','any','all','is','was','be','do','does','used','using'
+  'when','then','also','both','any','all','is','was','be','do','does','used','using',
+  'direct','relationship','relationships','responsible','participating','production','scope',
+  'area','areas','perform','changes'
 ])
 
 // Imperative verbs that open an instruction sentence ("List the files…", "Trace how…").
@@ -47,7 +51,9 @@ function asciiTokens(query) {
   for (const sentence of String(query ?? '').toLowerCase().split(/[.?!;:\n]+(?:\s|$)/)) {
     const words = (sentence.match(/[a-z0-9_$.-]+/g) ?? []).map(token => token.replace(/^[.-]+|[.-]+$/g, ''))
     if (words.length && LEADING_IMPERATIVES.has(words[0])) words.shift()
-    tokens.push(...words.filter(token => token.length > 1 && !STOP_WORDS.has(token)))
+    // "end-of-cleaning" and "predator-dodge" are phrases; match their parts, not the compound.
+    const parts = words.flatMap(token => /^[a-z]+(?:-[a-z]+)+$/.test(token) ? token.split('-') : [token])
+    tokens.push(...parts.filter(token => token.length > 1 && !STOP_WORDS.has(token)).map(stemTerm))
   }
   return tokens
 }
@@ -76,37 +82,8 @@ function queryProfile(query) {
   }
 }
 
-function taskIntent(query) {
-  const raw = String(query ?? '')
-  if (/impact|affected|affect|depend(?:s|ency|encies)?|break|影響|影响|依賴|依赖/i.test(raw)) return 'impact'
-  if (/trace|flow|through|from\s+.+\s+to|流程|追蹤|追踪/i.test(raw)) return 'flow'
-  // Editing intent must be an action request. Descriptive nouns/participles such as
-  // "implementation" or "implemented" must not turn a navigation question into editing-prep.
-  if (/\b(?:modify|change|add|implement|refactor)\b|修改|新增|實作|实现|重構|重构/i.test(raw)) return 'editing-prep'
-  return 'navigation'
-}
-
 function escapeRegex(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
-function symbolPriority(symbol, intent) {
-  const kind=String(symbol?.kind??'')
-  if(kind==='method'||kind==='function') return intent==='flow'||intent==='editing-prep'?4:3
-  if(kind==='class') return 2
-  if(kind==='constant') return 1
-  return 0
-}
-
-function compareSymbols(a,b,qTokens,intent) {
-  const scoreA=scoreText(`${a.name} ${a.qualified_name}`,qTokens)
-  const scoreB=scoreText(`${b.name} ${b.qualified_name}`,qTokens)
-  if(scoreA!==scoreB)return scoreB-scoreA
-  const priority=symbolPriority(b,intent)-symbolPriority(a,intent)
-  if(priority)return priority
-  const spanA=Math.max(0,Number(a.end_line)-Number(a.start_line))
-  const spanB=Math.max(0,Number(b.end_line)-Number(b.start_line))
-  return spanA-spanB || Number(a.start_line)-Number(b.start_line)
 }
 
 function scoreText(text, queryTokens) {
@@ -281,6 +258,42 @@ export async function impact(projectPath, target, options = {}) {
   }, options)
 }
 
+// Share of the top primary score a file needs to stay a primary target. Weak lexical
+// coincidences ("scene", "start") must not take a target slot and source budget.
+const PRIMARY_RELATIVE_CUTOFF = { navigation: 0.5, flow: 0.35, impact: 0.35, 'editing-prep': 0.35 }
+const EVIDENCE_LIMITS = { flow: 3, impact: 2, 'editing-prep': 2, navigation: 1 }
+const EVIDENCE_RELATIVE_CUTOFF = 0.6
+const UNLINKED_FLOW_CUTOFF = 0.6
+const CALLABLE_KINDS = new Set(['function', 'method', 'class'])
+
+function referencesFrom(db, fileId) {
+  return db.prepare(`SELECT e.metadata_json,s.symbol_id,s.name,s.qualified_name,s.kind,s.start_line,s.end_line,f.file_id,f.path,f.line_count,f.size_bytes,f.is_test,f.importance
+    FROM edges e JOIN symbols s ON s.symbol_id=e.target_id JOIN files f ON f.file_id=s.file_id
+    WHERE e.source_id=? AND e.edge_type='references' ORDER BY f.file_id,s.start_line,s.qualified_name`).all(fileId).map(ref => {
+    let metadata = {}
+    try { metadata = JSON.parse(ref.metadata_json || '{}') } catch {}
+    return { ...ref, localName: metadata.localName ?? metadata.importedName ?? ref.name, typeOnly: metadata.importKind === 'type' }
+  }).filter(ref => ref.localName && ref.file_id !== fileId)
+}
+
+function referencesInto(db, fileId) {
+  return db.prepare(`SELECT e.source_id AS consumer_id,e.metadata_json,s.name,s.qualified_name,s.kind
+    FROM edges e JOIN symbols s ON s.symbol_id=e.target_id
+    WHERE s.file_id=? AND e.edge_type='references' AND e.source_id<>? ORDER BY e.source_id,s.start_line,s.qualified_name`).all(fileId, fileId).map(ref => {
+    let metadata = {}
+    try { metadata = JSON.parse(ref.metadata_json || '{}') } catch {}
+    return { ...ref, localName: metadata.localName ?? metadata.importedName ?? ref.name }
+  })
+}
+
+function usesBinding(text, localName) {
+  return identifierPattern(localName).test(text)
+}
+
+function nonImportText(lines) {
+  return lines.filter(line => !/^\s*import\b/.test(line)).join('\n')
+}
+
 export async function contextForTask(projectPath, task, options = {}) {
   const compact=Boolean(options.compact)
   const depth=Math.max(0,Math.min(2,Number(options.depth??0)))
@@ -290,10 +303,11 @@ export async function contextForTask(projectPath, task, options = {}) {
   return withFreshProjectDb(projectPath, async ({ db, root }) => {
     const profile = queryProfile(task)
     const qTokens = profile.terms
-    const intent = taskIntent(task)
+    const intentDetail = classifyIntent(task)
+    const intent = intentDetail.intent
     const hints = await loadArchitectureHints(root)
     const files = db.prepare('SELECT * FROM files').all()
-    const symbols = db.prepare('SELECT file_id,name,qualified_name,start_line,end_line,kind FROM symbols').all()
+    const symbols = db.prepare('SELECT file_id,name,qualified_name,start_line,end_line,kind FROM symbols ORDER BY file_id,start_line,qualified_name').all()
     const symbolsByFile = new Map()
     for (const symbol of symbols) {
       if (!symbolsByFile.has(symbol.file_id)) symbolsByFile.set(symbol.file_id, [])
@@ -305,8 +319,47 @@ export async function contextForTask(projectPath, task, options = {}) {
       architecture: classifyArchitecture(file, hints),
       ownSymbols: symbolsByFile.get(file.file_id) ?? []
     }))
+    const documentOf = v => `${v.file.path} ${v.file.summary ?? ''} ${v.ownSymbols.map(symbol => symbol.name).join(' ')}`
+    const weights = termWeights(qTokens, enriched.map(documentOf))
+    const shapeWords = new Set(intentDetail.signalWords.map(stemTerm))
+    for (const term of qTokens) if (shapeWords.has(term)) weights.set(term, weights.get(term) * 0.3)
+    const fileEvidence = v => {
+      if (!qTokens.length) return 0
+      // A top-level symbol (or file) named exactly like a query term is a module-level owner
+      // and scores as exact; a method named like a common verb ("finish") does not.
+      const symbolScore = Math.max(0, ...v.ownSymbols.map(symbol => symbol.name === symbol.qualified_name
+        ? weightedScore(symbol.name, qTokens, weights)
+        : weightedScore(`${symbol.name} ${symbol.qualified_name}`, qTokens, weights)))
+      const basename = path.posix.basename(v.file.path).replace(/\.[^.]+$/, '')
+      const lexical = weightedScore(`${v.file.path} ${v.file.summary ?? ''}`, qTokens, weights) + weightedScore(basename, qTokens, weights) * 0.5
+      if (lexical <= 0 && symbolScore <= 0) return 0
+      // Distinct rare terms matter more than one common term repeated across path, summary and symbols.
+      // Coverage uses path and summary only; counting every symbol name would favor the largest files.
+      return lexical * 2 + symbolScore * 3 + termCoverage(`${v.file.path} ${v.file.summary ?? ''}`, qTokens, weights).covered * 6
+    }
+
+    const sourceCache = new Map()
+    const sourceLines = async filePath => {
+      if (!sourceCache.has(filePath)) {
+        let lines = null
+        const absolute = path.resolve(root, filePath)
+        const relative = path.relative(root, absolute)
+        if (!relative.startsWith('..') && !path.isAbsolute(relative)) {
+          try { lines = (await fs.readFile(absolute, 'utf8')).split(/\r?\n/) } catch {}
+        }
+        sourceCache.set(filePath, lines)
+      }
+      return sourceCache.get(filePath)
+    }
+    const referenceCache = new Map()
+    const refsFrom = fileId => {
+      if (!referenceCache.has(fileId)) referenceCache.set(fileId, referencesFrom(db, fileId))
+      return referenceCache.get(fileId)
+    }
 
     let primaryRanked = []
+    let rankedById = new Map()
+    const flowCallees = []
     if (profile.architectureOverview) {
       const viable = enriched.filter(v => !['test', 'docs', 'config'].includes(v.architecture.role))
       const entries = viable
@@ -330,9 +383,7 @@ export async function contextForTask(projectPath, task, options = {}) {
     } else {
       const startupNavigation = intent === 'navigation' && profile.concepts.includes('startup')
       const ranked = enriched.map(v => {
-        const symbolScore = qTokens.length ? Math.max(0, ...v.ownSymbols.map(symbol => scoreText(`${symbol.name} ${symbol.qualified_name}`, qTokens))) : 0
-        const lexical = qTokens.length ? scoreText(`${v.file.path} ${v.file.summary ?? ''}`, qTokens) : 0
-        const evidence = lexical * 2 + symbolScore * 3
+        const evidence = fileEvidence(v)
         const recent = v.file.git_activity > 0 ? Math.min(1, v.file.git_activity / 20) : 0
         const actionBoundary=/(^|\/)actions?\//.test(v.file.path)?20:0
         const startupEntry = startupNavigation
@@ -340,7 +391,40 @@ export async function contextForTask(projectPath, task, options = {}) {
           : 0
         return { ...v, evidence, startupEntry, score: evidence + (evidence > 0 ? v.file.importance * 2 + recent + actionBoundary : 0) + startupEntry + (v.file.is_test ? -1 : 0) }
       }).filter(v => v.evidence > 0 || v.startupEntry > 0).sort((a, b) => b.score - a.score || a.file.path.localeCompare(b.file.path))
-      primaryRanked = ranked.filter(v => !v.file.is_test && !/(^|\/)types?(\/|$)/.test(v.file.path)).slice(0, Math.min(3, limit)).map(v => ({ ...v, category: 'primary' }))
+
+      // Flow, impact and editing tasks span modules. A candidate whose query-relevant
+      // callable is imported AND used by another candidate forms part of the behavior
+      // chain; both ends gain rank. A generic neighbor that merely shares a common term
+      // gains nothing, so it cannot displace the connected file.
+      if (intent !== 'navigation') {
+        const pool = ranked.filter(v => !v.file.is_test).slice(0, 8)
+        const poolById = new Map(pool.map(v => [v.file.file_id, v]))
+        for (const source of pool) {
+          const lines = await sourceLines(source.file.path)
+          if (!lines) continue
+          const text = nonImportText(lines)
+          for (const ref of refsFrom(source.file.file_id)) {
+            const target = poolById.get(ref.file_id)
+            // Interfaces/types are contracts an edit or impact must respect, but not flow steps.
+            if (!target || ((!CALLABLE_KINDS.has(ref.kind) || ref.typeOnly) && intent === 'flow')) continue
+            if (weightedScore(ref.name, qTokens, weights) <= 0 || !usesBinding(text, ref.localName)) continue
+            const link = Math.min(source.score, target.score) * 0.5
+            flowCallees.push({ caller: source.file.file_id, callee: target.file.file_id, range: [Number(ref.start_line), Number(ref.end_line)] })
+            if (link > (target.flowLink ?? 0)) { target.flowLink = link; target.linkedFrom = `${source.file.path} uses ${ref.name}` }
+            if (link > (source.flowLink ?? 0)) { source.flowLink = link; source.linkedFrom = `uses ${ref.name} from ${ref.path}` }
+          }
+        }
+        for (const v of pool) if (v.flowLink) v.score += v.flowLink
+        ranked.sort((a, b) => b.score - a.score || a.file.path.localeCompare(b.file.path))
+      }
+      rankedById = new Map(ranked.map(v => [v.file.file_id, v]))
+
+      const viable = ranked.filter(v => !v.file.is_test && !/(^|\/)types?(\/|$)/.test(v.file.path))
+      const topScore = viable[0]?.score ?? 0
+      primaryRanked = viable
+        // In a flow, a file outside the linked behavior chain must be a strong match on its own.
+        .filter((v, index) => index === 0 || v.score >= topScore * (intent === 'flow' && !v.flowLink && viable[0].flowLink ? UNLINKED_FLOW_CUTOFF : PRIMARY_RELATIVE_CUTOFF[intent]))
+        .slice(0, Math.min(3, limit)).map(v => ({ ...v, category: 'primary' }))
       // A server action imported by a client-side flow is a concrete behavior boundary.
       // Prefer it over lower-ranked configuration files without exposing a full neighbor set.
       const selectedIds=new Set(primaryRanked.map(v=>v.file.file_id))
@@ -356,6 +440,7 @@ export async function contextForTask(projectPath, task, options = {}) {
     }
 
     const selected = new Map(primaryRanked.map(v => [v.file.file_id, v]))
+    const primaryIds = new Set(primaryRanked.map(v => v.file.file_id))
     const relatedCandidates = new Map()
     for (const primary of primaryRanked) {
       if(compact && depth===0) break
@@ -397,17 +482,49 @@ export async function contextForTask(projectPath, task, options = {}) {
       }
     }
 
+    // Symbol relevance is decided per file, after file relevance: the best range inside
+    // a correct file is the query-matching behavior that uses relevant imported bindings,
+    // not merely the first or the largest matching declaration.
+    const constructionQuery = /\bconstruct|\binstantiat/i.test(profile.raw)
+    const relationQuery = constructionQuery || /\bconsum|\bintegrat|\bappl(?:y|ies|ied)\b|\bwired?\b/i.test(profile.raw)
+    const bindingRelevance = ref => {
+      const primary = primaryIds.has(ref.file_id)
+      // A config constant named after the domain (RUSH, CLEANING) is read by most methods
+      // of a domain file; it says nothing about which behavior the flow/impact goes through.
+      if (!CALLABLE_KINDS.has(ref.kind) && !primary && (intent === 'flow' || intent === 'impact')) return 0
+      if (ref.typeOnly && intent === 'flow') return 0
+      let relevance = weightedScore(ref.name, qTokens, weights) / 3 + (primary ? 1.5 : 0)
+      if (!CALLABLE_KINDS.has(ref.kind) && intent !== 'navigation') relevance *= 0.5
+      return relevance
+    }
+    const choices = new Map()
+    const chooseSymbols = async v => {
+      if (!choices.has(v.file.file_id)) {
+        const lines = qTokens.length ? await sourceLines(v.file.path) : null
+        const bindings = v.file.is_test ? [] : refsFrom(v.file.file_id).filter(ref => !ref.is_test).map(ref => ({ ...ref, relevance: bindingRelevance(ref), primary: primaryIds.has(ref.file_id) }))
+        const ranked = qTokens.length ? rankFileSymbols({ symbols: v.ownSymbols, lines, terms: qTokens, weights, intent, bindings, relationQuery, constructionQuery, maxLines }) : []
+        choices.set(v.file.file_id, { ranked, best: ranked[0] ?? null, bindings, lines })
+      }
+      return choices.get(v.file.file_id)
+    }
+
+    const values = [...selected.values()].sort((a, b) => b.score - a.score)
+    for (const v of values) await chooseSymbols(v)
+
     const makeEntry = v => {
+      const choice = choices.get(v.file.file_id)
+      const best = choice?.best
       const matchingSymbols = qTokens.length ? v.ownSymbols.filter(symbol => scoreText(`${symbol.name} ${symbol.qualified_name}`, qTokens) > 0) : []
-      const rankedSymbols=[...matchingSymbols].sort((a,b)=>compareSymbols(a,b,qTokens,intent))
-      const symbolEvidence = rankedSymbols
-        .slice(0, 1)
-        .map(symbol => ({ name: symbol.name, qualifiedName: symbol.qualified_name, kind: symbol.kind, lines: [symbol.start_line, symbol.end_line] }))
-      const exactLines = rankedSymbols.length
-        ? [rankedSymbols[0].start_line, rankedSymbols[0].end_line]
-        : undefined
+      const symbolEvidence = best ? [{ name: best.symbol.name, qualifiedName: best.symbol.qualified_name, kind: best.symbol.kind, lines: [best.symbol.start_line, best.symbol.end_line] }] : []
+      const exactLines = best ? [best.symbol.start_line, best.symbol.end_line] : undefined
       const fileLines = Math.max(1, Number(v.file.line_count ?? 1))
       let readLines=exactLines?[Math.max(1,exactLines[0]-6),Math.min(fileLines,exactLines[1]+8)]:[1,Math.min(fileLines,80)]
+      // A long symbol is narrowed to the window where the relevant bindings and terms are used.
+      // The top-ranked target keeps its whole symbol (up to maxLines) as the anchor.
+      if(best&&choice.lines&&(v!==values[0]||best.symbol.kind==='class')) {
+        const focused=focusRange([Number(best.symbol.start_line),Number(best.symbol.end_line)],choice.lines,{names:best.usedBindings.filter(binding=>binding.primary).map(binding=>binding.localName),terms:qTokens,weights})
+        if(focused[0]!==Number(best.symbol.start_line)||focused[1]!==Number(best.symbol.end_line))readLines=focused
+      }
       readLines[1]=Math.min(readLines[1],readLines[0]+maxLines-1)
       const estimatedLineBytes=Math.max(1,Math.ceil(Number(v.file.size_bytes??0)/fileLines))
       readLines[1]=Math.min(readLines[1],readLines[0]+Math.max(1,Math.floor(maxBytes/estimatedLineBytes))-1)
@@ -416,6 +533,13 @@ export async function contextForTask(projectPath, task, options = {}) {
       else if (matchingSymbols.length) reason = `Matches symbols: ${matchingSymbols.slice(0, 3).map(symbol => symbol.qualified_name).join(', ')}`
       else if (v.via) reason = `${v.via} relation to a primary match`
       else reason = `Matches query terms: ${qTokens.filter(term => scoreText(`${v.file.path} ${v.file.summary ?? ''}`, [term]) > 0).slice(0, 4).join(', ') || 'symbol match'}`
+      const why = []
+      if (v.startupEntry > 0) why.push('application entry')
+      const nameTerms = best ? qTokens.filter(term => termMatch(best.symbol.name, term)) : []
+      if (nameTerms.length) why.push(`name matches ${nameTerms.slice(0, 3).join(', ')}`)
+      if (best?.usedBindings.length) why.push(`uses ${best.usedBindings.slice(0, 2).map(binding => binding.name).join(', ')}`)
+      else if (best?.bodyTerms.length) why.push(`body mentions ${best.bodyTerms.slice(0, 3).join(', ')}`)
+      if (v.linkedFrom && !best?.usedBindings.length) why.push(v.linkedFrom)
       return {
         path: v.file.path,
         score:v.score,
@@ -423,6 +547,7 @@ export async function contextForTask(projectPath, task, options = {}) {
         ...(exactLines ? { lines: exactLines } : {}),
         ...(symbolEvidence.length ? { symbols: symbolEvidence } : {}),
         reason,
+        precisionReason: why.join('; ') || reason,
         ...(v.via ? { relation:v.via } : {}),
         ...(v.direction ? { direction:v.direction } : {}),
         read: {
@@ -433,104 +558,176 @@ export async function contextForTask(projectPath, task, options = {}) {
       }
     }
 
-    const values = [...selected.values()].sort((a, b) => b.score - a.score)
     const meta = db.prepare('SELECT graph_version FROM project_meta LIMIT 1').get()
     const primary = values.filter(v => v.category === 'primary').slice(0, 3).map(makeEntry)
     const relatedFiles=(compact&&depth===0)?[]:values.filter(v=>v.category==='related').slice(0,4).map(makeEntry)
     const tests=compact?[]:values.filter(v=>v.category==='tests').slice(0,3).map(makeEntry)
     if(compact) {
-      const targets=primary.slice(0,Math.min(3,limit)).map(v=>({path:v.path,lines:v.read.lines,symbol:v.symbols?.[0]?.qualifiedName??null,confidence:primary.length?Number((v.score/(primary[0].score||1)).toFixed(2)):0}))
-      const targetPaths=new Set(targets.map(target=>target.path))
-      const relatedHints=depth>0?relatedFiles.slice(0,Math.max(0,limit-targets.length)).map(v=>({path:v.path,lines:v.read.lines,symbol:v.symbols?.[0]?.qualifiedName??null,relation:v.relation??'imports',direction:v.direction??'outgoing'})):[]
-      const evidenceLimit=depth>0?Math.min(intent==='flow'?2:(intent==='editing-prep'||intent==='navigation'?1:0),Math.max(0,limit-targets.length)):0
-      const evidenceCandidates=[]
-      for(const primaryValue of primaryRanked) {
-        let primaryLines=[]
-        try {
-          primaryLines=(await fs.readFile(path.resolve(root,primaryValue.file.path),'utf8')).split(/\r?\n/)
-        } catch { continue }
-        const refs=db.prepare(`SELECT e.metadata_json,s.symbol_id,s.name,s.qualified_name,s.kind,s.start_line,s.end_line,f.file_id,f.path,f.line_count,f.size_bytes,f.is_test,f.importance
-          FROM edges e JOIN symbols s ON s.symbol_id=e.target_id JOIN files f ON f.file_id=s.file_id
-          WHERE e.source_id=? AND e.edge_type='references'`).all(primaryValue.file.file_id)
-        for(const ref of refs) {
-          if(ref.is_test || ref.file_id===primaryValue.file.file_id)continue
-          let metadata={};try{metadata=JSON.parse(ref.metadata_json||'{}')}catch{}
-          const localName=metadata.localName??metadata.importedName??ref.name
-          if(!localName)continue
-          const bindingRe=new RegExp(`\\b${escapeRegex(localName)}\\b`)
-          const usageSymbols=(primaryValue.ownSymbols??[]).filter(symbol=>{
-            const body=primaryLines.slice(Math.max(0,Number(symbol.start_line)-1),Number(symbol.end_line)).join('\n')
-            return bindingRe.test(body)
-          })
-          if(!usageSymbols.length)continue
-          const usageSymbol=[...usageSymbols].sort((a,b)=>compareSymbols(a,b,qTokens,intent))[0]
-          const usageText=primaryLines.slice(Math.max(0,Number(usageSymbol.start_line)-1),Number(usageSymbol.end_line)).join('\n')
-          const lexical=scoreText(`${ref.path} ${ref.name} ${ref.qualified_name}`,qTokens)
-          if(intent==='navigation' && lexical<=0)continue
-          const usageLexical=scoreText(`${usageSymbol.name} ${usageSymbol.qualified_name}`,qTokens)
-          const callable=['function','method','class'].includes(ref.kind)?8:0
-          const callLike=new RegExp(`\\b${escapeRegex(localName)}\\s*\\(`).test(usageText)?6:0
-          const score=lexical*4+usageLexical*8+callable+callLike+symbolPriority(usageSymbol,intent)*2+Number(ref.importance??0)
-          evidenceCandidates.push({...ref,localName,usageSymbol:usageSymbol.qualified_name,score})
+      // In a flow, a primary file reached only as the callee of another primary file's
+      // used binding is reported as relatedEvidence from that caller: the caller is where
+      // the behavior happens, the callee range is the precise implementation it reaches.
+      const calleeIds=new Set()
+      const callerIds=new Set()
+      if(intent==='flow'&&depth>0) {
+        const rankOf=id=>primaryRanked.findIndex(v=>v.file.file_id===id)
+        for(const {caller,callee,range} of flowCallees) {
+          if(caller===callee||rankOf(caller)<0||rankOf(callee)<0||calleeIds.has(caller)||callerIds.has(callee))continue
+          // Only when the callee's own most relevant range is the referenced symbol; a callee
+          // whose best evidence lies elsewhere is an independent primary target.
+          const best=choices.get(callee)?.best?.symbol
+          if(!best||Number(best.start_line)<range[0]||Number(best.end_line)>range[1])continue
+          const mutual=flowCallees.some(link=>link.caller===callee&&link.callee===caller)
+          if(mutual&&rankOf(callee)<rankOf(caller))continue
+          calleeIds.add(callee)
+          callerIds.add(caller)
         }
       }
-      evidenceCandidates.sort((a,b)=>b.score-a.score||a.path.localeCompare(b.path)||a.start_line-b.start_line)
+      const kept=primary.filter(v=>!calleeIds.has(v.path))
+      const targets=kept.slice(0,Math.min(3,limit)).map(v=>({path:v.path,lines:v.read.lines,symbol:v.symbols?.[0]?.qualifiedName??null,confidence:Number((v.score/(kept[0].score||1)).toFixed(2)),reason:v.precisionReason}))
+      const targetPaths=new Set(targets.map(target=>target.path))
+      const relatedHints=depth>0?relatedFiles.filter(v=>!targetPaths.has(v.path)).slice(0,Math.max(0,limit-targets.length)).map(v=>({path:v.path,lines:v.read.lines,symbol:v.symbols?.[0]?.qualifiedName??null,relation:v.relation??'imports',direction:v.direction??'outgoing'})):[]
+      const evidenceLimit=depth>0?Math.min(EVIDENCE_LIMITS[intent]??1,Math.max(0,limit-targets.length)):0
+      const evidenceCandidates=[]
+      if(evidenceLimit>0) for(const primaryValue of primaryRanked.filter(v=>!calleeIds.has(v.file.file_id))) {
+        const choice=await chooseSymbols(primaryValue)
+        const primaryLines=choice.lines ?? await sourceLines(primaryValue.file.path)
+        if(!primaryLines)continue
+        const anchor=choice.best?.symbol
+        const rankIndex=symbol=>choice.ranked.findIndex(entry=>entry.symbol===symbol)
+        const bodyOf=symbol=>primaryLines.slice(Math.max(0,Number(symbol.start_line)-1),Number(symbol.end_line)).join('\n')
+        // Outgoing: an imported symbol whose binding is used inside the relevant behavior.
+        for(const ref of choice.bindings) {
+          if(ref.typeOnly&&intent!=='editing-prep')continue
+          const usageSymbols=primaryValue.ownSymbols.filter(symbol=>usesBinding(bodyOf(symbol),ref.localName))
+          if(!usageSymbols.length)continue
+          const lexical=weightedScore(`${ref.name} ${ref.qualified_name}`,qTokens,weights)
+          const fileLexical=weightedScore(ref.path,qTokens,weights)
+          if(intent==='navigation' && lexical+fileLexical<=0)continue
+          const preciseAnchor=anchor&&Number(anchor.end_line)-Number(anchor.start_line)+1<=maxLines/2
+          const inAnchor=preciseAnchor?usageSymbols.some(symbol=>Number(symbol.start_line)<=Number(anchor.start_line)&&Number(symbol.end_line)>=Number(anchor.end_line)&&(symbol===anchor||symbol.kind!=='class')):false
+          const usageSymbol=[...usageSymbols].sort((a,b)=>{
+            const ra=rankIndex(a),rb=rankIndex(b)
+            return (ra<0?1e9:ra)-(rb<0?1e9:rb)||(Number(a.end_line)-Number(a.start_line))-(Number(b.end_line)-Number(b.start_line))
+          })[0]
+          const usageText=bodyOf(usageSymbol)
+          const usageRank=rankIndex(usageSymbol)
+          const usageRelevant=usageRank>=0&&usageRank<3?4:0
+          const callable=CALLABLE_KINDS.has(ref.kind)?4:0
+          const callLike=new RegExp(`(?<![\\w$])${escapeRegex(ref.localName)}\\s*[.(]`).test(usageText)?4:0
+          const primaryTarget=primaryIds.has(ref.file_id)?8:0
+          // A non-callable import (config constant, enum) is grounded only when the
+          // relevant behavior itself reads it; otherwise it stays a navigation hint.
+          if(!CALLABLE_KINDS.has(ref.kind)&&intent!=='navigation'&&!inAnchor)continue
+          const declaration=!CALLABLE_KINDS.has(ref.kind)&&intent!=='navigation'?6:0
+          const promotedCallee=calleeIds.has(ref.file_id)?10:0
+          // Grounded evidence needs query relevance of its own (symbol, path or file match).
+          // A call made by the anchor with no lexical handle (a UI helper, or the only callee
+          // of a tiny flow function) is kept only as a fallback; see weakEvidence below.
+          const weak=lexical+fileLexical<=0&&!promotedCallee&&!((rankedById.get(ref.file_id)?.evidence??0)>0)
+          if(weak&&!inAnchor)continue
+          const score=lexical*2+fileLexical*0.5+(inAnchor?14:0)+primaryTarget+usageRelevant+callable+callLike+promotedCallee-declaration+Number(ref.importance??0)
+          // A referenced class is a container; narrow it to its best-ranked member when one matches.
+          let range={symbol:ref.qualified_name,start:Number(ref.start_line),end:Number(ref.end_line)}
+          if(ref.kind==='class') {
+            const owner=rankedById.get(ref.file_id)??enriched.find(v=>v.file.file_id===ref.file_id)
+            const inner=owner?(await chooseSymbols(owner)).ranked.find(entry=>entry.symbol!==undefined&&Number(entry.symbol.start_line)>=range.start&&Number(entry.symbol.end_line)<=range.end&&entry.symbol.kind!=='class'):null
+            if(inner)range={symbol:inner.symbol.qualified_name,start:Number(inner.symbol.start_line),end:Number(inner.symbol.end_line)}
+          }
+          evidenceCandidates.push({weak,path:ref.path,symbol:range.symbol,start:range.start,end:range.end,lineCount:Number(ref.line_count||ref.end_line),relation:'imported-symbol',direction:'outgoing',reason:`binding ${ref.localName} used in ${usageSymbol.qualified_name}`,score})
+        }
+        // Impact: consumers whose relevant code uses a symbol exported by the primary file.
+        if(intent==='impact') {
+          const consumers=new Map()
+          for(const ref of referencesInto(db,primaryValue.file.file_id)) {
+            if(primaryIds.has(ref.consumer_id))continue
+            const consumer=enriched.find(v=>v.file.file_id===ref.consumer_id)
+            if(!consumer||consumer.file.is_test)continue
+            const lines=await sourceLines(consumer.file.path)
+            if(!lines)continue
+            const usage=consumer.ownSymbols.filter(symbol=>usesBinding(lines.slice(Math.max(0,Number(symbol.start_line)-1),Number(symbol.end_line)).join('\n'),ref.localName))
+              .sort((a,b)=>weightedScore(b.name,qTokens,weights)-weightedScore(a.name,qTokens,weights)||(Number(a.end_line)-Number(a.start_line))-(Number(b.end_line)-Number(b.start_line)))[0]
+            if(!usage)continue
+            // Consumers are the answer to an impact question: rank them with the strongest edges.
+            const score=30+fileEvidence(consumer)/4+weightedScore(usage.name,qTokens,weights)+(CALLABLE_KINDS.has(ref.kind)?4:0)
+            const existing=consumers.get(consumer.file.file_id)
+            if(!existing||score>existing.score)consumers.set(consumer.file.file_id,{path:consumer.file.path,symbol:usage.qualified_name,start:Number(usage.start_line),end:Number(usage.end_line),lineCount:Number(consumer.file.line_count||usage.end_line),relation:'imported-by',direction:'incoming',reason:`uses ${ref.name} from ${primaryValue.file.path}`,score})
+          }
+          evidenceCandidates.push(...consumers.values())
+        }
+        // Flow: a second behavior range in the same primary file that also uses a relevant
+        // binding (for example where a collaborator is constructed and where it is consumed).
+        if(intent==='flow'&&choice.best) {
+          const second=choice.ranked.slice(1).find(entry=>entry.usedBindings.some(binding=>binding.primary)&&entry.score>=choice.best.score*0.5&&overlapLines([entry.symbol.start_line,entry.symbol.end_line],[anchor.start_line,anchor.end_line])===0&&entry.symbol.kind!=='class')
+          if(second)evidenceCandidates.push({path:primaryValue.file.path,symbol:second.symbol.qualified_name,start:Number(second.symbol.start_line),end:Number(second.symbol.end_line),lineCount:Number(primaryValue.file.line_count||second.symbol.end_line),relation:'same-file-symbol',direction:'internal',reason:`also uses ${second.usedBindings.slice(0,2).map(binding=>binding.name).join(', ')}`,score:12+second.score/4})
+        }
+      }
+      // Weak (anchor-call-only) evidence is used only when nothing lexically relevant exists.
+      if(evidenceCandidates.some(candidate=>!candidate.weak&&candidate.relation==='imported-symbol'))evidenceCandidates.splice(0,evidenceCandidates.length,...evidenceCandidates.filter(candidate=>!candidate.weak))
+      evidenceCandidates.sort((a,b)=>b.score-a.score||a.path.localeCompare(b.path)||a.start-b.start)
+      // Evidence must be competitive with the strongest edge; a long tail of weakly
+      // related imports is what turns grounded context into noise.
+      const evidenceFloor=(evidenceCandidates.find(candidate=>candidate.relation!=='same-file-symbol')?.score??0)*EVIDENCE_RELATIVE_CUTOFF
       const uniqueEvidence=[];const seenEvidence=new Set()
-      if(evidenceLimit>0) for(const candidate of evidenceCandidates) {
-        if(targetPaths.has(candidate.path))continue
-        const key=`${candidate.path}:${candidate.qualified_name}`
+      for(const candidate of evidenceCandidates) {
+        if(uniqueEvidence.length>=evidenceLimit)break
+        if(candidate.relation!=='same-file-symbol'&&candidate.score<evidenceFloor)continue
+        const key=`${candidate.path}:${candidate.symbol}`
         if(seenEvidence.has(key))continue
         seenEvidence.add(key);uniqueEvidence.push(candidate)
-        if(uniqueEvidence.length>=evidenceLimit)break
       }
 
       const relatedEvidence=[]
       const groundedFiles=[]
       if(options.withSource) {
-        let budget=maxBytes
-        const attach=async(target,lineBudget=maxLines)=>{
-          if(budget<=0)return false
-          const absolute=path.resolve(root,target.path)
-          const relative=path.relative(root,absolute)
-          if(relative.startsWith('..')||path.isAbsolute(relative))return false
-          let text
-          try { text=await fs.readFile(absolute,'utf8') } catch { return false }
-          const lines=text.split(/\r?\n/)
-          const start=Math.max(1,target.lines?.[0]??1),requestedEnd=Math.max(start,target.lines?.[1]??start)
-          const end=Math.min(requestedEnd,start+lineBudget-1)
-          const out=[]
-          for(let n=start;n<=Math.min(end,lines.length);n++) {
-            const line=`${n}: ${lines[n-1]}`
-            const cost=Buffer.byteLength(line)+1
-            if(cost>budget)break
-            budget-=cost;out.push(line)
-          }
-          if(!out.length)return false
-          target.lines=[start,start+out.length-1];target.source=out.join('\n')
-          if(!groundedFiles.includes(target.path))groundedFiles.push(target.path)
-          return true
-        }
-        for(const target of targets) await attach(target)
-        let relatedLinesRemaining=80
+        // Collect every requested range first, drop duplicates (same path, overlapping
+        // lines), then split the byte budget fairly instead of first-come-first-served.
+        const requests=[]
+        for(const [index,target] of targets.entries()) requests.push({entry:target,range:target.lines,cap:maxLines,weight:index===0?1.5:1.2,minLines:1})
         for(const candidate of uniqueEvidence) {
-          if(budget<=0||relatedLinesRemaining<=0)break
-          const start=Math.max(1,Number(candidate.start_line)-3)
-          const end=Math.min(Number(candidate.line_count||candidate.end_line),Number(candidate.end_line)+5,start+relatedLinesRemaining-1)
-          const evidence={path:candidate.path,symbol:candidate.qualified_name,lines:[start,end],relation:'imported-symbol',direction:'outgoing'}
-          if(await attach(evidence,relatedLinesRemaining)) {
-            relatedLinesRemaining-=evidence.lines[1]-evidence.lines[0]+1
-            relatedEvidence.push(evidence)
-          }
+          const start=Math.max(1,candidate.start-3)
+          const end=Math.min(candidate.lineCount,candidate.end+5)
+          requests.push({entry:{path:candidate.path,symbol:candidate.symbol,lines:[start,end],relation:candidate.relation,direction:candidate.direction,reason:candidate.reason},range:[start,end],cap:80,weight:1,minLines:3,evidence:true})
+        }
+        const taken=new Map()
+        const prepared=[]
+        for(const request of requests) {
+          const lines=await sourceLines(request.entry.path)
+          if(!lines)continue
+          const start=Math.max(1,request.range?.[0]??1)
+          let range=[start,Math.min(lines.length,Math.max(start,request.range?.[1]??start),start+request.cap-1)]
+          if(range[1]<range[0])continue
+          if(request.evidence)range=focusRange(range,lines,{terms:qTokens,weights})
+          range=subtractTaken(range,taken.get(request.entry.path))
+          if(!range)continue
+          taken.set(request.entry.path,[...(taken.get(request.entry.path)??[]),range])
+          const rendered=[]
+          for(let n=range[0];n<=range[1];n++)rendered.push(`${n}: ${lines[n-1]}`)
+          const costs=rendered.map(line=>Buffer.byteLength(line)+1)
+          const lineScores=[]
+          for(let n=range[0];n<=range[1];n++)lineScores.push(termCoverage(lines[n-1]??'',qTokens,weights).covered)
+          prepared.push({...request,range,rendered,costs,lineScores,desired:costs.reduce((a,b)=>a+b,0)})
+        }
+        const allotted=allocateBudget(prepared,maxBytes)
+        for(const [index,request] of prepared.entries()) {
+          // When the fair share cannot hold the whole range, keep its densest window.
+          const [from,to]=densestWindow(request.costs,request.lineScores,allotted[index])
+          const count=to-from
+          if(count<Math.min(request.minLines,request.costs.length))continue
+          request.entry.lines=[request.range[0]+from,request.range[0]+to-1]
+          request.entry.source=request.rendered.slice(from,to).join('\n')
+          if(request.evidence)relatedEvidence.push(request.entry)
+          if(!groundedFiles.includes(request.entry.path))groundedFiles.push(request.entry.path)
         }
       }
-      const groundedRelatedPaths=new Set(relatedEvidence.map(item=>item.path))
-      const finalRelatedHints=relatedHints.filter(item=>!groundedRelatedPaths.has(item.path))
-      return {targets,relatedEvidence,relatedHints:finalRelatedHints,groundedFiles,intent,depth,more:values.length>primary.length+finalRelatedHints.length+groundedRelatedPaths.size||uniqueEvidence.length>relatedEvidence.length,...(options.withSource?{sourceOfTruth:'targets[].source and relatedEvidence[].source are repository source read live from the working tree'}:{})}
+      const groundedPaths=new Set(groundedFiles)
+      const finalRelatedHints=relatedHints.filter(item=>!groundedPaths.has(item.path))
+      return {targets,relatedEvidence,relatedHints:finalRelatedHints,groundedFiles,intent,intentDetail:{confidence:intentDetail.confidence,signals:intentDetail.signals},depth,more:values.length>primary.length+finalRelatedHints.length+relatedEvidence.length||uniqueEvidence.length>relatedEvidence.length,...(options.withSource?{sourceOfTruth:'targets[].source and relatedEvidence[].source are repository source read live from the working tree'}:{})}
     }
     return {
       query: task,
       graphVersion: meta?.graph_version ?? 0,
       queryProfile: { terms: qTokens, concepts: profile.concepts, architectureOverview: profile.architectureOverview },
+      intent,
       confidence: primary.length ? (profile.architectureOverview ? 'structural' : 'lexical') : 'none',
       ...(primary.length ? {} : { noMatchReason: qTokens.length ? 'No indexed path, summary, or symbol matched the query.' : 'No deterministic query terms could be extracted.' }),
       sourceGrounding: {

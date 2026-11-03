@@ -128,3 +128,40 @@ export async function completedEvidence({input,output,cwd,ok,atMs,via}) {
   }
   return {discovered,reads}
 }
+
+// Unique source bytes read, merged per file so overlapping or repeated reads count once.
+// expectedSourceBytes / nonExpectedSourceBytes split that total by the task's expected
+// files. expectedFileSourcePrecision = expected / (expected + nonExpected) is a benchmark
+// proxy for context focus only: an expected file can contain irrelevant lines and a
+// non-expected file can be useful, so it is not line-level semantic correctness.
+export async function sourceCoverage(root, reads, expectedFiles = []) {
+  const expected=new Set(expectedFiles)
+  const byPath=new Map()
+  for(const read of reads) {
+    const ranges=byPath.get(read.path)??[];ranges.push(read);byPath.set(read.path,ranges)
+  }
+  let uniqueLines=0,uniqueBytes=0,expectedBytes=0
+  for(const [file,ranges] of byPath) {
+    ranges.sort((a,b)=>a.startLine-b.startLine)
+    let active=null
+    const merged=[]
+    for(const range of ranges) {
+      if(!active || range.startLine>active.endLine+1) { if(active)merged.push(active); active={...range} }
+      else if(range.endLine>active.endLine) active.endLine=range.endLine
+    }
+    if(active)merged.push(active)
+    const source=(await fs.readFile(path.join(root,file),'utf8')).split(/\r?\n/)
+    for(const range of merged) {
+      uniqueLines+=range.endLine-range.startLine+1
+      const excerpt=source.slice(range.startLine-1,range.endLine).join('\n')
+      const bytes=Buffer.byteLength(excerpt)+(range.endLine<source.length?1:0)
+      uniqueBytes+=bytes
+      if(expected.has(file))expectedBytes+=bytes
+    }
+  }
+  return {
+    uniqueSourceLinesRead:uniqueLines,uniqueSourceBytesRead:uniqueBytes,
+    expectedSourceBytes:expectedBytes,nonExpectedSourceBytes:uniqueBytes-expectedBytes,
+    expectedFileSourcePrecision:uniqueBytes?expectedBytes/uniqueBytes:null
+  }
+}

@@ -249,3 +249,4 @@ See:
 - `docs/IMPLEMENTATION_STATUS_V0.5.1.md`
 - `docs/V0.5.1_RELEASE.md`
 - `docs/BENCHMARK_TASK_AUTHORING.md`
+- `docs/V0.5.5_CONTEXT_PRECISION.md` — intent model, context precision, benchmark categories, per-task medians, expected-file source precision

@@ -140,10 +140,12 @@ function rebuildEdges(db, aliases = []) {
     try { importedNames = JSON.parse(imp.imported_names || '[]') } catch {}
     for (const item of importedNames) {
       const binding = typeof item === 'string' ? { importedName:item, localName:item, kind:'named' } : item
-      if (!binding?.importedName || binding.kind === 'type' || binding.importedName === '*' || binding.importedName === 'default') continue
+      if (!binding?.importedName || binding.importedName === '*' || binding.importedName === 'default') continue
       const symbol = db.prepare('SELECT symbol_id FROM symbols WHERE file_id=? AND name=? LIMIT 1').get(target.file_id, binding.importedName)
       if (symbol) {
-        insert.run(edgeId(imp.source_file_id, symbol.symbol_id, 'references'), imp.source_file_id, symbol.symbol_id, 'references', 1, 0.9, imp.source_file_id,
+        // Type-only bindings are recorded too (lower confidence): an interface a module
+        // consumes is a contract for editing-prep and impact, though not a flow step.
+        insert.run(edgeId(imp.source_file_id, symbol.symbol_id, 'references'), imp.source_file_id, symbol.symbol_id, 'references', 1, binding.kind === 'type' ? 0.6 : 0.9, imp.source_file_id,
           JSON.stringify({ importedName:binding.importedName, localName:binding.localName ?? binding.importedName, importKind:binding.kind ?? 'named', line:imp.line }))
       }
     }
