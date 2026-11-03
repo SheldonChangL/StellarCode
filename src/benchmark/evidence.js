@@ -24,12 +24,53 @@ export function sourcePaths(value, roots) {
   return [...result]
 }
 
+function jsonObjectsFromText(text) {
+  const result=[]
+  let start=-1,depth=0,inString=false,escaped=false
+  for(let i=0;i<text.length;i++) {
+    const c=text[i]
+    if(start<0) {
+      if(c==='{'){start=i;depth=1;inString=false;escaped=false}
+      continue
+    }
+    if(inString) {
+      if(escaped){escaped=false;continue}
+      if(c==='\\'){escaped=true;continue}
+      if(c==='"')inString=false
+      continue
+    }
+    if(c==='"'){inString=true;continue}
+    if(c==='{')depth++
+    else if(c==='}') {
+      depth--
+      if(depth===0){result.push(text.slice(start,i+1));start=-1}
+    }
+  }
+  return result
+}
+
 function outputStrings(value) {
   const out=[]
   for(const text of strings(value)) {
-    try {out.push(...strings(JSON.parse(text)))} catch {out.push(text)}
+    out.push(text)
+    try {out.push(...strings(JSON.parse(text)));continue} catch {}
+    for(const candidate of jsonObjectsFromText(text)) {
+      try {out.push(...strings(JSON.parse(candidate)))} catch {}
+    }
   }
   return out
+}
+
+function observedSourceLine(line, rel) {
+  const normalized=String(line).replaceAll('\\','/')
+  const at=normalized.indexOf(rel)
+  if(at>=0) {
+    const suffix=normalized.slice(at+rel.length)
+    const withPath=suffix.match(/^[:\-](\d+)[:\-]\s?(.*)$/)
+    if(withPath)return {text:withPath[2],line:Number(withPath[1])}
+  }
+  const numbered=normalized.match(/^\s*(\d+)(?:(?::|-)\s?|\t|\s{2,})(.*)$/)
+  return numbered?{text:numbered[2],line:Number(numbered[1])}:{text:line,line:null}
 }
 
 // Evidence comes from completed tool output, matched against repository source.
@@ -45,7 +86,7 @@ export async function completedEvidence({input,output,cwd,ok,atMs,via}) {
   const contextWithSource=/\bstellar\s+context\b.*--with-source|stellar_context/.test(text)
   const navigation=/\bstellar\s+(context|search|find|file|symbol|related|impact|architecture)\b|stellar_(context|search|find|file|symbol|related|impact|architecture)/.test(text)
   if(navigation && !contextWithSource)return {discovered,reads:[]}
-  const candidates=contextWithSource?sourcePaths(output,roots):sourcePaths(input,roots)
+  const candidates=sourcePaths(contextWithSource?output:[input,output],roots)
   const outputs=outputStrings(output)
   const reads=[]
   for(const rel of candidates) {
@@ -60,10 +101,7 @@ export async function completedEvidence({input,output,cwd,ok,atMs,via}) {
     if(lines.at(-1)==='')lines.pop()
     const observed=new Set()
     for(const output of outputs) {
-      const returned=output.split(/\r?\n/).map(line=>{
-        const numbered=line.match(/^\s*(\d+)(?:: |\t|\s{2,})(.*)$/)
-        return numbered?{text:numbered[2],line:Number(numbered[1])}:{text:line,line:null}
-      })
+      const returned=output.split(/\r?\n/).map(line=>observedSourceLine(line,rel))
       for(let i=0;i<returned.length;i++) {
         if(!returned[i].text.trim())continue
         let bestStart=-1,bestCount=0

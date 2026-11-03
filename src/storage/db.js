@@ -61,7 +61,8 @@ export function migrateProject(db) {
       last_seen_at TEXT NOT NULL,
       last_indexed_head TEXT,
       graph_version INTEGER NOT NULL DEFAULT 0,
-      schema_version INTEGER NOT NULL
+      schema_version INTEGER NOT NULL,
+      indexer_version INTEGER NOT NULL DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS files (
       file_id TEXT PRIMARY KEY,
@@ -149,6 +150,7 @@ export function migrateProject(db) {
       message TEXT NOT NULL
     );
   `)
+  ensureColumn(db, 'project_meta', 'indexer_version INTEGER NOT NULL DEFAULT 0')
   db.prepare(`INSERT INTO schema_meta(key,value) VALUES('schema_version',?)
     ON CONFLICT(key) DO UPDATE SET value=excluded.value`).run(String(DB_SCHEMA_VERSION))
 }

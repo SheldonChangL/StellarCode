@@ -7,7 +7,7 @@ import { gitActivity, gitHead, gitRenameHints, gitStatus } from './git.js'
 import { nextGraphVersion, openProjectStore, projectMeta } from '../storage/project-store.js'
 import { withTransaction } from '../storage/db.js'
 import { readProjectMetadata } from '../core/project.js'
-import { SUPPORTED_EXTENSIONS } from '../core/constants.js'
+import { INDEXER_VERSION, SUPPORTED_EXTENSIONS } from '../core/constants.js'
 import { markProjectIndexed } from '../storage/registry.js'
 
 function edgeId(source, target, type) {
@@ -138,11 +138,13 @@ function rebuildEdges(db, aliases = []) {
     }
     let importedNames = []
     try { importedNames = JSON.parse(imp.imported_names || '[]') } catch {}
-    for (const name of importedNames) {
-      const symbol = db.prepare('SELECT symbol_id FROM symbols WHERE file_id=? AND name=? LIMIT 1').get(target.file_id, name)
+    for (const item of importedNames) {
+      const binding = typeof item === 'string' ? { importedName:item, localName:item, kind:'named' } : item
+      if (!binding?.importedName || binding.kind === 'type' || binding.importedName === '*' || binding.importedName === 'default') continue
+      const symbol = db.prepare('SELECT symbol_id FROM symbols WHERE file_id=? AND name=? LIMIT 1').get(target.file_id, binding.importedName)
       if (symbol) {
         insert.run(edgeId(imp.source_file_id, symbol.symbol_id, 'references'), imp.source_file_id, symbol.symbol_id, 'references', 1, 0.9, imp.source_file_id,
-          JSON.stringify({ importedName: name, line: imp.line }))
+          JSON.stringify({ importedName:binding.importedName, localName:binding.localName ?? binding.importedName, importKind:binding.kind ?? 'named', line:imp.line }))
       }
     }
   }
@@ -196,13 +198,16 @@ export async function syncProject(root, options = {}) {
   const { db, registration } = await openProjectStore(root, metadata, options)
   const previous = previousMap(db)
   const metaBefore = projectMeta(db)
+  const storedIndexerVersion = Number(metaBefore?.indexer_version ?? 0)
+  const semanticReindex = storedIndexerVersion !== INDEXER_VERSION
+  const forceReindex = Boolean(options.force) || semanticReindex
 
   // Fast path for already-indexed Git repositories: if HEAD is unchanged and Git reports
   // no supported source-file changes, the graph cannot be stale. This avoids walking 10k+
   // files on every AI query while still detecting tracked edits and untracked source files.
   let head = null
   let status = []
-  if (!options.force && previous.size > 0) {
+  if (!forceReindex && previous.size > 0) {
     head = await gitHead(root)
     if (head) {
       status = await gitStatus(root)
@@ -226,7 +231,7 @@ export async function syncProject(root, options = {}) {
     }
   }
 
-  const scanned = await scanRepository(root, { previousByPath: options.force ? new Map() : previous, ignores: options.ignores })
+  const scanned = await scanRepository(root, { previousByPath: forceReindex ? new Map() : previous, ignores: options.ignores })
   const current = new Map(scanned.files.map(f => [f.path, f]))
   const oldPaths = new Set(previous.keys())
   const added = []
@@ -239,10 +244,10 @@ export async function syncProject(root, options = {}) {
     oldPaths.delete(file.path)
   }
   deleted.push(...oldPaths)
-  const changedFiles = [...added, ...modified]
+  const changedFiles = forceReindex ? scanned.files : [...added, ...modified]
   const warnings = [...scanned.warnings]
   if (!head) head = await gitHead(root)
-  if (!options.force && changedFiles.length === 0 && deleted.length === 0 && head === metaBefore?.last_indexed_head) {
+  if (!forceReindex && changedFiles.length === 0 && deleted.length === 0 && head === metaBefore?.last_indexed_head) {
     const total = db.prepare('SELECT COUNT(*) c FROM files').get().c
     const symbols = db.prepare('SELECT COUNT(*) c FROM symbols').get().c
     const edges = db.prepare('SELECT COUNT(*) c FROM edges').get().c
@@ -320,7 +325,7 @@ export async function syncProject(root, options = {}) {
         .run(graphVersion, w.path ?? null, w.code, w.message)
     }
     recordWorkingChange(db, graphVersion, [...added.map(f => f.path), ...modified.map(f => f.path), ...deleted])
-    db.prepare('UPDATE project_meta SET last_indexed_head=?, repo_path=?, last_seen_at=?').run(head, root, new Date().toISOString())
+    db.prepare('UPDATE project_meta SET last_indexed_head=?, repo_path=?, last_seen_at=?, indexer_version=?').run(head, root, new Date().toISOString(), INDEXER_VERSION)
   })
 
   const total = db.prepare('SELECT COUNT(*) c FROM files').get().c
@@ -334,12 +339,14 @@ export async function syncProject(root, options = {}) {
     added: added.length,
     modified: modified.length,
     deleted: deleted.length,
-    changedFiles: added.length + modified.length + deleted.length,
+    changedFiles: forceReindex ? changedFiles.length + deleted.length : added.length + modified.length + deleted.length,
     files: total,
     symbols,
     edges,
     warnings,
     git: { head, statusCount: status.length },
+    indexerVersion: INDEXER_VERSION,
+    semanticReindex,
     durationMs: Math.round(performance.now() - started),
     dbPath: registration.db_path
   }

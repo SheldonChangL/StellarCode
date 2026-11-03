@@ -71,12 +71,15 @@ test('grounding needs successful source output: native reads, Stellar source, an
   } finally {await w.cleanup()}
 })
 
-test('Stellar-only contract includes context, source-of-truth, read source and source command without an answer key', () => {
+test('Stellar-only contract requires Stellar context plus source-grounded evidence without leaking the answer key', () => {
   const task={prompt:'Find the entry point',expectedFiles:['private-answer-key.ts']}
   const stellar=benchmarkPrompt(task,'stellar'), baseline=benchmarkPrompt(task,'baseline')
-  for(const text of ['stellar context','source-of-truth','read source','stellar source']) {
-    assert.ok(stellar.includes(text));assert.ok(!baseline.includes(text))
-  }
+  assert.ok(stellar.includes('stellar context'))
+  assert.match(stellar,/source[- ]of[- ]truth/i)
+  assert.match(stellar,/read(?: the relevant)? source|inspected source/i)
+  assert.ok(stellar.includes('stellar source'))
+  assert.ok(!baseline.includes('stellar context'))
+  assert.ok(!baseline.includes('stellar source'))
   assert.ok(!stellar.includes('private-answer-key'))
   assert.ok(!baseline.includes('private-answer-key'))
 })
@@ -132,16 +135,24 @@ test('a failed debug sample retains its worktree, real executable and metadata-o
   } finally {if(retained)await fs.rm(retained,{recursive:true,force:true});await w.cleanup()}
 })
 
-test('correctness gate requires all layers at 100 percent independently of performance targets', async () => {
+test('correctness and efficiency gates are reported independently and passGate means overall acceptance', async () => {
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'stellar-gate-'))
   try {
     const baseline=path.join(dir,'baseline'),stellar=path.join(dir,'stellar')
     const row={taskId:'test',verified:true,success:true,discoverySuccess:true,sourceGrounded:true,answerSuccess:true,inputTokens:100}
     await fs.writeFile(baseline,JSON.stringify(row)+'\n');await fs.writeFile(stellar,JSON.stringify(row)+'\n')
     let report=await benchmarkReport(baseline,stellar)
-    assert.equal(report.passGate,true);assert.equal(report.mvpThresholdsMet,false)
+    assert.equal(report.correctnessPass,true)
+    assert.equal(report.efficiencyPass,false)
+    assert.equal(report.overallPass,false)
+    assert.equal(report.passGate,false)
+    assert.equal(report.mvpThresholdsMet,false)
+
     await fs.writeFile(stellar,JSON.stringify({...row,sourceGrounded:false,success:false})+'\n')
-    report=await benchmarkReport(baseline,stellar);assert.equal(report.passGate,false)
+    report=await benchmarkReport(baseline,stellar)
+    assert.equal(report.correctnessPass,false)
+    assert.equal(report.overallPass,false)
+    assert.equal(report.passGate,false)
   } finally {await fs.rm(dir,{recursive:true,force:true})}
 })
 

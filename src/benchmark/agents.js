@@ -9,11 +9,40 @@ function parseJsonLine(line) {
   try { return JSON.parse(line) } catch { return null }
 }
 
+function jsonObjectsFromText(text) {
+  const result=[]
+  let start=-1,depth=0,inString=false,escaped=false
+  for(let i=0;i<text.length;i++) {
+    const c=text[i]
+    if(start<0) {
+      if(c==='{'){start=i;depth=1;inString=false;escaped=false}
+      continue
+    }
+    if(inString) {
+      if(escaped){escaped=false;continue}
+      if(c==='\\'){escaped=true;continue}
+      if(c==='"')inString=false
+      continue
+    }
+    if(c==='"'){inString=true;continue}
+    if(c==='{')depth++
+    else if(c==='}') {
+      depth--
+      if(depth===0){result.push(text.slice(start,i+1));start=-1}
+    }
+  }
+  return result
+}
+
 function finalJsonFromText(text) {
   if (!text) return null
   try { return JSON.parse(text) } catch {}
-  const start=text.indexOf('{'), end=text.lastIndexOf('}')
-  if (start>=0 && end>start) { try { return JSON.parse(text.slice(start,end+1)) } catch {} }
+  // Claude often explains first and then emits the requested JSON. Prose may itself
+  // contain brace examples such as `new Game({...})`, so first-{ / last-} is unsafe.
+  const objects=jsonObjectsFromText(text)
+  for(let i=objects.length-1;i>=0;i--) {
+    try { return JSON.parse(objects[i]) } catch {}
+  }
   return null
 }
 
@@ -90,7 +119,7 @@ Repository source is the source of truth. Before making implementation claims, y
 Benchmark condition: BASELINE. StellarCode is disabled. Use your normal repository exploration tools (search, grep, file reads, directory inspection) as needed. Do not list a file in the final answer unless you opened its source.`
   return `${common}
 
-Benchmark condition: STELLAR. Your first action must be exactly one command: stellar context ${JSON.stringify(task.prompt)} --compact --with-source --depth 1 --max-files 6 --max-lines 160 --max-bytes 12000 --json. Targets with a "source" field contain repository source read live from the working tree, with line numbers; that counts as having read source for that range. Targets of kind "related" are import neighbours listed by path only. Paths, symbols and confidence values are navigation metadata, never source-of-truth. If the excerpts cover every part the task asks about, answer immediately with no further tool calls. If the task spans several layers (a flow, an impact set, several responsibilities) and a part is not covered, read only the specific related file or range that covers it (stellar source <path> --lines START:END --json or your file reader), then answer. Do not answer from paths or symbol names alone. Do not fall back to broad find/tree/grep/rg unless the returned targets are clearly unrelated.`
+Benchmark condition: STELLAR. Your first action must be exactly one command: stellar context ${JSON.stringify(task.prompt)} --compact --with-source --depth 1 --max-files 6 --max-lines 160 --max-bytes 12000 --json. Any item in targets or relatedEvidence with a "source" field contains repository source read live from the working tree, with line numbers, and counts as inspected source for that range. Do not re-read those same embedded ranges. relatedHints are navigation metadata only: never list a hinted file in the final answer unless you separately inspect its source. Paths, symbols, confidence values and relation metadata without source are never source-of-truth. If targets plus relatedEvidence cover every part the task asks about, answer immediately with no further tool calls. If a concrete part is still unsupported, inspect only the smallest relevant hinted file/range (stellar source <path> --lines START:END --json or your file reader), then answer. Do not answer from paths or symbol names alone. Do not fall back to broad find/tree/grep/rg unless the returned grounded evidence is clearly unrelated.`
 }
 
 export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, onEvent, diagnosticDir, diagnostic = {} }) {

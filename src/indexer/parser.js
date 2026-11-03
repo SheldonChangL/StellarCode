@@ -66,24 +66,50 @@ function findBlockEnd(masked, openIndex) {
   return masked.length - 1
 }
 
+function parseJSImportBindings(clause, typeOnly = false) {
+  const bindings = []
+  const add = (importedName, localName, kind = 'named') => {
+    if (!importedName || !localName) return
+    bindings.push({ importedName, localName, kind: typeOnly ? 'type' : kind })
+  }
+  const value = String(clause ?? '').trim()
+  const named = value.match(/\{([\s\S]*?)\}/)
+  if (named) {
+    for (let part of named[1].split(',')) {
+      part = part.trim()
+      if (!part) continue
+      let entryType = typeOnly
+      if (part.startsWith('type ')) { entryType = true; part = part.slice(5).trim() }
+      const match = part.match(/^([A-Za-z_$][\w$]*)(?:\s+as\s+([A-Za-z_$][\w$]*))?$/)
+      if (match) bindings.push({ importedName: match[1], localName: match[2] ?? match[1], kind: entryType ? 'type' : 'named' })
+    }
+  }
+  const namespace = value.match(/\*\s+as\s+([A-Za-z_$][\w$]*)/)
+  if (namespace) add('*', namespace[1], 'namespace')
+  const first = value.split(',')[0].trim()
+  if (first && !first.startsWith('{') && !first.startsWith('*')) add('default', first, 'default')
+  return bindings
+}
+
 function parseJsTs(text, file) {
   const symbols = []
   const imports = []
   const masked = stripCommentsAndStrings(text)
 
-  const importPatterns = [
-    /\bimport\s+(?:type\s+)?(?:[\s\S]*?\s+from\s+)?["']([^"']+)["']/g,
-    /\brequire\s*\(\s*["']([^"']+)["']\s*\)/g,
-    /\bimport\s*\(\s*["']([^"']+)["']\s*\)/g
-  ]
-  for (const pattern of importPatterns) {
+  for (const match of text.matchAll(/\bimport\s+(type\s+)?([^"'`;]+?)\s+from\s+["']([^"']+)["']/g)) {
+    imports.push({
+      specifier: match[3],
+      line: lineAt(text, match.index),
+      sourceOffset: match.index,
+      importedNames: parseJSImportBindings(match[2], Boolean(match[1]))
+    })
+  }
+  for (const match of text.matchAll(/\bimport\s+["']([^"']+)["']/g)) {
+    imports.push({ specifier: match[1], line: lineAt(text, match.index), sourceOffset: match.index, importedNames: [] })
+  }
+  for (const pattern of [/\brequire\s*\(\s*["']([^"']+)["']\s*\)/g, /\bimport\s*\(\s*["']([^"']+)["']\s*\)/g]) {
     for (const match of text.matchAll(pattern)) {
-      imports.push({
-        specifier: match[1],
-        line: lineAt(text, match.index),
-        sourceOffset: match.index,
-        importedNames: []
-      })
+      imports.push({ specifier: match[1], line: lineAt(text, match.index), sourceOffset: match.index, importedNames: [] })
     }
   }
 
@@ -100,9 +126,14 @@ function parseJsTs(text, file) {
       const name = match[2]
       const startLine = lineAt(masked, match.index)
       let endLine = startLine
-      const brace = masked.indexOf('{', match.index + match[0].length)
+      let brace = masked.indexOf('{', match.index + match[0].length)
       if (brace >= 0 && (decl.kind === 'function' || decl.kind === 'class' || decl.kind === 'interface')) {
         endLine = lineAt(masked, findBlockEnd(masked, brace))
+      } else if (decl.kind === 'constant') {
+        let cursor = match.index + match[0].length
+        while (/\s/.test(masked[cursor] ?? '')) cursor++
+        brace = masked[cursor] === '{' ? cursor : -1
+        if (brace >= 0) endLine = lineAt(masked, findBlockEnd(masked, brace))
       }
       symbols.push({
         symbolId: makeSymbolId(file, decl.kind, name, startLine, match.index),
@@ -163,6 +194,19 @@ function parseJsTs(text, file) {
   return { symbols, imports }
 }
 
+function pythonBlockEnd(lines, startIndex, indent) {
+  let endLine = startIndex + 1
+  for (let i = startIndex + 1; i < lines.length; i++) {
+    const raw = lines[i]
+    const trimmed = raw.trim()
+    if (!trimmed || trimmed.startsWith('#')) { endLine = i + 1; continue }
+    const currentIndent = raw.match(/^\s*/)[0].replace(/\t/g, '    ').length
+    if (currentIndent <= indent) break
+    endLine = i + 1
+  }
+  return endLine
+}
+
 function parsePython(text, file) {
   const lines = text.split(/\r?\n/)
   const symbols = []
@@ -181,7 +225,7 @@ function parsePython(text, file) {
       const name = m[1]
       symbols.push({
         symbolId: makeSymbolId(file, 'class', name, i + 1, i), fileId: file.fileId,
-        qualifiedName: name, name, kind: 'class', startLine: i + 1, endLine: i + 1,
+        qualifiedName: name, name, kind: 'class', startLine: i + 1, endLine: pythonBlockEnd(lines, i, indent),
         exported: !name.startsWith('_'), signature: trimmed.slice(0, 300)
       })
       classStack.push({ name, indent })
@@ -195,7 +239,7 @@ function parsePython(text, file) {
       const qualifiedName = cls ? `${cls.name}.${name}` : name
       symbols.push({
         symbolId: makeSymbolId(file, cls ? 'method' : 'function', qualifiedName, i + 1, i), fileId: file.fileId,
-        qualifiedName, name, kind: cls ? 'method' : 'function', startLine: i + 1, endLine: i + 1,
+        qualifiedName, name, kind: cls ? 'method' : 'function', startLine: i + 1, endLine: pythonBlockEnd(lines, i, indent),
         exported: !name.startsWith('_'), signature: trimmed.slice(0, 300)
       })
       continue
