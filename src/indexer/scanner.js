@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import crypto from 'node:crypto'
+import { spawn } from 'node:child_process'
 import { DEFAULT_IGNORES, MAX_SOURCE_BYTES, SUPPORTED_EXTENSIONS } from '../core/constants.js'
 
 export function toPosix(input) {
@@ -51,6 +52,24 @@ async function inspectFile(absPath, relativePath, stat, previous) {
   }
 }
 
+// Paths git would ignore (.gitignore, .git/info/exclude, global excludes). Outside a
+// git repository, or if git is unavailable, nothing is filtered.
+function gitIgnored(root, relPaths) {
+  if (!relPaths.length) return Promise.resolve(new Set())
+  return new Promise(resolve => {
+    let out = ''
+    let child
+    try { child = spawn('git', ['-C', root, 'check-ignore', '--stdin', '-z'], { stdio: ['pipe', 'pipe', 'ignore'] }) }
+    catch { resolve(new Set()); return }
+    child.on('error', () => resolve(new Set()))
+    child.stdout.on('data', d => { out += d })
+    // exit 0: some ignored; 1: none ignored; anything else: not a repo / error.
+    child.on('close', code => resolve(code === 0 ? new Set(out.split('\0').filter(Boolean)) : new Set()))
+    child.stdin.on('error', () => {})
+    child.stdin.end(relPaths.join('\0') + '\0')
+  })
+}
+
 export async function scanRepository(root, options = {}) {
   const ignores = new Set([...DEFAULT_IGNORES, ...(options.ignores ?? [])])
   const files = []
@@ -78,6 +97,15 @@ export async function scanRepository(root, options = {}) {
         if (entry.isDirectory()) dirQueue.push(abs)
         else if (entry.isFile() && SUPPORTED_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) candidates.push({ abs, rel })
       }
+    }
+  }
+
+  if (options.respectGitIgnore !== false) {
+    const ignored = await gitIgnored(root, candidates.map(c => toPosix(c.rel)))
+    if (ignored.size) {
+      const kept = candidates.filter(c => !ignored.has(toPosix(c.rel)))
+      candidates.length = 0
+      candidates.push(...kept)
     }
   }
 

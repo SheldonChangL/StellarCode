@@ -8,12 +8,17 @@ export function strings(value, out=[]) {
   return out
 }
 
-export function sourcePaths(value, cwd) {
+// `roots` may list several spellings of the same directory (for example macOS
+// /var/... and its realpath /private/var/...); agents may report either.
+export function sourcePaths(value, roots) {
   const result=new Set()
+  const bases=Array.isArray(roots)?roots:[roots]
   for(const text of strings(value)) {
     for(let token of text.match(/(?:[A-Za-z]:)?[^\s'"`|<>]+\.(?:[cm]?[jt]sx?|py|go|rs|java|kt|kts|swift|rb|php|cs|c|cc|cpp|h|hpp|vue|svelte)\b/g)??[]) {
-      const rel=path.relative(cwd,path.resolve(cwd,token)).replaceAll('\\','/')
-      if(rel && rel!=='..' && !rel.startsWith('../'))result.add(rel)
+      for(const base of bases) {
+        const rel=path.relative(base,path.resolve(bases[0],token)).replaceAll('\\','/')
+        if(rel && rel!=='..' && !rel.startsWith('../') && !path.isAbsolute(rel)){result.add(rel);break}
+      }
     }
   }
   return [...result]
@@ -31,11 +36,16 @@ function outputStrings(value) {
 // A command name or a path in tool arguments alone is never a source read.
 export async function completedEvidence({input,output,cwd,ok,atMs,via}) {
   if(!ok)return {discovered:[],reads:[]}
-  const discovered=sourcePaths([input,output],cwd)
+  let roots=[cwd]
+  try {const real=await fs.realpath(cwd); if(real!==cwd)roots.push(real)} catch {}
+  const discovered=sourcePaths([input,output],roots)
   const text=strings(input).join(' ')
+  // `stellar context --with-source` returns live source excerpts; those count as reads
+  // only where the returned lines match repository source verbatim (checked below).
+  const contextWithSource=/\bstellar\s+context\b.*--with-source|stellar_context/.test(text)
   const navigation=/\bstellar\s+(context|search|find|file|symbol|related|impact|architecture)\b|stellar_(context|search|find|file|symbol|related|impact|architecture)/.test(text)
-  if(navigation)return {discovered,reads:[]}
-  const candidates=sourcePaths(input,cwd)
+  if(navigation && !contextWithSource)return {discovered,reads:[]}
+  const candidates=contextWithSource?sourcePaths(output,roots):sourcePaths(input,roots)
   const outputs=outputStrings(output)
   const reads=[]
   for(const rel of candidates) {

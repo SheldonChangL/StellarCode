@@ -1,4 +1,5 @@
 import path from 'node:path'
+import fs from 'node:fs/promises'
 import crypto from 'node:crypto'
 import { scanRepository } from './scanner.js'
 import { parseFile } from './parser.js'
@@ -27,17 +28,65 @@ function previousMap(db) {
   }]))
 }
 
-function resolveJSImport(sourcePath, specifier, fileSet) {
-  if (!specifier.startsWith('.')) return null
-  const base = path.posix.normalize(path.posix.join(path.posix.dirname(sourcePath), specifier))
-  const candidates = [
+// Reads compilerOptions.paths/baseUrl from tsconfig.json or jsconfig.json at the repo
+// root (no `extends` chasing). Deterministic; returns [{prefix, suffix, targets}].
+export async function loadPathAliases(root) {
+  for (const name of ['tsconfig.json', 'jsconfig.json']) {
+    let text
+    try { text = await fs.readFile(path.join(root, name), 'utf8') } catch { continue }
+    let config
+    try {
+      const stripped = text
+        .replace(/("(?:[^"\\]|\\.)*")|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (m, str) => str ?? '')
+        .replace(/,(\s*[}\]])/g, '$1')
+      config = JSON.parse(stripped)
+    } catch { continue }
+    const options = config?.compilerOptions ?? {}
+    const baseUrl = path.posix.normalize(String(options.baseUrl ?? '.').replaceAll('\\', '/'))
+    const aliases = []
+    for (const [pattern, targets] of Object.entries(options.paths ?? {})) {
+      if (!Array.isArray(targets)) continue
+      const star = pattern.indexOf('*')
+      const prefix = star >= 0 ? pattern.slice(0, star) : pattern
+      const suffix = star >= 0 ? pattern.slice(star + 1) : null
+      aliases.push({ prefix, suffix, targets: targets.map(t => path.posix.normalize(path.posix.join(baseUrl, String(t).replaceAll('\\', '/')))) })
+    }
+    // Longest prefix first so `@/lib/*` wins over `@/*`.
+    return aliases.sort((a, b) => b.prefix.length - a.prefix.length)
+  }
+  return []
+}
+
+function jsCandidates(base) {
+  return [
     base,
     `${base}.ts`, `${base}.tsx`, `${base}.mts`, `${base}.cts`,
     `${base}.js`, `${base}.jsx`, `${base}.mjs`, `${base}.cjs`,
     path.posix.join(base, 'index.ts'), path.posix.join(base, 'index.tsx'),
     path.posix.join(base, 'index.js'), path.posix.join(base, 'index.jsx')
   ]
-  return candidates.find(c => fileSet.has(c)) ?? null
+}
+
+function resolveJSImport(sourcePath, specifier, fileSet, aliases = []) {
+  if (specifier.startsWith('.')) {
+    const base = path.posix.normalize(path.posix.join(path.posix.dirname(sourcePath), specifier))
+    return jsCandidates(base).find(c => fileSet.has(c)) ?? null
+  }
+  for (const alias of aliases) {
+    let captured
+    if (alias.suffix === null) { if (specifier !== alias.prefix) continue; captured = '' }
+    else {
+      if (!specifier.startsWith(alias.prefix) || !specifier.endsWith(alias.suffix) || specifier.length < alias.prefix.length + alias.suffix.length) continue
+      captured = specifier.slice(alias.prefix.length, specifier.length - alias.suffix.length)
+    }
+    for (const target of alias.targets) {
+      const base = path.posix.normalize(target.replace('*', captured)).replace(/^\.\//, '')
+      if (base.startsWith('..')) continue
+      const found = jsCandidates(base).find(c => fileSet.has(c))
+      if (found) return found
+    }
+  }
+  return null
 }
 
 function resolvePythonImport(sourcePath, specifier, fileSet) {
@@ -57,13 +106,13 @@ function resolvePythonImport(sourcePath, specifier, fileSet) {
   return candidates.find(c => fileSet.has(c)) ?? null
 }
 
-function resolveImport(source, specifier, fileSet) {
+function resolveImport(source, specifier, fileSet, aliases) {
   return source.endsWith('.py')
     ? resolvePythonImport(source, specifier, fileSet)
-    : resolveJSImport(source, specifier, fileSet)
+    : resolveJSImport(source, specifier, fileSet, aliases)
 }
 
-function rebuildEdges(db) {
+function rebuildEdges(db, aliases = []) {
   db.exec('DELETE FROM edges')
   const insert = db.prepare(`INSERT OR REPLACE INTO edges(edge_id,source_id,target_id,edge_type,weight,confidence,source_file_id,metadata_json)
     VALUES(?,?,?,?,?,?,?,?)`)
@@ -77,7 +126,7 @@ function rebuildEdges(db) {
   }
 
   for (const imp of imports) {
-    const targetPath = resolveImport(imp.source_file_id, imp.specifier, fileSet)
+    const targetPath = resolveImport(imp.source_file_id, imp.specifier, fileSet, aliases)
     if (!targetPath) continue
     const target = fileByPath.get(targetPath)
     insert.run(edgeId(imp.source_file_id, target.file_id, 'imports'), imp.source_file_id, target.file_id, 'imports', 1, 1, imp.source_file_id,
@@ -206,6 +255,7 @@ export async function syncProject(root, options = {}) {
     }
   }
   const gitCounts = await gitActivity(root)
+  const aliases = await loadPathAliases(root)
   const renames = await gitRenameHints(root)
   if (!status.length) status = await gitStatus(root)
 
@@ -259,7 +309,7 @@ export async function syncProject(root, options = {}) {
       }
     }
 
-    rebuildEdges(db)
+    rebuildEdges(db, aliases)
     updateImportance(db, gitCounts)
     for (const r of renames) {
       db.prepare('INSERT OR REPLACE INTO rename_hints(old_path,new_path,detected_at,confidence) VALUES(?,?,?,?)')

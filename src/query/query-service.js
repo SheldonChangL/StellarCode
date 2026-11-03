@@ -26,17 +26,29 @@ const QUERY_CONCEPTS = [
 const STOP_WORDS = new Set([
   'a','an','the','to','of','for','and','or','in','on','with','from','is','are','be','this','that','these','those',
   'find','show','tell','locate','modify','change','fix','file','files','code','project','repo','repository','flow',
-  'please','where','which','what','how','need','should','first','look','at','about'
+  'please','where','which','what','how','need','should','first','look','at','about',
+  // Task-instruction vocabulary: describes the requested answer, not the code.
+  'explain','identify','summarize','describe','implementation','implementations','responsibility','responsibilities',
+  'each','why','their','its','it','they','them','without','making','directly','if','into','through','before','after',
+  'when','then','also','both','any','all','is','was','be','do','does','used','using'
 ])
+
+// Imperative verbs that open an instruction sentence ("List the files…", "Trace how…").
+// Only dropped at sentence start, so domain uses such as "user list" are kept.
+const LEADING_IMPERATIVES = new Set(['list','trace','find','show','explain','identify','describe','summarize','give','return','locate','check','map','outline'])
 
 function unique(values) {
   return [...new Set(values.filter(Boolean))]
 }
 
 function asciiTokens(query) {
-  return String(query ?? '')
-    .toLowerCase()
-    .match(/[a-z0-9_$.-]+/g)?.filter(token => token.length > 1 && !STOP_WORDS.has(token)) ?? []
+  const tokens = []
+  for (const sentence of String(query ?? '').toLowerCase().split(/[.?!;:\n]+(?:\s|$)/)) {
+    const words = (sentence.match(/[a-z0-9_$.-]+/g) ?? []).map(token => token.replace(/^[.-]+|[.-]+$/g, ''))
+    if (words.length && LEADING_IMPERATIVES.has(words[0])) words.shift()
+    tokens.push(...words.filter(token => token.length > 1 && !STOP_WORDS.has(token)))
+  }
+  return tokens
 }
 
 function queryProfile(query) {
@@ -377,11 +389,36 @@ export async function contextForTask(projectPath, task, options = {}) {
     const values = [...selected.values()].sort((a, b) => b.score - a.score)
     const meta = db.prepare('SELECT graph_version FROM project_meta LIMIT 1').get()
     const primary = values.filter(v => v.category === 'primary').slice(0, 3).map(makeEntry)
-    const relatedFiles=compact?[]:values.filter(v=>v.category==='related').slice(0,4).map(makeEntry)
+    const relatedFiles=(compact&&depth===0)?[]:values.filter(v=>v.category==='related').slice(0,4).map(makeEntry)
     const tests=compact?[]:values.filter(v=>v.category==='tests').slice(0,3).map(makeEntry)
     if(compact) {
       const expanded=depth>0?relatedFiles:[]
-      return {targets:[...primary,...expanded].slice(0,limit).map(v=>({path:v.path,lines:v.read.lines,symbol:v.symbols?.[0]?.qualifiedName??null,confidence:primary.length?Number((v.score/(primary[0].score||1)).toFixed(2)):0})),depth,more:values.length>primary.length+expanded.length}
+      const targets=[...primary.map(v=>({v,kind:'primary'})),...expanded.map(v=>({v,kind:'related'}))].slice(0,limit).map(({v,kind})=>({path:v.path,lines:v.read.lines,symbol:v.symbols?.[0]?.qualifiedName??null,confidence:primary.length?Number((v.score/(primary[0].score||1)).toFixed(2)):0,...(depth>0?{kind}:{})}))
+      // Opt-in: attach the bounded read ranges, read live from the working tree, so one
+      // call both locates and grounds. Never persisted; total bytes capped by maxBytes.
+      if(options.withSource) {
+        let budget=maxBytes
+        for(const target of targets) {
+          if(budget<=0)break
+          if(target.kind==='related')continue // related files: path only; the agent decides whether to read
+          const absolute=path.resolve(root,target.path)
+          const relative=path.relative(root,absolute)
+          if(relative.startsWith('..')||path.isAbsolute(relative))continue
+          let text
+          try { text=await fs.readFile(absolute,'utf8') } catch { continue }
+          const lines=text.split(/\r?\n/)
+          const [start,end]=target.lines
+          const out=[]
+          for(let n=start;n<=Math.min(end,lines.length);n++) {
+            const line=`${n}: ${lines[n-1]}`
+            const cost=Buffer.byteLength(line)+1
+            if(cost>budget)break
+            budget-=cost;out.push(line)
+          }
+          if(out.length){target.lines=[start,start+out.length-1];target.source=out.join('\n')}
+        }
+      }
+      return {targets,depth,more:values.length>primary.length+expanded.length,...(options.withSource?{sourceOfTruth:'targets[].source is repository source read live from the working tree'}:{})}
     }
     return {
       query: task,

@@ -17,7 +17,7 @@ const tools = [
   { name:'stellar_symbol', description:'Resolve a symbol name to file and line ranges.', inputSchema:{type:'object',properties:{query:{type:'string'},limit:{type:'integer',minimum:1,maximum:30},...projectFields},required:['query'],additionalProperties:false} },
   { name:'stellar_related', description:'Return direct incoming/outgoing repository relationships for a file or symbol.', inputSchema:{type:'object',properties:{target:{type:'string'},limit:{type:'integer',minimum:1,maximum:100},...projectFields},required:['target'],additionalProperties:false} },
   { name:'stellar_impact', description:'Bounded reverse dependency traversal showing likely impacted files/tests.', inputSchema:{type:'object',properties:{target:{type:'string'},depth:{type:'integer',minimum:1,maximum:6},limit:{type:'integer',minimum:1,maximum:200},...projectFields},required:['target'],additionalProperties:false} },
-  { name:'stellar_context', description:'Return up to three compact primary source ranges. Metadata is navigation evidence; read source before factual claims.', inputSchema:{type:'object',properties:{task:{type:'string'},...projectFields},required:['task'],additionalProperties:false} },
+  { name:'stellar_context', description:'Return up to three compact primary source ranges. Metadata is navigation evidence; read source before factual claims.', inputSchema:{type:'object',properties:{task:{type:'string'},withSource:{type:'boolean',description:'Attach bounded live source excerpts for the returned ranges (one call to locate and ground).'},...projectFields},required:['task'],additionalProperties:false} },
   { name:'stellar_source', description:'Read a bounded repository source excerpt after StellarCode locates a file. Use this before implementation claims instead of answering from metadata alone.', inputSchema:{type:'object',properties:{path:{type:'string'},lines:{type:'string',description:'Line range START:END, e.g. 47:116'},...projectFields},required:['path'],additionalProperties:false} },
   { name:'stellar_architecture', description:'Return deterministic application entries, structural core files, role counts, galaxies and modules.', inputSchema:{type:'object',properties:{...projectFields},additionalProperties:false} }
 ]
@@ -36,7 +36,7 @@ async function invoke(name, args = {}, defaultProject = null, queryOptions = {})
   if (name === 'stellar_symbol') return symbolLookup(project, args.query, { ...queryOptions, limit: args.limit ?? 10 })
   if (name === 'stellar_related') return related(project, args.target, { ...queryOptions, limit: args.limit ?? 30 })
   if (name === 'stellar_impact') return impact(project, args.target, { ...queryOptions, depth: args.depth ?? 3, limit: args.limit ?? 50 })
-  if (name === 'stellar_context') return contextForTask(project,args.task,{...queryOptions,compact:true,maxFiles:3,maxLines:300,maxBytes:12000})
+  if (name === 'stellar_context') return contextForTask(project,args.task,{...queryOptions,compact:true,maxFiles:3,maxLines:300,maxBytes:12000,withSource:args.withSource===true})
   if (name === 'stellar_source') return sourceExcerpt(project, args.path, { ...queryOptions, lines: args.lines })
   if (name === 'stellar_architecture') return architectureOverview(project, queryOptions)
   throw new Error(`Unknown tool: ${name}`)
