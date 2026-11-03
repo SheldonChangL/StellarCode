@@ -25,6 +25,14 @@ v0.5.1 can execute controlled Claude/Codex A/B runs and reads the agents' report
 - Agent CLI output formats can evolve; adapters are regression-tested against fixtures but should be revalidated when upgrading major CLI versions.
 - The harness does not claim a universal token-saving percentage. The HTML report only marks the evidence gate PASS when token/navigation thresholds and answer-key correctness all pass.
 
+## v0.5.5 context-precision limits
+
+- Ranking is lexical/structural: IDF-weighted, identifier-boundary-aware term matching plus import-binding usage. Without types or a call graph, a method reached through `this.field.method()` is not linked to the imported class that field holds.
+- Relative thresholds (primary 0.35/0.5, unlinked flow file 0.6, evidence 0.6) and the 40-line density/window constants are fixed heuristics, not learned per repository.
+- Intent classification is keyword-based. Prompts that describe a flow without flow vocabulary are classified as navigation and get navigation's smaller evidence budget.
+- `expectedFileSourcePrecision` is a file-level focus proxy, not semantic usefulness of the returned lines.
+- Range deduplication runs before byte allocation. If a target is later cut to its densest window, evidence that overlapped the target's full range has already been dropped, so the overlapping lines may be returned by neither.
+
 ## v0.5.2 source-grounding limits
 
 - Source grounding is detected from explicit native Read operations, read-like shell commands, or `stellar source` / `stellar_source`. Extremely custom scripts that read files indirectly may not be classified as source reads.

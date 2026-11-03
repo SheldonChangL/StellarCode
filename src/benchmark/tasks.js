@@ -4,6 +4,19 @@ import { StellarError } from '../core/errors.js'
 
 export const BENCHMARK_SCHEMA_VERSION = 1
 
+// Benchmark category is author metadata describing the task type. It is reported next to
+// the runtime-classified intent but never passed to StellarCode, so it cannot leak into
+// context results. A task without a category keeps the legacy 'navigation' label so
+// historical task files and reports keep their meaning.
+export const BENCHMARK_CATEGORIES = ['navigation', 'flow', 'impact', 'editing-prep']
+
+function taskCategory(raw) {
+  if (raw.category == null || raw.category === '') return { category: 'navigation', categorySource: 'legacy-default' }
+  if (raw.category === 'edit') return { category: 'edit', categorySource: 'explicit' }
+  if (BENCHMARK_CATEGORIES.includes(raw.category)) return { category: raw.category, categorySource: 'explicit' }
+  throw new StellarError(`Unknown benchmark category "${raw.category}" for task ${raw.id}. Use one of: ${BENCHMARK_CATEGORIES.join(', ')} (legacy 'edit' is accepted but not runnable).`, 'BENCHMARK_TASKS_INVALID', 2)
+}
+
 export function defaultBenchmarkConfig() {
   return {
     version: BENCHMARK_SCHEMA_VERSION,
@@ -70,7 +83,7 @@ export async function loadBenchmarkTasks(file) {
     ids.add(raw.id)
     tasks.push({
       id: String(raw.id),
-      category: raw.category === 'edit' ? 'edit' : 'navigation',
+      ...taskCategory(raw),
       prompt: String(raw.prompt),
       expectedFiles: Array.isArray(raw.expectedFiles) ? raw.expectedFiles.map(v => String(v).replaceAll('\\','/')) : [],
       expectedMatch: raw.expectedMatch === 'all' ? 'all' : 'any',

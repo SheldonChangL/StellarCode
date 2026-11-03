@@ -45,6 +45,20 @@ Use 10–20 tasks per repository:
 
 Run at least three repeats per task/condition when quota permits.
 
+## Categories (v0.5.5)
+
+Give every task an explicit `category`: `navigation`, `flow`, `impact` or `editing-prep`.
+Choose it from what the prompt actually asks, not from the task id:
+
+- `navigation`: locate an implementation, entry point or owner;
+- `flow`: trace behavior across modules (caller → callee, producer → consumer);
+- `impact`: what depends on or breaks if something changes;
+- `editing-prep`: identify what to read before modifying code.
+
+A task without a category is treated as legacy `navigation`. The report shows each
+category separately and lists the runtime-classified intent next to it; the category is
+never given to the agent or to StellarCode. See `docs/V0.5.5_CONTEXT_PRECISION.md`.
+
 ## Correctness
 
 `expectedMatch: "any"` means at least one answer-key file must appear in the agent's final `files` list.
