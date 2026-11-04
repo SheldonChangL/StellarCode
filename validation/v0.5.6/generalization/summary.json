@@ -1,0 +1,3764 @@
+{
+  "schemaVersion": 1,
+  "methodVersion": 1,
+  "generatedAt": "2026-11-04T03:05:19.870Z",
+  "methodology": {
+    "neutralThresholdPct": 5,
+    "catastrophicInputIncreasePct": 25,
+    "catastrophicToolCallMultiplier": 2,
+    "determinismMetrics": [
+      "inputTokens",
+      "toolCalls",
+      "sourceBytesRead"
+    ],
+    "targets": {
+      "correctnessPct": 100,
+      "directional": {
+        "inputTokens": 20,
+        "toolCalls": 20,
+        "searchCalls": 30,
+        "sourceBytes": 30
+      },
+      "strong": {
+        "inputTokens": 30,
+        "toolCalls": 35,
+        "searchCalls": 50,
+        "sourceBytes": 50
+      }
+    },
+    "primaryGeneralizationSignal": "repo-median"
+  },
+  "notes": {
+    "providerDrift": "Absolute provider input-token values across campaigns are not directly comparable: provider-side context (system prompt, tool schema, cached framework context) can change between campaigns even with an identical agent and model version. Only same-campaign paired reductions are valid performance evidence.",
+    "weighting": "runWeighted pools every paired run, so repositories with more tasks or repetitions weigh more. repoWeighted treats each repository x agent campaign as one unit and reports mean and median of per-campaign reductions; repo median is the primary generalization signal.",
+    "precision": "Expected-file source precision is a focus proxy. A non-expected file is not necessarily useless.",
+    "missingValues": "null means not applicable / not measured (rendered n/a), never zero."
+  },
+  "repositories": [
+    {
+      "repository": "jetchat-admin",
+      "agents": [
+        "claude"
+      ]
+    },
+    {
+      "repository": "nestmind",
+      "agents": [
+        "claude"
+      ]
+    },
+    {
+      "repository": "reefmori",
+      "agents": [
+        "claude"
+      ]
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "reefmori::claude::2026-11-04T01:34:05.643Z",
+      "repository": "reefmori",
+      "agent": "claude",
+      "agentVersion": "2.1.317 (Claude Code)",
+      "model": null,
+      "runtimeCommit": "6c9eb49896a298f6edab6f7d0fa8cb59e03f2242",
+      "runtimePackageVersion": "0.5.5",
+      "runtimeDirty": false,
+      "runtimeChangedDuringCampaign": false,
+      "repoCommit": "6f2b9a5593c82f8b1430c1dc651e1d435808de69",
+      "taskHash": "c1ed9e17e30fb9a55705723f5cb3abd56865800c78cf192faa044b0898633f10",
+      "campaignStartedAt": "2026-11-04T01:34:05.643Z",
+      "repeat": 3,
+      "projectRoot": "/Users/sheldon.chang/Projects/Private/stellar-holdout-v056/reefmori",
+      "repositoryIdentity": {
+        "rootCommits": [
+          "0be784d50f6700ebc95ecf9d5deef028c816bda2"
+        ],
+        "remote": "git@github.com:SheldonChangL/reefmori.git"
+      },
+      "runtimeVerified": true,
+      "sourceSchemaVersion": 5,
+      "upgradedFromJsonl": false,
+      "invalidReasons": [],
+      "valid": true,
+      "reportFile": "/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete/validation/v0.5.6/holdout/reefmori/claude-20261104-093404/report.json"
+    },
+    {
+      "id": "jetchat-admin::claude::2026-11-04T02:01:27.779Z",
+      "repository": "jetchat-admin",
+      "agent": "claude",
+      "agentVersion": "2.1.317 (Claude Code)",
+      "model": null,
+      "runtimeCommit": "6c9eb49896a298f6edab6f7d0fa8cb59e03f2242",
+      "runtimePackageVersion": "0.5.5",
+      "runtimeDirty": false,
+      "runtimeChangedDuringCampaign": false,
+      "repoCommit": "c9256c06ff39fb2d3c4f5f73fe5be2439423cd9f",
+      "taskHash": "9b37b0d66c2abf3408fd357823faa992a31ae30ce1c2cdfecee50ae3bc1fdf98",
+      "campaignStartedAt": "2026-11-04T02:01:27.779Z",
+      "repeat": 3,
+      "projectRoot": "/Users/sheldon.chang/Projects/Private/stellar-holdout-v056/jetchat-admin",
+      "repositoryIdentity": {
+        "rootCommits": [
+          "2268f67797d8ddabb9690bc73944f3f5f0984b6c"
+        ],
+        "remote": "https://github.com/jet-opto/jetchat-admin.git"
+      },
+      "runtimeVerified": true,
+      "sourceSchemaVersion": 5,
+      "upgradedFromJsonl": false,
+      "invalidReasons": [],
+      "valid": true,
+      "reportFile": "/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete/validation/v0.5.6/holdout/jetchat-admin/claude-20261104-100126/report.json"
+    },
+    {
+      "id": "nestmind::claude::2026-11-04T02:33:30.838Z",
+      "repository": "nestmind",
+      "agent": "claude",
+      "agentVersion": "2.1.317 (Claude Code)",
+      "model": null,
+      "runtimeCommit": "6c9eb49896a298f6edab6f7d0fa8cb59e03f2242",
+      "runtimePackageVersion": "0.5.5",
+      "runtimeDirty": false,
+      "runtimeChangedDuringCampaign": false,
+      "repoCommit": "3dc749f17631259529aec8a13ff8e2ce5e4b3920",
+      "taskHash": "202b18e852f25e391bfe5654213dca96adc948e634ae37228dd7bc3df57d88d0",
+      "campaignStartedAt": "2026-11-04T02:33:30.838Z",
+      "repeat": 3,
+      "projectRoot": "/Users/sheldon.chang/Projects/Private/stellar-holdout-v056/nestmind",
+      "repositoryIdentity": {
+        "rootCommits": [
+          "4aa1734bce6bc1c646fde58b1ca0f5c20b327cd5"
+        ],
+        "remote": "https://gitlab.saikah.com/harness/nestmind.git"
+      },
+      "runtimeVerified": true,
+      "sourceSchemaVersion": 5,
+      "upgradedFromJsonl": false,
+      "invalidReasons": [],
+      "valid": true,
+      "reportFile": "/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete/validation/v0.5.6/holdout/nestmind/claude-20261104-103330/report.json"
+    }
+  ],
+  "invalidCampaigns": [],
+  "overall": {
+    "note": "Pools all agents. Prefer byAgent for agent-specific claims; agents are never summed into one score.",
+    "runWeighted": {
+      "status": "measured",
+      "pairedRuns": 102,
+      "tasks": 34,
+      "inputTokenReductionPct": 23.2276716473351,
+      "toolCallReductionPct": 34.00936037441497,
+      "searchCallReductionPct": 58.94039735099338,
+      "sourceBytesReductionPct": 49.216623992825006,
+      "filesOpenedReductionPct": -32.970027247956395,
+      "firstRelevantPairs": 102,
+      "firstRelevantReductionPct": 17.97307266691258,
+      "correctness": {
+        "discoveryRate": {
+          "baseline": 100,
+          "stellar": 100
+        },
+        "sourceGroundingRate": {
+          "baseline": 96.07843137254902,
+          "stellar": 97.05882352941177
+        },
+        "answerSuccessRate": {
+          "baseline": 100,
+          "stellar": 100
+        },
+        "groundedSuccessRate": {
+          "baseline": 96.07843137254902,
+          "stellar": 97.05882352941177
+        }
+      },
+      "precision": {
+        "baseline": 0.8383572740817892,
+        "stellar": 0.7352842986562996
+      }
+    },
+    "repoWeighted": {
+      "units": 3,
+      "inputTokenReductionPct": {
+        "mean": 22.764410773374436,
+        "median": 13.9624549987703,
+        "min": 10.758054339793812,
+        "max": 43.5727229815592,
+        "n": 3
+      },
+      "toolCallReductionPct": {
+        "mean": 33.65689155392471,
+        "median": 25.641025641025646,
+        "min": 18.848167539267017,
+        "max": 56.481481481481474,
+        "n": 3
+      },
+      "searchCallReductionPct": {
+        "mean": 59.11412980378498,
+        "median": 50.574712643678154,
+        "min": 50,
+        "max": 76.76767676767678,
+        "n": 3
+      },
+      "sourceBytesReductionPct": {
+        "mean": 40.68105003347004,
+        "median": 25.533860197622353,
+        "min": 24.74370480111303,
+        "max": 71.76558510167472,
+        "n": 3
+      },
+      "filesOpenedReductionPct": {
+        "mean": -33.029954127602025,
+        "median": -56.923076923076934,
+        "min": -63.478260869565204,
+        "max": 21.311475409836056,
+        "n": 3
+      },
+      "firstRelevantReductionPct": {
+        "mean": 15.660326814283815,
+        "median": 16.836555360281196,
+        "min": 10.16230173367761,
+        "max": 19.982123348892642,
+        "n": 3
+      },
+      "precision": {
+        "baselineMedian": 0.8225982322062684,
+        "stellarMedian": 0.7238331098667087
+      }
+    }
+  },
+  "byRepository": {
+    "jetchat-admin": {
+      "claude": {
+        "repository": "jetchat-admin",
+        "agent": "claude",
+        "status": "measured",
+        "pairedRuns": 36,
+        "tasks": 12,
+        "inputTokenReductionPct": 13.9624549987703,
+        "toolCallReductionPct": 25.641025641025646,
+        "searchCallReductionPct": 50,
+        "sourceBytesReductionPct": 25.533860197622353,
+        "filesOpenedReductionPct": -56.923076923076934,
+        "firstRelevantPairs": 36,
+        "firstRelevantReductionPct": 16.836555360281196,
+        "correctness": {
+          "discoveryRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "sourceGroundingRate": {
+            "baseline": 88.88888888888889,
+            "stellar": 91.66666666666666
+          },
+          "answerSuccessRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "groundedSuccessRate": {
+            "baseline": 88.88888888888889,
+            "stellar": 91.66666666666666
+          }
+        },
+        "precision": {
+          "baseline": 0.8225982322062684,
+          "stellar": 0.7018656680154074
+        },
+        "meetsCorrectnessTarget": false,
+        "categories": {
+          "navigation": {
+            "status": "measured",
+            "pairedRuns": 9,
+            "tasks": 3,
+            "inputTokenReductionPct": 26.842809676623325,
+            "toolCallReductionPct": 34.782608695652165,
+            "searchCallReductionPct": 75.86206896551725,
+            "sourceBytesReductionPct": 9.914954824114284,
+            "filesOpenedReductionPct": -33.33333333333333,
+            "firstRelevantPairs": 9,
+            "firstRelevantReductionPct": -41.6270470153196,
+            "correctness": {
+              "discoveryRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "sourceGroundingRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "answerSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "groundedSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              }
+            },
+            "precision": {
+              "baseline": 0.8073007582845732,
+              "stellar": 0.6222232556697516
+            }
+          },
+          "flow": {
+            "status": "measured",
+            "pairedRuns": 9,
+            "tasks": 3,
+            "inputTokenReductionPct": 17.216020114604277,
+            "toolCallReductionPct": 35.211267605633815,
+            "searchCallReductionPct": 48.57142857142857,
+            "sourceBytesReductionPct": 35.5543358946213,
+            "filesOpenedReductionPct": -21.621621621621635,
+            "firstRelevantPairs": 9,
+            "firstRelevantReductionPct": 9.317803660565724,
+            "correctness": {
+              "discoveryRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "sourceGroundingRate": {
+                "baseline": 66.66666666666666,
+                "stellar": 66.66666666666666
+              },
+              "answerSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "groundedSuccessRate": {
+                "baseline": 66.66666666666666,
+                "stellar": 66.66666666666666
+              }
+            },
+            "precision": {
+              "baseline": 0.8704563274266897,
+              "stellar": 0.7750565734725162
+            }
+          },
+          "impact": {
+            "status": "measured",
+            "pairedRuns": 9,
+            "tasks": 3,
+            "inputTokenReductionPct": -2.175393055275148,
+            "toolCallReductionPct": 6.896551724137934,
+            "searchCallReductionPct": 37.03703703703704,
+            "sourceBytesReductionPct": 16.265816785934323,
+            "filesOpenedReductionPct": -115.62500000000003,
+            "firstRelevantPairs": 9,
+            "firstRelevantReductionPct": -28.226340172071474,
+            "correctness": {
+              "discoveryRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "sourceGroundingRate": {
+                "baseline": 88.88888888888889,
+                "stellar": 100
+              },
+              "answerSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "groundedSuccessRate": {
+                "baseline": 88.88888888888889,
+                "stellar": 100
+              }
+            },
+            "precision": {
+              "baseline": 0.968638927065068,
+              "stellar": 0.8365192783869827
+            }
+          },
+          "editing-prep": {
+            "status": "measured",
+            "pairedRuns": 9,
+            "tasks": 3,
+            "inputTokenReductionPct": 11.483736748057078,
+            "toolCallReductionPct": 25.423728813559315,
+            "searchCallReductionPct": 36,
+            "sourceBytesReductionPct": 30.28822294330979,
+            "filesOpenedReductionPct": -56.75675675675678,
+            "firstRelevantPairs": 9,
+            "firstRelevantReductionPct": 13.818050280340024,
+            "correctness": {
+              "discoveryRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "sourceGroundingRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "answerSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "groundedSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              }
+            },
+            "precision": {
+              "baseline": 0.6902462301966024,
+              "stellar": 0.5880181808225179
+            }
+          }
+        },
+        "taskDistribution": {
+          "tasks": 12,
+          "byCategory": {
+            "navigation": 3,
+            "flow": 3,
+            "impact": 3,
+            "editing-prep": 3
+          }
+        },
+        "coverage": {
+          "campaigns": 1,
+          "baselineRuns": 36,
+          "stellarRuns": 36,
+          "pairedAvailableRuns": 36,
+          "pairedRuns": 36,
+          "excludedFailedPairs": 0,
+          "unpairedBaseline": 0,
+          "unpairedStellar": 0,
+          "campaignsWithoutCoverage": 0,
+          "coverageGaps": 0,
+          "note": "Pairs with a failed invocation on either side are coverage gaps and are excluded from every performance aggregate."
+        },
+        "campaign": [
+          {
+            "id": "jetchat-admin::claude::2026-11-04T02:01:27.779Z",
+            "repository": "jetchat-admin",
+            "agent": "claude",
+            "agentVersion": "2.1.317 (Claude Code)",
+            "model": null,
+            "runtimeCommit": "6c9eb49896a298f6edab6f7d0fa8cb59e03f2242",
+            "runtimePackageVersion": "0.5.5",
+            "runtimeDirty": false,
+            "runtimeChangedDuringCampaign": false,
+            "repoCommit": "c9256c06ff39fb2d3c4f5f73fe5be2439423cd9f",
+            "taskHash": "9b37b0d66c2abf3408fd357823faa992a31ae30ce1c2cdfecee50ae3bc1fdf98",
+            "campaignStartedAt": "2026-11-04T02:01:27.779Z",
+            "repeat": 3,
+            "projectRoot": "/Users/sheldon.chang/Projects/Private/stellar-holdout-v056/jetchat-admin",
+            "repositoryIdentity": {
+              "rootCommits": [
+                "2268f67797d8ddabb9690bc73944f3f5f0984b6c"
+              ],
+              "remote": "https://github.com/jet-opto/jetchat-admin.git"
+            },
+            "runtimeVerified": true,
+            "sourceSchemaVersion": 5,
+            "upgradedFromJsonl": false,
+            "invalidReasons": [],
+            "valid": true,
+            "reportFile": "/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete/validation/v0.5.6/holdout/jetchat-admin/claude-20261104-100126/report.json"
+          }
+        ]
+      }
+    },
+    "nestmind": {
+      "claude": {
+        "repository": "nestmind",
+        "agent": "claude",
+        "status": "measured",
+        "pairedRuns": 36,
+        "tasks": 12,
+        "inputTokenReductionPct": 10.758054339793812,
+        "toolCallReductionPct": 18.848167539267017,
+        "searchCallReductionPct": 50.574712643678154,
+        "sourceBytesReductionPct": 24.74370480111303,
+        "filesOpenedReductionPct": -63.478260869565204,
+        "firstRelevantPairs": 36,
+        "firstRelevantReductionPct": 10.16230173367761,
+        "correctness": {
+          "discoveryRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "sourceGroundingRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "answerSuccessRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "groundedSuccessRate": {
+            "baseline": 100,
+            "stellar": 100
+          }
+        },
+        "precision": {
+          "baseline": 0.9751302250269472,
+          "stellar": 0.7238331098667087
+        },
+        "meetsCorrectnessTarget": true,
+        "categories": {
+          "navigation": {
+            "status": "measured",
+            "pairedRuns": 9,
+            "tasks": 3,
+            "inputTokenReductionPct": -5.598974788138174,
+            "toolCallReductionPct": -9.523809523809508,
+            "searchCallReductionPct": 75,
+            "sourceBytesReductionPct": -47.543329978754336,
+            "filesOpenedReductionPct": -266.66666666666663,
+            "firstRelevantPairs": 9,
+            "firstRelevantReductionPct": -1.1817670230725943,
+            "correctness": {
+              "discoveryRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "sourceGroundingRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "answerSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "groundedSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              }
+            },
+            "precision": {
+              "baseline": 1,
+              "stellar": 0.7316215478824991
+            }
+          },
+          "flow": {
+            "status": "measured",
+            "pairedRuns": 9,
+            "tasks": 3,
+            "inputTokenReductionPct": 17.18546699748701,
+            "toolCallReductionPct": 19.354838709677427,
+            "searchCallReductionPct": 51.724137931034484,
+            "sourceBytesReductionPct": 11.80550301379537,
+            "filesOpenedReductionPct": -52.77777777777777,
+            "firstRelevantPairs": 9,
+            "firstRelevantReductionPct": 25.313773431132848,
+            "correctness": {
+              "discoveryRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "sourceGroundingRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "answerSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "groundedSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              }
+            },
+            "precision": {
+              "baseline": 0.9394971123048599,
+              "stellar": 0.7760842627013631
+            }
+          },
+          "impact": {
+            "status": "measured",
+            "pairedRuns": 9,
+            "tasks": 3,
+            "inputTokenReductionPct": 18.646607509550293,
+            "toolCallReductionPct": 43.28358208955224,
+            "searchCallReductionPct": 50,
+            "sourceBytesReductionPct": 39.84096146026296,
+            "filesOpenedReductionPct": -48.71794871794874,
+            "firstRelevantPairs": 9,
+            "firstRelevantReductionPct": 16.266666666666666,
+            "correctness": {
+              "discoveryRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "sourceGroundingRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "answerSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "groundedSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              }
+            },
+            "precision": {
+              "baseline": 0.990090212201991,
+              "stellar": 0.705294780322944
+            }
+          },
+          "editing-prep": {
+            "status": "measured",
+            "pairedRuns": 9,
+            "tasks": 3,
+            "inputTokenReductionPct": 3.1777564570296284,
+            "toolCallReductionPct": -7.317073170731721,
+            "searchCallReductionPct": 31.24999999999999,
+            "sourceBytesReductionPct": 46.92370598422166,
+            "filesOpenedReductionPct": -35.483870967741936,
+            "firstRelevantPairs": 9,
+            "firstRelevantReductionPct": 9.823321554770319,
+            "correctness": {
+              "discoveryRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "sourceGroundingRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "answerSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "groundedSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              }
+            },
+            "precision": {
+              "baseline": 0.9842697710217433,
+              "stellar": 0.6556396429056963
+            }
+          }
+        },
+        "taskDistribution": {
+          "tasks": 12,
+          "byCategory": {
+            "navigation": 3,
+            "flow": 3,
+            "impact": 3,
+            "editing-prep": 3
+          }
+        },
+        "coverage": {
+          "campaigns": 1,
+          "baselineRuns": 36,
+          "stellarRuns": 36,
+          "pairedAvailableRuns": 36,
+          "pairedRuns": 36,
+          "excludedFailedPairs": 0,
+          "unpairedBaseline": 0,
+          "unpairedStellar": 0,
+          "campaignsWithoutCoverage": 0,
+          "coverageGaps": 0,
+          "note": "Pairs with a failed invocation on either side are coverage gaps and are excluded from every performance aggregate."
+        },
+        "campaign": [
+          {
+            "id": "nestmind::claude::2026-11-04T02:33:30.838Z",
+            "repository": "nestmind",
+            "agent": "claude",
+            "agentVersion": "2.1.317 (Claude Code)",
+            "model": null,
+            "runtimeCommit": "6c9eb49896a298f6edab6f7d0fa8cb59e03f2242",
+            "runtimePackageVersion": "0.5.5",
+            "runtimeDirty": false,
+            "runtimeChangedDuringCampaign": false,
+            "repoCommit": "3dc749f17631259529aec8a13ff8e2ce5e4b3920",
+            "taskHash": "202b18e852f25e391bfe5654213dca96adc948e634ae37228dd7bc3df57d88d0",
+            "campaignStartedAt": "2026-11-04T02:33:30.838Z",
+            "repeat": 3,
+            "projectRoot": "/Users/sheldon.chang/Projects/Private/stellar-holdout-v056/nestmind",
+            "repositoryIdentity": {
+              "rootCommits": [
+                "4aa1734bce6bc1c646fde58b1ca0f5c20b327cd5"
+              ],
+              "remote": "https://gitlab.saikah.com/harness/nestmind.git"
+            },
+            "runtimeVerified": true,
+            "sourceSchemaVersion": 5,
+            "upgradedFromJsonl": false,
+            "invalidReasons": [],
+            "valid": true,
+            "reportFile": "/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete/validation/v0.5.6/holdout/nestmind/claude-20261104-103330/report.json"
+          }
+        ]
+      }
+    },
+    "reefmori": {
+      "claude": {
+        "repository": "reefmori",
+        "agent": "claude",
+        "status": "measured",
+        "pairedRuns": 30,
+        "tasks": 10,
+        "inputTokenReductionPct": 43.5727229815592,
+        "toolCallReductionPct": 56.481481481481474,
+        "searchCallReductionPct": 76.76767676767678,
+        "sourceBytesReductionPct": 71.76558510167472,
+        "filesOpenedReductionPct": 21.311475409836056,
+        "firstRelevantPairs": 30,
+        "firstRelevantReductionPct": 19.982123348892642,
+        "correctness": {
+          "discoveryRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "sourceGroundingRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "answerSuccessRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "groundedSuccessRate": {
+            "baseline": 100,
+            "stellar": 100
+          }
+        },
+        "precision": {
+          "baseline": 0.7811301474616892,
+          "stellar": 0.7906251364125194
+        },
+        "meetsCorrectnessTarget": true,
+        "categories": {
+          "navigation": {
+            "status": "measured",
+            "pairedRuns": 6,
+            "tasks": 2,
+            "inputTokenReductionPct": 47.56122023202454,
+            "toolCallReductionPct": 67.64705882352942,
+            "searchCallReductionPct": 80,
+            "sourceBytesReductionPct": 77.91772895470856,
+            "filesOpenedReductionPct": 52,
+            "firstRelevantPairs": 6,
+            "firstRelevantReductionPct": 8.02863436123348,
+            "correctness": {
+              "discoveryRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "sourceGroundingRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "answerSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "groundedSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              }
+            },
+            "precision": {
+              "baseline": 0.6724982617104769,
+              "stellar": 0.8684039087947882
+            }
+          },
+          "flow": {
+            "status": "measured",
+            "pairedRuns": 15,
+            "tasks": 5,
+            "inputTokenReductionPct": 45.33473443910229,
+            "toolCallReductionPct": 56.25,
+            "searchCallReductionPct": 78.33333333333333,
+            "sourceBytesReductionPct": 70.27239910785158,
+            "filesOpenedReductionPct": 32.83582089552239,
+            "firstRelevantPairs": 15,
+            "firstRelevantReductionPct": 24.75975127190503,
+            "correctness": {
+              "discoveryRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "sourceGroundingRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "answerSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "groundedSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              }
+            },
+            "precision": {
+              "baseline": 0.6866196105319221,
+              "stellar": 0.7798202922824528
+            }
+          },
+          "impact": {
+            "status": "measured",
+            "pairedRuns": 3,
+            "tasks": 1,
+            "inputTokenReductionPct": 17.63316295946852,
+            "toolCallReductionPct": 28.571428571428577,
+            "searchCallReductionPct": 42.85714285714287,
+            "sourceBytesReductionPct": 55.08775899408476,
+            "filesOpenedReductionPct": -150,
+            "firstRelevantPairs": 3,
+            "firstRelevantReductionPct": -7.116839450826562,
+            "correctness": {
+              "discoveryRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "sourceGroundingRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "answerSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "groundedSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              }
+            },
+            "precision": {
+              "baseline": 1,
+              "stellar": 0.6759149303681313
+            }
+          },
+          "editing-prep": {
+            "status": "measured",
+            "pairedRuns": 6,
+            "tasks": 2,
+            "inputTokenReductionPct": 45.39578316539519,
+            "toolCallReductionPct": 57.49999999999999,
+            "searchCallReductionPct": 82.35294117647058,
+            "sourceBytesReductionPct": 76.37860693515523,
+            "filesOpenedReductionPct": 0,
+            "firstRelevantPairs": 6,
+            "firstRelevantReductionPct": 15.330723263960436,
+            "correctness": {
+              "discoveryRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "sourceGroundingRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "answerSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "groundedSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              }
+            },
+            "precision": {
+              "baseline": 0.9963286656486565,
+              "stellar": 0.8419625488770558
+            }
+          }
+        },
+        "taskDistribution": {
+          "tasks": 10,
+          "byCategory": {
+            "navigation": 2,
+            "flow": 5,
+            "impact": 1,
+            "editing-prep": 2
+          }
+        },
+        "coverage": {
+          "campaigns": 1,
+          "baselineRuns": 30,
+          "stellarRuns": 30,
+          "pairedAvailableRuns": 30,
+          "pairedRuns": 30,
+          "excludedFailedPairs": 0,
+          "unpairedBaseline": 0,
+          "unpairedStellar": 0,
+          "campaignsWithoutCoverage": 0,
+          "coverageGaps": 0,
+          "note": "Pairs with a failed invocation on either side are coverage gaps and are excluded from every performance aggregate."
+        },
+        "campaign": [
+          {
+            "id": "reefmori::claude::2026-11-04T01:34:05.643Z",
+            "repository": "reefmori",
+            "agent": "claude",
+            "agentVersion": "2.1.317 (Claude Code)",
+            "model": null,
+            "runtimeCommit": "6c9eb49896a298f6edab6f7d0fa8cb59e03f2242",
+            "runtimePackageVersion": "0.5.5",
+            "runtimeDirty": false,
+            "runtimeChangedDuringCampaign": false,
+            "repoCommit": "6f2b9a5593c82f8b1430c1dc651e1d435808de69",
+            "taskHash": "c1ed9e17e30fb9a55705723f5cb3abd56865800c78cf192faa044b0898633f10",
+            "campaignStartedAt": "2026-11-04T01:34:05.643Z",
+            "repeat": 3,
+            "projectRoot": "/Users/sheldon.chang/Projects/Private/stellar-holdout-v056/reefmori",
+            "repositoryIdentity": {
+              "rootCommits": [
+                "0be784d50f6700ebc95ecf9d5deef028c816bda2"
+              ],
+              "remote": "git@github.com:SheldonChangL/reefmori.git"
+            },
+            "runtimeVerified": true,
+            "sourceSchemaVersion": 5,
+            "upgradedFromJsonl": false,
+            "invalidReasons": [],
+            "valid": true,
+            "reportFile": "/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete/validation/v0.5.6/holdout/reefmori/claude-20261104-093404/report.json"
+          }
+        ]
+      }
+    }
+  },
+  "byCategory": {
+    "navigation": {
+      "status": "measured",
+      "repoCount": 3,
+      "taskCount": 8,
+      "pairedRunCount": 24,
+      "runWeighted": {
+        "status": "measured",
+        "pairedRuns": 24,
+        "tasks": 8,
+        "inputTokenReductionPct": 24.31663708374899,
+        "toolCallReductionPct": 36.633663366336634,
+        "searchCallReductionPct": 76.78571428571429,
+        "sourceBytesReductionPct": 34.514406888468265,
+        "filesOpenedReductionPct": -32.75862068965519,
+        "firstRelevantPairs": 24,
+        "firstRelevantReductionPct": 4.879217791411043,
+        "correctness": {
+          "discoveryRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "sourceGroundingRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "answerSuccessRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "groundedSuccessRate": {
+            "baseline": 100,
+            "stellar": 100
+          }
+        },
+        "precision": {
+          "baseline": 0.7731303350217646,
+          "stellar": 0.7108903126245154
+        }
+      },
+      "repoWeighted": {
+        "units": 3,
+        "inputTokenReductionPct": {
+          "mean": 22.935018373503226,
+          "median": 26.842809676623325,
+          "min": -5.598974788138174,
+          "max": 47.56122023202454,
+          "n": 3
+        },
+        "toolCallReductionPct": {
+          "mean": 30.96861933179069,
+          "median": 34.782608695652165,
+          "min": -9.523809523809508,
+          "max": 67.64705882352942,
+          "n": 3
+        },
+        "searchCallReductionPct": {
+          "mean": 76.95402298850576,
+          "median": 75.86206896551725,
+          "min": 75,
+          "max": 80,
+          "n": 3
+        },
+        "sourceBytesReductionPct": {
+          "mean": 13.42978460002284,
+          "median": 9.914954824114284,
+          "min": -47.543329978754336,
+          "max": 77.91772895470856,
+          "n": 3
+        },
+        "filesOpenedReductionPct": {
+          "mean": -82.66666666666664,
+          "median": -33.33333333333333,
+          "min": -266.66666666666663,
+          "max": 52,
+          "n": 3
+        },
+        "firstRelevantReductionPct": {
+          "mean": -11.593393225719572,
+          "median": -1.1817670230725943,
+          "min": -41.6270470153196,
+          "max": 8.02863436123348,
+          "n": 3
+        },
+        "precision": {
+          "baselineMedian": 0.8073007582845732,
+          "stellarMedian": 0.7316215478824991
+        }
+      }
+    },
+    "flow": {
+      "status": "measured",
+      "repoCount": 3,
+      "taskCount": 11,
+      "pairedRunCount": 33,
+      "runWeighted": {
+        "status": "measured",
+        "pairedRuns": 33,
+        "tasks": 11,
+        "inputTokenReductionPct": 31.152102296444678,
+        "toolCallReductionPct": 41.76245210727969,
+        "searchCallReductionPct": 63.70967741935485,
+        "sourceBytesReductionPct": 54.818164785363024,
+        "filesOpenedReductionPct": -3.5714285714285685,
+        "firstRelevantPairs": 33,
+        "firstRelevantReductionPct": 16.23199688594784,
+        "correctness": {
+          "discoveryRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "sourceGroundingRate": {
+            "baseline": 90.9090909090909,
+            "stellar": 90.9090909090909
+          },
+          "answerSuccessRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "groundedSuccessRate": {
+            "baseline": 90.9090909090909,
+            "stellar": 90.9090909090909
+          }
+        },
+        "precision": {
+          "baseline": 0.7592926986230324,
+          "stellar": 0.7774659314572472
+        }
+      },
+      "repoWeighted": {
+        "units": 3,
+        "inputTokenReductionPct": {
+          "mean": 26.578740517064528,
+          "median": 17.216020114604277,
+          "min": 17.18546699748701,
+          "max": 45.33473443910229,
+          "n": 3
+        },
+        "toolCallReductionPct": {
+          "mean": 36.93870210510375,
+          "median": 35.211267605633815,
+          "min": 19.354838709677427,
+          "max": 56.25,
+          "n": 3
+        },
+        "searchCallReductionPct": {
+          "mean": 59.54296661193212,
+          "median": 51.724137931034484,
+          "min": 48.57142857142857,
+          "max": 78.33333333333333,
+          "n": 3
+        },
+        "sourceBytesReductionPct": {
+          "mean": 39.210746005422756,
+          "median": 35.5543358946213,
+          "min": 11.80550301379537,
+          "max": 70.27239910785158,
+          "n": 3
+        },
+        "filesOpenedReductionPct": {
+          "mean": -13.854526167959007,
+          "median": -21.621621621621635,
+          "min": -52.77777777777777,
+          "max": 32.83582089552239,
+          "n": 3
+        },
+        "firstRelevantReductionPct": {
+          "mean": 19.797109454534535,
+          "median": 24.75975127190503,
+          "min": 9.317803660565724,
+          "max": 25.313773431132848,
+          "n": 3
+        },
+        "precision": {
+          "baselineMedian": 0.8704563274266897,
+          "stellarMedian": 0.7760842627013631
+        }
+      }
+    },
+    "impact": {
+      "status": "measured",
+      "repoCount": 3,
+      "taskCount": 7,
+      "pairedRunCount": 21,
+      "runWeighted": {
+        "status": "measured",
+        "pairedRuns": 21,
+        "tasks": 7,
+        "inputTokenReductionPct": 10.4638866771404,
+        "toolCallReductionPct": 26.618705035971225,
+        "searchCallReductionPct": 43.75,
+        "sourceBytesReductionPct": 36.091243962218186,
+        "filesOpenedReductionPct": -84.41558441558442,
+        "firstRelevantPairs": 21,
+        "firstRelevantReductionPct": 19.5320808224034,
+        "correctness": {
+          "discoveryRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "sourceGroundingRate": {
+            "baseline": 95.23809523809523,
+            "stellar": 100
+          },
+          "answerSuccessRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "groundedSuccessRate": {
+            "baseline": 95.23809523809523,
+            "stellar": 100
+          }
+        },
+        "precision": {
+          "baseline": 0.9857995671430004,
+          "stellar": 0.7527165076196777
+        }
+      },
+      "repoWeighted": {
+        "units": 3,
+        "inputTokenReductionPct": {
+          "mean": 11.36812580458122,
+          "median": 17.63316295946852,
+          "min": -2.175393055275148,
+          "max": 18.646607509550293,
+          "n": 3
+        },
+        "toolCallReductionPct": {
+          "mean": 26.25052079503958,
+          "median": 28.571428571428577,
+          "min": 6.896551724137934,
+          "max": 43.28358208955224,
+          "n": 3
+        },
+        "searchCallReductionPct": {
+          "mean": 43.29805996472663,
+          "median": 42.85714285714287,
+          "min": 37.03703703703704,
+          "max": 50,
+          "n": 3
+        },
+        "sourceBytesReductionPct": {
+          "mean": 37.06484574676068,
+          "median": 39.84096146026296,
+          "min": 16.265816785934323,
+          "max": 55.08775899408476,
+          "n": 3
+        },
+        "filesOpenedReductionPct": {
+          "mean": -104.78098290598291,
+          "median": -115.62500000000003,
+          "min": -150,
+          "max": -48.71794871794874,
+          "n": 3
+        },
+        "firstRelevantReductionPct": {
+          "mean": -6.358837652077123,
+          "median": -7.116839450826562,
+          "min": -28.226340172071474,
+          "max": 16.266666666666666,
+          "n": 3
+        },
+        "precision": {
+          "baselineMedian": 0.990090212201991,
+          "stellarMedian": 0.705294780322944
+        }
+      }
+    },
+    "editing-prep": {
+      "status": "measured",
+      "repoCount": 3,
+      "taskCount": 8,
+      "pairedRunCount": 24,
+      "runWeighted": {
+        "status": "measured",
+        "pairedRuns": 24,
+        "tasks": 8,
+        "inputTokenReductionPct": 19.31493883957601,
+        "toolCallReductionPct": 24.999999999999996,
+        "searchCallReductionPct": 48.275862068965516,
+        "sourceBytesReductionPct": 55.76857771099169,
+        "filesOpenedReductionPct": -34.78260869565218,
+        "firstRelevantPairs": 24,
+        "firstRelevantReductionPct": 13.971457140259977,
+        "correctness": {
+          "discoveryRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "sourceGroundingRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "answerSuccessRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "groundedSuccessRate": {
+            "baseline": 100,
+            "stellar": 100
+          }
+        },
+        "precision": {
+          "baseline": 0.9080495632019968,
+          "stellar": 0.6715147385544077
+        }
+      },
+      "repoWeighted": {
+        "units": 3,
+        "inputTokenReductionPct": {
+          "mean": 20.019092123493966,
+          "median": 11.483736748057078,
+          "min": 3.1777564570296284,
+          "max": 45.39578316539519,
+          "n": 3
+        },
+        "toolCallReductionPct": {
+          "mean": 25.202218547609196,
+          "median": 25.423728813559315,
+          "min": -7.317073170731721,
+          "max": 57.49999999999999,
+          "n": 3
+        },
+        "searchCallReductionPct": {
+          "mean": 49.86764705882353,
+          "median": 36,
+          "min": 31.24999999999999,
+          "max": 82.35294117647058,
+          "n": 3
+        },
+        "sourceBytesReductionPct": {
+          "mean": 51.19684528756223,
+          "median": 46.92370598422166,
+          "min": 30.28822294330979,
+          "max": 76.37860693515523,
+          "n": 3
+        },
+        "filesOpenedReductionPct": {
+          "mean": -30.746875908166242,
+          "median": -35.483870967741936,
+          "min": -56.75675675675678,
+          "max": 0,
+          "n": 3
+        },
+        "firstRelevantReductionPct": {
+          "mean": 12.990698366356925,
+          "median": 13.818050280340024,
+          "min": 9.823321554770319,
+          "max": 15.330723263960436,
+          "n": 3
+        },
+        "precision": {
+          "baselineMedian": 0.9842697710217433,
+          "stellarMedian": 0.6556396429056963
+        }
+      }
+    }
+  },
+  "byAgent": {
+    "claude": {
+      "repositories": [
+        "jetchat-admin",
+        "nestmind",
+        "reefmori"
+      ],
+      "runWeighted": {
+        "status": "measured",
+        "pairedRuns": 102,
+        "tasks": 34,
+        "inputTokenReductionPct": 23.2276716473351,
+        "toolCallReductionPct": 34.00936037441497,
+        "searchCallReductionPct": 58.94039735099338,
+        "sourceBytesReductionPct": 49.216623992825006,
+        "filesOpenedReductionPct": -32.970027247956395,
+        "firstRelevantPairs": 102,
+        "firstRelevantReductionPct": 17.97307266691258,
+        "correctness": {
+          "discoveryRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "sourceGroundingRate": {
+            "baseline": 96.07843137254902,
+            "stellar": 97.05882352941177
+          },
+          "answerSuccessRate": {
+            "baseline": 100,
+            "stellar": 100
+          },
+          "groundedSuccessRate": {
+            "baseline": 96.07843137254902,
+            "stellar": 97.05882352941177
+          }
+        },
+        "precision": {
+          "baseline": 0.8383572740817892,
+          "stellar": 0.7352842986562996
+        }
+      },
+      "repoWeighted": {
+        "units": 3,
+        "inputTokenReductionPct": {
+          "mean": 22.764410773374436,
+          "median": 13.9624549987703,
+          "min": 10.758054339793812,
+          "max": 43.5727229815592,
+          "n": 3
+        },
+        "toolCallReductionPct": {
+          "mean": 33.65689155392471,
+          "median": 25.641025641025646,
+          "min": 18.848167539267017,
+          "max": 56.481481481481474,
+          "n": 3
+        },
+        "searchCallReductionPct": {
+          "mean": 59.11412980378498,
+          "median": 50.574712643678154,
+          "min": 50,
+          "max": 76.76767676767678,
+          "n": 3
+        },
+        "sourceBytesReductionPct": {
+          "mean": 40.68105003347004,
+          "median": 25.533860197622353,
+          "min": 24.74370480111303,
+          "max": 71.76558510167472,
+          "n": 3
+        },
+        "filesOpenedReductionPct": {
+          "mean": -33.029954127602025,
+          "median": -56.923076923076934,
+          "min": -63.478260869565204,
+          "max": 21.311475409836056,
+          "n": 3
+        },
+        "firstRelevantReductionPct": {
+          "mean": 15.660326814283815,
+          "median": 16.836555360281196,
+          "min": 10.16230173367761,
+          "max": 19.982123348892642,
+          "n": 3
+        },
+        "precision": {
+          "baselineMedian": 0.8225982322062684,
+          "stellarMedian": 0.7238331098667087
+        }
+      },
+      "byCategory": {
+        "navigation": {
+          "status": "measured",
+          "repoCount": 3,
+          "taskCount": 8,
+          "pairedRunCount": 24,
+          "runWeighted": {
+            "status": "measured",
+            "pairedRuns": 24,
+            "tasks": 8,
+            "inputTokenReductionPct": 24.31663708374899,
+            "toolCallReductionPct": 36.633663366336634,
+            "searchCallReductionPct": 76.78571428571429,
+            "sourceBytesReductionPct": 34.514406888468265,
+            "filesOpenedReductionPct": -32.75862068965519,
+            "firstRelevantPairs": 24,
+            "firstRelevantReductionPct": 4.879217791411043,
+            "correctness": {
+              "discoveryRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "sourceGroundingRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "answerSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "groundedSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              }
+            },
+            "precision": {
+              "baseline": 0.7731303350217646,
+              "stellar": 0.7108903126245154
+            }
+          },
+          "repoWeighted": {
+            "units": 3,
+            "inputTokenReductionPct": {
+              "mean": 22.935018373503226,
+              "median": 26.842809676623325,
+              "min": -5.598974788138174,
+              "max": 47.56122023202454,
+              "n": 3
+            },
+            "toolCallReductionPct": {
+              "mean": 30.96861933179069,
+              "median": 34.782608695652165,
+              "min": -9.523809523809508,
+              "max": 67.64705882352942,
+              "n": 3
+            },
+            "searchCallReductionPct": {
+              "mean": 76.95402298850576,
+              "median": 75.86206896551725,
+              "min": 75,
+              "max": 80,
+              "n": 3
+            },
+            "sourceBytesReductionPct": {
+              "mean": 13.42978460002284,
+              "median": 9.914954824114284,
+              "min": -47.543329978754336,
+              "max": 77.91772895470856,
+              "n": 3
+            },
+            "filesOpenedReductionPct": {
+              "mean": -82.66666666666664,
+              "median": -33.33333333333333,
+              "min": -266.66666666666663,
+              "max": 52,
+              "n": 3
+            },
+            "firstRelevantReductionPct": {
+              "mean": -11.593393225719572,
+              "median": -1.1817670230725943,
+              "min": -41.6270470153196,
+              "max": 8.02863436123348,
+              "n": 3
+            },
+            "precision": {
+              "baselineMedian": 0.8073007582845732,
+              "stellarMedian": 0.7316215478824991
+            }
+          }
+        },
+        "flow": {
+          "status": "measured",
+          "repoCount": 3,
+          "taskCount": 11,
+          "pairedRunCount": 33,
+          "runWeighted": {
+            "status": "measured",
+            "pairedRuns": 33,
+            "tasks": 11,
+            "inputTokenReductionPct": 31.152102296444678,
+            "toolCallReductionPct": 41.76245210727969,
+            "searchCallReductionPct": 63.70967741935485,
+            "sourceBytesReductionPct": 54.818164785363024,
+            "filesOpenedReductionPct": -3.5714285714285685,
+            "firstRelevantPairs": 33,
+            "firstRelevantReductionPct": 16.23199688594784,
+            "correctness": {
+              "discoveryRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "sourceGroundingRate": {
+                "baseline": 90.9090909090909,
+                "stellar": 90.9090909090909
+              },
+              "answerSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "groundedSuccessRate": {
+                "baseline": 90.9090909090909,
+                "stellar": 90.9090909090909
+              }
+            },
+            "precision": {
+              "baseline": 0.7592926986230324,
+              "stellar": 0.7774659314572472
+            }
+          },
+          "repoWeighted": {
+            "units": 3,
+            "inputTokenReductionPct": {
+              "mean": 26.578740517064528,
+              "median": 17.216020114604277,
+              "min": 17.18546699748701,
+              "max": 45.33473443910229,
+              "n": 3
+            },
+            "toolCallReductionPct": {
+              "mean": 36.93870210510375,
+              "median": 35.211267605633815,
+              "min": 19.354838709677427,
+              "max": 56.25,
+              "n": 3
+            },
+            "searchCallReductionPct": {
+              "mean": 59.54296661193212,
+              "median": 51.724137931034484,
+              "min": 48.57142857142857,
+              "max": 78.33333333333333,
+              "n": 3
+            },
+            "sourceBytesReductionPct": {
+              "mean": 39.210746005422756,
+              "median": 35.5543358946213,
+              "min": 11.80550301379537,
+              "max": 70.27239910785158,
+              "n": 3
+            },
+            "filesOpenedReductionPct": {
+              "mean": -13.854526167959007,
+              "median": -21.621621621621635,
+              "min": -52.77777777777777,
+              "max": 32.83582089552239,
+              "n": 3
+            },
+            "firstRelevantReductionPct": {
+              "mean": 19.797109454534535,
+              "median": 24.75975127190503,
+              "min": 9.317803660565724,
+              "max": 25.313773431132848,
+              "n": 3
+            },
+            "precision": {
+              "baselineMedian": 0.8704563274266897,
+              "stellarMedian": 0.7760842627013631
+            }
+          }
+        },
+        "impact": {
+          "status": "measured",
+          "repoCount": 3,
+          "taskCount": 7,
+          "pairedRunCount": 21,
+          "runWeighted": {
+            "status": "measured",
+            "pairedRuns": 21,
+            "tasks": 7,
+            "inputTokenReductionPct": 10.4638866771404,
+            "toolCallReductionPct": 26.618705035971225,
+            "searchCallReductionPct": 43.75,
+            "sourceBytesReductionPct": 36.091243962218186,
+            "filesOpenedReductionPct": -84.41558441558442,
+            "firstRelevantPairs": 21,
+            "firstRelevantReductionPct": 19.5320808224034,
+            "correctness": {
+              "discoveryRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "sourceGroundingRate": {
+                "baseline": 95.23809523809523,
+                "stellar": 100
+              },
+              "answerSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "groundedSuccessRate": {
+                "baseline": 95.23809523809523,
+                "stellar": 100
+              }
+            },
+            "precision": {
+              "baseline": 0.9857995671430004,
+              "stellar": 0.7527165076196777
+            }
+          },
+          "repoWeighted": {
+            "units": 3,
+            "inputTokenReductionPct": {
+              "mean": 11.36812580458122,
+              "median": 17.63316295946852,
+              "min": -2.175393055275148,
+              "max": 18.646607509550293,
+              "n": 3
+            },
+            "toolCallReductionPct": {
+              "mean": 26.25052079503958,
+              "median": 28.571428571428577,
+              "min": 6.896551724137934,
+              "max": 43.28358208955224,
+              "n": 3
+            },
+            "searchCallReductionPct": {
+              "mean": 43.29805996472663,
+              "median": 42.85714285714287,
+              "min": 37.03703703703704,
+              "max": 50,
+              "n": 3
+            },
+            "sourceBytesReductionPct": {
+              "mean": 37.06484574676068,
+              "median": 39.84096146026296,
+              "min": 16.265816785934323,
+              "max": 55.08775899408476,
+              "n": 3
+            },
+            "filesOpenedReductionPct": {
+              "mean": -104.78098290598291,
+              "median": -115.62500000000003,
+              "min": -150,
+              "max": -48.71794871794874,
+              "n": 3
+            },
+            "firstRelevantReductionPct": {
+              "mean": -6.358837652077123,
+              "median": -7.116839450826562,
+              "min": -28.226340172071474,
+              "max": 16.266666666666666,
+              "n": 3
+            },
+            "precision": {
+              "baselineMedian": 0.990090212201991,
+              "stellarMedian": 0.705294780322944
+            }
+          }
+        },
+        "editing-prep": {
+          "status": "measured",
+          "repoCount": 3,
+          "taskCount": 8,
+          "pairedRunCount": 24,
+          "runWeighted": {
+            "status": "measured",
+            "pairedRuns": 24,
+            "tasks": 8,
+            "inputTokenReductionPct": 19.31493883957601,
+            "toolCallReductionPct": 24.999999999999996,
+            "searchCallReductionPct": 48.275862068965516,
+            "sourceBytesReductionPct": 55.76857771099169,
+            "filesOpenedReductionPct": -34.78260869565218,
+            "firstRelevantPairs": 24,
+            "firstRelevantReductionPct": 13.971457140259977,
+            "correctness": {
+              "discoveryRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "sourceGroundingRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "answerSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              },
+              "groundedSuccessRate": {
+                "baseline": 100,
+                "stellar": 100
+              }
+            },
+            "precision": {
+              "baseline": 0.9080495632019968,
+              "stellar": 0.6715147385544077
+            }
+          },
+          "repoWeighted": {
+            "units": 3,
+            "inputTokenReductionPct": {
+              "mean": 20.019092123493966,
+              "median": 11.483736748057078,
+              "min": 3.1777564570296284,
+              "max": 45.39578316539519,
+              "n": 3
+            },
+            "toolCallReductionPct": {
+              "mean": 25.202218547609196,
+              "median": 25.423728813559315,
+              "min": -7.317073170731721,
+              "max": 57.49999999999999,
+              "n": 3
+            },
+            "searchCallReductionPct": {
+              "mean": 49.86764705882353,
+              "median": 36,
+              "min": 31.24999999999999,
+              "max": 82.35294117647058,
+              "n": 3
+            },
+            "sourceBytesReductionPct": {
+              "mean": 51.19684528756223,
+              "median": 46.92370598422166,
+              "min": 30.28822294330979,
+              "max": 76.37860693515523,
+              "n": 3
+            },
+            "filesOpenedReductionPct": {
+              "mean": -30.746875908166242,
+              "median": -35.483870967741936,
+              "min": -56.75675675675678,
+              "max": 0,
+              "n": 3
+            },
+            "firstRelevantReductionPct": {
+              "mean": 12.990698366356925,
+              "median": 13.818050280340024,
+              "min": 9.823321554770319,
+              "max": 15.330723263960436,
+              "n": 3
+            },
+            "precision": {
+              "baselineMedian": 0.9842697710217433,
+              "stellarMedian": 0.6556396429056963
+            }
+          }
+        }
+      },
+      "winLoss": {
+        "inputTokens": {
+          "wins": 20,
+          "neutral": 7,
+          "losses": 7,
+          "notApplicable": 0,
+          "tasks": 34
+        },
+        "toolCalls": {
+          "wins": 22,
+          "neutral": 8,
+          "losses": 4,
+          "notApplicable": 0,
+          "tasks": 34
+        },
+        "searchCalls": {
+          "wins": 31,
+          "neutral": 2,
+          "losses": 1,
+          "notApplicable": 0,
+          "tasks": 34
+        },
+        "sourceBytes": {
+          "wins": 24,
+          "neutral": 1,
+          "losses": 9,
+          "notApplicable": 0,
+          "tasks": 34
+        }
+      },
+      "catastrophicRegressionTasks": [
+        {
+          "repository": "jetchat-admin",
+          "agent": "claude",
+          "taskId": "flow-sign-in-to-session-cookie",
+          "category": "flow",
+          "metric": "inputTokens",
+          "baselineMedian": 202931,
+          "stellarMedian": 285582,
+          "deltaPct": 40.728622043945975,
+          "stellarGroundedSuccessRate": 100
+        },
+        {
+          "repository": "jetchat-admin",
+          "agent": "claude",
+          "taskId": "impact-shared-date-picker-props",
+          "category": "impact",
+          "metric": "inputTokens",
+          "baselineMedian": 146404,
+          "stellarMedian": 186805,
+          "deltaPct": 27.595557498429002,
+          "stellarGroundedSuccessRate": 100
+        }
+      ],
+      "determinism": {
+        "inputTokens": {
+          "tasksWithRepetitions": 34,
+          "baselineMedianCv": 0.10473439264813768,
+          "stellarMedianCv": 0.0880290950851956,
+          "tasksWhereStellarLessVariable": 17
+        },
+        "toolCalls": {
+          "tasksWithRepetitions": 34,
+          "baselineMedianCv": 0.10206207261596575,
+          "stellarMedianCv": 0.1414213562373095,
+          "tasksWhereStellarLessVariable": 10
+        },
+        "sourceBytesRead": {
+          "tasksWithRepetitions": 34,
+          "baselineMedianCv": 0.06875761691918672,
+          "stellarMedianCv": 0.05922853978942781,
+          "tasksWhereStellarLessVariable": 15
+        },
+        "note": "Coefficient of variation across repetitions of the same task and condition. Describes run-to-run stability only; it is not a correctness measure."
+      },
+      "scorecard": {
+        "repositories": 3,
+        "repositoriesMeetingCorrectnessTarget": "2/3",
+        "repositoriesMeetingInputTarget": "1/3",
+        "repositoriesMeetingToolTarget": "2/3",
+        "repositoriesMeetingSearchTarget": "3/3",
+        "repositoriesMeetingSourceByteTarget": "1/3",
+        "repositoriesMeetingStrongInputTarget": "1/3",
+        "repositoriesMeetingStrongToolTarget": "1/3",
+        "repositoriesMeetingStrongSearchTarget": "3/3",
+        "repositoriesMeetingStrongSourceByteTarget": "1/3",
+        "repoMedianInputReductionPct": 13.9624549987703,
+        "repoMedianToolReductionPct": 25.641025641025646,
+        "repoMedianSearchReductionPct": 50.574712643678154,
+        "repoMedianSourceByteReductionPct": 25.533860197622353,
+        "categoriesWithPositiveMedianInputReduction": "4/4",
+        "categoriesRepresentedInAtLeastTwoRepos": "4/4",
+        "catastrophicRegressionTasks": 2,
+        "repeatedCatastrophicPatterns": [],
+        "distinctRepositoryIdentities": 3,
+        "campaignsWithoutRuntimeVerification": []
+      },
+      "suggestedDecision": {
+        "decision": "PARTIAL GENERALIZATION",
+        "reasons": [
+          "1 repositories below 100% grounded correctness",
+          "repo-median input reduction < 20%"
+        ]
+      },
+      "agentScope": "claude-only"
+    }
+  },
+  "crossAgentConsistency": {
+    "status": "n/a",
+    "reason": "Only one agent completed campaigns; cross-agent consistency needs at least two.",
+    "agents": [
+      "claude"
+    ]
+  },
+  "taskDistribution": {
+    "tasks": 34,
+    "byCategory": {
+      "navigation": 8,
+      "flow": 11,
+      "impact": 7,
+      "editing-prep": 8
+    }
+  },
+  "winLoss": {
+    "inputTokens": {
+      "wins": 20,
+      "neutral": 7,
+      "losses": 7,
+      "notApplicable": 0,
+      "tasks": 34
+    },
+    "toolCalls": {
+      "wins": 22,
+      "neutral": 8,
+      "losses": 4,
+      "notApplicable": 0,
+      "tasks": 34
+    },
+    "searchCalls": {
+      "wins": 31,
+      "neutral": 2,
+      "losses": 1,
+      "notApplicable": 0,
+      "tasks": 34
+    },
+    "sourceBytes": {
+      "wins": 24,
+      "neutral": 1,
+      "losses": 9,
+      "notApplicable": 0,
+      "tasks": 34
+    }
+  },
+  "catastrophicRegressionTasks": [
+    {
+      "repository": "jetchat-admin",
+      "agent": "claude",
+      "taskId": "flow-sign-in-to-session-cookie",
+      "category": "flow",
+      "metric": "inputTokens",
+      "baselineMedian": 202931,
+      "stellarMedian": 285582,
+      "deltaPct": 40.728622043945975,
+      "stellarGroundedSuccessRate": 100
+    },
+    {
+      "repository": "jetchat-admin",
+      "agent": "claude",
+      "taskId": "impact-shared-date-picker-props",
+      "category": "impact",
+      "metric": "inputTokens",
+      "baselineMedian": 146404,
+      "stellarMedian": 186805,
+      "deltaPct": 27.595557498429002,
+      "stellarGroundedSuccessRate": 100
+    }
+  ],
+  "determinism": {
+    "inputTokens": {
+      "tasksWithRepetitions": 34,
+      "baselineMedianCv": 0.10473439264813768,
+      "stellarMedianCv": 0.0880290950851956,
+      "tasksWhereStellarLessVariable": 17
+    },
+    "toolCalls": {
+      "tasksWithRepetitions": 34,
+      "baselineMedianCv": 0.10206207261596575,
+      "stellarMedianCv": 0.1414213562373095,
+      "tasksWhereStellarLessVariable": 10
+    },
+    "sourceBytesRead": {
+      "tasksWithRepetitions": 34,
+      "baselineMedianCv": 0.06875761691918672,
+      "stellarMedianCv": 0.05922853978942781,
+      "tasksWhereStellarLessVariable": 15
+    },
+    "note": "Coefficient of variation across repetitions of the same task and condition. Describes run-to-run stability only; it is not a correctness measure."
+  },
+  "coverage": {
+    "campaigns": 3,
+    "baselineRuns": 102,
+    "stellarRuns": 102,
+    "pairedAvailableRuns": 102,
+    "pairedRuns": 102,
+    "excludedFailedPairs": 0,
+    "unpairedBaseline": 0,
+    "unpairedStellar": 0,
+    "campaignsWithoutCoverage": 0,
+    "coverageGaps": 0,
+    "note": "Pairs with a failed invocation on either side are coverage gaps and are excluded from every performance aggregate."
+  },
+  "excludedCoverage": {
+    "campaigns": 0,
+    "baselineRuns": 0,
+    "stellarRuns": 0,
+    "pairedAvailableRuns": 0,
+    "pairedRuns": 0,
+    "excludedFailedPairs": 0,
+    "unpairedBaseline": 0,
+    "unpairedStellar": 0,
+    "campaignsWithoutCoverage": 0,
+    "coverageGaps": 0,
+    "note": "Pairs with a failed invocation on either side are coverage gaps and are excluded from every performance aggregate."
+  },
+  "comparabilityWarnings": [
+    {
+      "field": "campaignStartedAt",
+      "values": [
+        "2026-11-04T01:34:05.643Z",
+        "2026-11-04T02:01:27.779Z",
+        "2026-11-04T02:33:30.838Z"
+      ],
+      "message": "Absolute provider input-token values across campaigns are not directly comparable: provider-side context (system prompt, tool schema, cached framework context) can change between campaigns even with an identical agent and model version. Only same-campaign paired reductions are valid performance evidence."
+    }
+  ],
+  "taskStats": [
+    {
+      "repository": "jetchat-admin",
+      "agent": "claude",
+      "taskId": "edit-expose-organizations-module",
+      "category": "editing-prep",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 190493,
+        "stellarMedian": 156146,
+        "reductionPct": 18.030583800979564
+      },
+      "toolCalls": {
+        "baselineMedian": 6,
+        "stellarMedian": 4,
+        "reductionPct": 33.33333333333333
+      },
+      "searchCalls": {
+        "baselineMedian": 2,
+        "stellarMedian": 1,
+        "reductionPct": 50
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 14158,
+        "stellarMedian": 10115,
+        "reductionPct": 28.556293261760135
+      },
+      "filesOpened": {
+        "baselineMedian": 4,
+        "stellarMedian": 6,
+        "reductionPct": -50
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 8262,
+        "stellarMedian": 4765,
+        "reductionPct": 42.32631324134592
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.08729749879806664,
+          "stellarCv": 0.31786989896366347
+        },
+        "toolCalls": {
+          "baselineCv": 0.1414213562373095,
+          "stellarCv": 0.282842712474619
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.010330071081224525,
+          "stellarCv": 0.05293195690617774
+        }
+      }
+    },
+    {
+      "repository": "jetchat-admin",
+      "agent": "claude",
+      "taskId": "edit-group-admin-account-creation",
+      "category": "editing-prep",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 150235,
+        "stellarMedian": 152224,
+        "reductionPct": -1.3239258495024462
+      },
+      "toolCalls": {
+        "baselineMedian": 4,
+        "stellarMedian": 4,
+        "reductionPct": 0
+      },
+      "searchCalls": {
+        "baselineMedian": 2,
+        "stellarMedian": 1,
+        "reductionPct": 50
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 12340,
+        "stellarMedian": 10050,
+        "reductionPct": 18.557536466774714
+      },
+      "filesOpened": {
+        "baselineMedian": 3,
+        "stellarMedian": 5,
+        "reductionPct": -66.66666666666666
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 6420,
+        "stellarMedian": 4945,
+        "reductionPct": 22.97507788161994
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.25011884194701567,
+          "stellarCv": 0.0023807891357313393
+        },
+        "toolCalls": {
+          "baselineCv": 0.282842712474619,
+          "stellarCv": 0.128564869306645
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.3151239462802679,
+          "stellarCv": 0.07517286491646569
+        }
+      }
+    },
+    {
+      "repository": "jetchat-admin",
+      "agent": "claude",
+      "taskId": "edit-new-ai-assistant-tool",
+      "category": "editing-prep",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 225306,
+        "stellarMedian": 196618,
+        "reductionPct": 12.732905470781958
+      },
+      "toolCalls": {
+        "baselineMedian": 8,
+        "stellarMedian": 6,
+        "reductionPct": 25
+      },
+      "searchCalls": {
+        "baselineMedian": 4,
+        "stellarMedian": 3,
+        "reductionPct": 25
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 8861,
+        "stellarMedian": 10332,
+        "reductionPct": -16.600835120189593
+      },
+      "filesOpened": {
+        "baselineMedian": 5,
+        "stellarMedian": 8,
+        "reductionPct": -60
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 5472,
+        "stellarMedian": 4161,
+        "reductionPct": 23.958333333333336
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.1260310427395456,
+          "stellarCv": 0.1059302029940778
+        },
+        "toolCalls": {
+          "baselineCv": 0.10206207261596575,
+          "stellarCv": 0
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.6578536460806146,
+          "stellarCv": 0.02602077713965128
+        }
+      }
+    },
+    {
+      "repository": "jetchat-admin",
+      "agent": "claude",
+      "taskId": "flow-conversation-list-date-window",
+      "category": "flow",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 224779,
+        "stellarMedian": 151636,
+        "reductionPct": 32.5399614732693
+      },
+      "toolCalls": {
+        "baselineMedian": 7,
+        "stellarMedian": 4,
+        "reductionPct": 42.857142857142854
+      },
+      "searchCalls": {
+        "baselineMedian": 3,
+        "stellarMedian": 2,
+        "reductionPct": 33.33333333333333
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 7657,
+        "stellarMedian": 8368,
+        "reductionPct": -9.2856210003918
+      },
+      "filesOpened": {
+        "baselineMedian": 4,
+        "stellarMedian": 5,
+        "reductionPct": -25
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 4563,
+        "stellarMedian": 4287,
+        "reductionPct": 6.0486522024983564
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.08560576204434495,
+          "stellarCv": 0.11206044071792401
+        },
+        "toolCalls": {
+          "baselineCv": 0.12297509238026913,
+          "stellarCv": 0.2041241452319315
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.011738032062822448,
+          "stellarCv": 0.03209723214544649
+        }
+      }
+    },
+    {
+      "repository": "jetchat-admin",
+      "agent": "claude",
+      "taskId": "flow-member-disable-and-enable",
+      "category": "flow",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 305519,
+        "stellarMedian": 149835,
+        "reductionPct": 50.95722360966094
+      },
+      "toolCalls": {
+        "baselineMedian": 10,
+        "stellarMedian": 3,
+        "reductionPct": 70
+      },
+      "searchCalls": {
+        "baselineMedian": 6,
+        "stellarMedian": 2,
+        "reductionPct": 66.66666666666666
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 9519,
+        "stellarMedian": 4988,
+        "reductionPct": 47.59953776657212
+      },
+      "filesOpened": {
+        "baselineMedian": 4,
+        "stellarMedian": 3,
+        "reductionPct": 25
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 4808,
+        "stellarMedian": 4367,
+        "reductionPct": 9.172212978369384
+      },
+      "stellarGroundedSuccessRate": 0,
+      "baselineGroundedSuccessRate": 0,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.07101013420512856,
+          "stellarCv": 0.21658221157432983
+        },
+        "toolCalls": {
+          "baselineCv": 0.08164965809277261,
+          "stellarCv": 0.25712973861329
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.30413414707705616,
+          "stellarCv": 0.02724988775315834
+        }
+      }
+    },
+    {
+      "repository": "jetchat-admin",
+      "agent": "claude",
+      "taskId": "flow-sign-in-to-session-cookie",
+      "category": "flow",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 202931,
+        "stellarMedian": 285582,
+        "reductionPct": -40.728622043945975
+      },
+      "toolCalls": {
+        "baselineMedian": 6,
+        "stellarMedian": 8,
+        "reductionPct": -33.33333333333333
+      },
+      "searchCalls": {
+        "baselineMedian": 2,
+        "stellarMedian": 3,
+        "reductionPct": -50
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 23053,
+        "stellarMedian": 14427,
+        "reductionPct": 37.41812345464798
+      },
+      "filesOpened": {
+        "baselineMedian": 4,
+        "stellarMedian": 7,
+        "reductionPct": -75
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 6234,
+        "stellarMedian": 4360,
+        "reductionPct": 30.06095604748155
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.012443445450156193,
+          "stellarCv": 0.07818560830627946
+        },
+        "toolCalls": {
+          "baselineCv": 0,
+          "stellarCv": 0.061487546190134565
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0,
+          "stellarCv": 0.05486664705912193
+        }
+      }
+    },
+    {
+      "repository": "jetchat-admin",
+      "agent": "claude",
+      "taskId": "impact-ai-generation-settings-shape",
+      "category": "impact",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 232765,
+        "stellarMedian": 197813,
+        "reductionPct": 15.016003265095698
+      },
+      "toolCalls": {
+        "baselineMedian": 8,
+        "stellarMedian": 7,
+        "reductionPct": 12.5
+      },
+      "searchCalls": {
+        "baselineMedian": 5,
+        "stellarMedian": 3,
+        "reductionPct": 40
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 13888,
+        "stellarMedian": 14041,
+        "reductionPct": -1.1016705069124424
+      },
+      "filesOpened": {
+        "baselineMedian": 4,
+        "stellarMedian": 7,
+        "reductionPct": -75
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 6549,
+        "stellarMedian": 8324,
+        "reductionPct": -27.10337456100168
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 66.66666666666666,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.08690118462287759,
+          "stellarCv": 0.10239879649375598
+        },
+        "toolCalls": {
+          "baselineCv": 0.10206207261596575,
+          "stellarCv": 0.0642824346533225
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.13714372152078316,
+          "stellarCv": 0.020999261880228066
+        }
+      }
+    },
+    {
+      "repository": "jetchat-admin",
+      "agent": "claude",
+      "taskId": "impact-browser-readable-access-cookie",
+      "category": "impact",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 146071,
+        "stellarMedian": 144784,
+        "reductionPct": 0.8810783796920676
+      },
+      "toolCalls": {
+        "baselineMedian": 4,
+        "stellarMedian": 4,
+        "reductionPct": 0
+      },
+      "searchCalls": {
+        "baselineMedian": 2,
+        "stellarMedian": 1,
+        "reductionPct": 50
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 7489,
+        "stellarMedian": 3694,
+        "reductionPct": 50.674322339431164
+      },
+      "filesOpened": {
+        "baselineMedian": 2,
+        "stellarMedian": 4,
+        "reductionPct": -100
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 5841,
+        "stellarMedian": 4088,
+        "reductionPct": 30.011984249272384
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.1120896286806684,
+          "stellarCv": 0.0009559636119293033
+        },
+        "toolCalls": {
+          "baselineCv": 0.10878565864408424,
+          "stellarCv": 0
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.0690155457214425,
+          "stellarCv": 0.09519070735927228
+        }
+      }
+    },
+    {
+      "repository": "jetchat-admin",
+      "agent": "claude",
+      "taskId": "impact-shared-date-picker-props",
+      "category": "impact",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 146404,
+        "stellarMedian": 186805,
+        "reductionPct": -27.595557498429002
+      },
+      "toolCalls": {
+        "baselineMedian": 7,
+        "stellarMedian": 7,
+        "reductionPct": 0
+      },
+      "searchCalls": {
+        "baselineMedian": 2,
+        "stellarMedian": 2,
+        "reductionPct": 0
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 8309,
+        "stellarMedian": 5573,
+        "reductionPct": 32.92815019857985
+      },
+      "filesOpened": {
+        "baselineMedian": 5,
+        "stellarMedian": 14,
+        "reductionPct": -180
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 6044,
+        "stellarMedian": 7750,
+        "reductionPct": -28.226340172071474
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.0010814933895701485,
+          "stellarCv": 0.09787258186411174
+        },
+        "toolCalls": {
+          "baselineCv": 0,
+          "stellarCv": 0.07071067811865475
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.034641867706808785,
+          "stellarCv": 0.10779554320020553
+        }
+      }
+    },
+    {
+      "repository": "jetchat-admin",
+      "agent": "claude",
+      "taskId": "nav-all-organizations-account-listing",
+      "category": "navigation",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 301496,
+        "stellarMedian": 189038,
+        "reductionPct": 37.29999734656513
+      },
+      "toolCalls": {
+        "baselineMedian": 9,
+        "stellarMedian": 4,
+        "reductionPct": 55.55555555555556
+      },
+      "searchCalls": {
+        "baselineMedian": 6,
+        "stellarMedian": 1,
+        "reductionPct": 83.33333333333334
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 8963,
+        "stellarMedian": 7896,
+        "reductionPct": 11.904496262412138
+      },
+      "filesOpened": {
+        "baselineMedian": 4,
+        "stellarMedian": 4,
+        "reductionPct": 0
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 5726,
+        "stellarMedian": 9627,
+        "reductionPct": -68.1278379322389
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.11585145417322454,
+          "stellarCv": 0.11594369002661765
+        },
+        "toolCalls": {
+          "baselineCv": 0.05439282932204212,
+          "stellarCv": 0.20203050891044214
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.06849968811693093,
+          "stellarCv": 0.09336393174735559
+        }
+      }
+    },
+    {
+      "repository": "jetchat-admin",
+      "agent": "claude",
+      "taskId": "nav-malformed-ai-chart-rejection",
+      "category": "navigation",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 145701,
+        "stellarMedian": 112023,
+        "reductionPct": 23.114460436098586
+      },
+      "toolCalls": {
+        "baselineMedian": 4,
+        "stellarMedian": 2,
+        "reductionPct": 50
+      },
+      "searchCalls": {
+        "baselineMedian": 2,
+        "stellarMedian": 0,
+        "reductionPct": 100
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 8492,
+        "stellarMedian": 7263,
+        "reductionPct": 14.472444653791804
+      },
+      "filesOpened": {
+        "baselineMedian": 2,
+        "stellarMedian": 4,
+        "reductionPct": -100
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 4425,
+        "stellarMedian": 4418,
+        "reductionPct": 0.1581920903954802
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.10569784219664745,
+          "stellarCv": 0.000658459233509634
+        },
+        "toolCalls": {
+          "baselineCv": 0.2041241452319315,
+          "stellarCv": 0
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.015482887824722912,
+          "stellarCv": 0.018764811782235165
+        }
+      }
+    },
+    {
+      "repository": "jetchat-admin",
+      "agent": "claude",
+      "taskId": "nav-unauthenticated-redirect-and-token-cache",
+      "category": "navigation",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 144791,
+        "stellarMedian": 144264,
+        "reductionPct": 0.3639728988680236
+      },
+      "toolCalls": {
+        "baselineMedian": 3,
+        "stellarMedian": 3,
+        "reductionPct": 0
+      },
+      "searchCalls": {
+        "baselineMedian": 2,
+        "stellarMedian": 1,
+        "reductionPct": 50
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 6255,
+        "stellarMedian": 6926,
+        "reductionPct": -10.727418065547562
+      },
+      "filesOpened": {
+        "baselineMedian": 2,
+        "stellarMedian": 2,
+        "reductionPct": 0
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 6208,
+        "stellarMedian": 8043,
+        "reductionPct": -29.558634020618555
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.13794934206472154,
+          "stellarCv": 0.006377733929640618
+        },
+        "toolCalls": {
+          "baselineCv": 0.1767766952966369,
+          "stellarCv": 0.1414213562373095
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.00468808431091974,
+          "stellarCv": 0.06284129833808264
+        }
+      }
+    },
+    {
+      "repository": "nestmind",
+      "agent": "claude",
+      "taskId": "add-go-to-sandboxed-execution",
+      "category": "editing-prep",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 155962,
+        "stellarMedian": 151116,
+        "reductionPct": 3.1071671304548545
+      },
+      "toolCalls": {
+        "baselineMedian": 4,
+        "stellarMedian": 3,
+        "reductionPct": 25
+      },
+      "searchCalls": {
+        "baselineMedian": 2,
+        "stellarMedian": 1,
+        "reductionPct": 50
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 15676,
+        "stellarMedian": 4738,
+        "reductionPct": 69.7754529216637
+      },
+      "filesOpened": {
+        "baselineMedian": 4,
+        "stellarMedian": 4,
+        "reductionPct": 0
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 5835,
+        "stellarMedian": 4547,
+        "reductionPct": 22.07369323050557
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.19538390219467933,
+          "stellarCv": 0.002076305843376486
+        },
+        "toolCalls": {
+          "baselineCv": 0.20203050891044214,
+          "stellarCv": 0.25712973861329
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0,
+          "stellarCv": 0.08938152939464404
+        }
+      }
+    },
+    {
+      "repository": "nestmind",
+      "agent": "claude",
+      "taskId": "approval-resumes-work-dispatch",
+      "category": "flow",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 233572,
+        "stellarMedian": 198960,
+        "reductionPct": 14.81855701882075
+      },
+      "toolCalls": {
+        "baselineMedian": 8,
+        "stellarMedian": 5,
+        "reductionPct": 37.5
+      },
+      "searchCalls": {
+        "baselineMedian": 4,
+        "stellarMedian": 1,
+        "reductionPct": 75
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 11222,
+        "stellarMedian": 12378,
+        "reductionPct": -10.301194083051149
+      },
+      "filesOpened": {
+        "baselineMedian": 5,
+        "stellarMedian": 8,
+        "reductionPct": -60
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 6663,
+        "stellarMedian": 4362,
+        "reductionPct": 34.533993696533095
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.08789350636503748,
+          "stellarCv": 0.1764917402203625
+        },
+        "toolCalls": {
+          "baselineCv": 0.061487546190134565,
+          "stellarCv": 0.16637806616154058
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.17769133717010815,
+          "stellarCv": 0.03790633553933715
+        }
+      }
+    },
+    {
+      "repository": "nestmind",
+      "agent": "claude",
+      "taskId": "async-report-job-ownership-check",
+      "category": "editing-prep",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 161131,
+        "stellarMedian": 154756,
+        "reductionPct": 3.956408139960653
+      },
+      "toolCalls": {
+        "baselineMedian": 4,
+        "stellarMedian": 6,
+        "reductionPct": -50
+      },
+      "searchCalls": {
+        "baselineMedian": 1,
+        "stellarMedian": 1,
+        "reductionPct": 0
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 22677,
+        "stellarMedian": 9518,
+        "reductionPct": 58.02795784274816
+      },
+      "filesOpened": {
+        "baselineMedian": 3,
+        "stellarMedian": 4,
+        "reductionPct": -33.33333333333333
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 5660,
+        "stellarMedian": 5053,
+        "reductionPct": 10.724381625441696
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.00019513858357577353,
+          "stellarCv": 0.127681755584548
+        },
+        "toolCalls": {
+          "baselineCv": 0,
+          "stellarCv": 0
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0,
+          "stellarCv": 0.19702480966024974
+        }
+      }
+    },
+    {
+      "repository": "nestmind",
+      "agent": "claude",
+      "taskId": "ci-hook-to-recorded-outcome",
+      "category": "flow",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 184517,
+        "stellarMedian": 200352,
+        "reductionPct": -8.581865085601867
+      },
+      "toolCalls": {
+        "baselineMedian": 5,
+        "stellarMedian": 6,
+        "reductionPct": -20
+      },
+      "searchCalls": {
+        "baselineMedian": 2,
+        "stellarMedian": 1,
+        "reductionPct": 50
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 16175,
+        "stellarMedian": 11882,
+        "reductionPct": 26.54095826893354
+      },
+      "filesOpened": {
+        "baselineMedian": 3,
+        "stellarMedian": 6,
+        "reductionPct": -100
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 4196,
+        "stellarMedian": 4698,
+        "reductionPct": -11.963775023832222
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.016832573091384632,
+          "stellarCv": 0.09989622356053694
+        },
+        "toolCalls": {
+          "baselineCv": 0.08838834764831845,
+          "stellarCv": 0.1414213562373095
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0,
+          "stellarCv": 0.06019180046239501
+        }
+      }
+    },
+    {
+      "repository": "nestmind",
+      "agent": "claude",
+      "taskId": "generated-code-to-searchable-vectors",
+      "category": "flow",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 301031,
+        "stellarMedian": 159791,
+        "reductionPct": 46.91875587564071
+      },
+      "toolCalls": {
+        "baselineMedian": 8,
+        "stellarMedian": 5,
+        "reductionPct": 37.5
+      },
+      "searchCalls": {
+        "baselineMedian": 4,
+        "stellarMedian": 2,
+        "reductionPct": 50
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 12087,
+        "stellarMedian": 10990,
+        "reductionPct": 9.075866633573261
+      },
+      "filesOpened": {
+        "baselineMedian": 4,
+        "stellarMedian": 4,
+        "reductionPct": 0
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 7388,
+        "stellarMedian": 5159,
+        "reductionPct": 30.170546832701678
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.1347687664048615,
+          "stellarCv": 0.017432923624403046
+        },
+        "toolCalls": {
+          "baselineCv": 0.1626807559466931,
+          "stellarCv": 0.21757131728816848
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.12482609917130047,
+          "stellarCv": 0.1053804641455355
+        }
+      }
+    },
+    {
+      "repository": "nestmind",
+      "agent": "claude",
+      "taskId": "job-trace-helper-signature-change",
+      "category": "impact",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 196430,
+        "stellarMedian": 153437,
+        "reductionPct": 21.88718627500891
+      },
+      "toolCalls": {
+        "baselineMedian": 7,
+        "stellarMedian": 3,
+        "reductionPct": 57.14285714285714
+      },
+      "searchCalls": {
+        "baselineMedian": 3,
+        "stellarMedian": 1,
+        "reductionPct": 66.66666666666666
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 19635,
+        "stellarMedian": 5010,
+        "reductionPct": 74.48433919022153
+      },
+      "filesOpened": {
+        "baselineMedian": 4,
+        "stellarMedian": 3,
+        "reductionPct": 25
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 5365,
+        "stellarMedian": 4583,
+        "reductionPct": 14.575955265610437
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.008338891385518847,
+          "stellarCv": 0.11099679517332994
+        },
+        "toolCalls": {
+          "baselineCv": 0,
+          "stellarCv": 0.1414213562373095
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.09640207015490829,
+          "stellarCv": 0.0042215330220092395
+        }
+      }
+    },
+    {
+      "repository": "nestmind",
+      "agent": "claude",
+      "taskId": "live-update-stream-fanout",
+      "category": "navigation",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 106544,
+        "stellarMedian": 113480,
+        "reductionPct": -6.509986484457126
+      },
+      "toolCalls": {
+        "baselineMedian": 2,
+        "stellarMedian": 2,
+        "reductionPct": 0
+      },
+      "searchCalls": {
+        "baselineMedian": 1,
+        "stellarMedian": 0,
+        "reductionPct": 100
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 4918,
+        "stellarMedian": 7447,
+        "reductionPct": -51.42334282228548
+      },
+      "filesOpened": {
+        "baselineMedian": 1,
+        "stellarMedian": 4,
+        "reductionPct": -300
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 4757,
+        "stellarMedian": 4801,
+        "reductionPct": -0.9249527012823209
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.00004220814946071647,
+          "stellarCv": 0.0000916775788469409
+        },
+        "toolCalls": {
+          "baselineCv": 0,
+          "stellarCv": 0
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0,
+          "stellarCv": 0
+        }
+      }
+    },
+    {
+      "repository": "nestmind",
+      "agent": "claude",
+      "taskId": "repo-access-token-encryption-at-rest",
+      "category": "navigation",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 105260,
+        "stellarMedian": 109969,
+        "reductionPct": -4.473684210526316
+      },
+      "toolCalls": {
+        "baselineMedian": 2,
+        "stellarMedian": 3,
+        "reductionPct": -50
+      },
+      "searchCalls": {
+        "baselineMedian": 1,
+        "stellarMedian": 0,
+        "reductionPct": 100
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 2944,
+        "stellarMedian": 3581,
+        "reductionPct": -21.637228260869566
+      },
+      "filesOpened": {
+        "baselineMedian": 1,
+        "stellarMedian": 3,
+        "reductionPct": -200
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 4830,
+        "stellarMedian": 4987,
+        "reductionPct": -3.250517598343685
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.00032575873042576934,
+          "stellarCv": 0.0010393410119870026
+        },
+        "toolCalls": {
+          "baselineCv": 0,
+          "stellarCv": 0.1767766952966369
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0,
+          "stellarCv": 0.000131628216899953
+        }
+      }
+    },
+    {
+      "repository": "nestmind",
+      "agent": "claude",
+      "taskId": "require-access-token-signing-secret",
+      "category": "editing-prep",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 147236,
+        "stellarMedian": 150643,
+        "reductionPct": -2.3139721263821347
+      },
+      "toolCalls": {
+        "baselineMedian": 5,
+        "stellarMedian": 5,
+        "reductionPct": 0
+      },
+      "searchCalls": {
+        "baselineMedian": 2,
+        "stellarMedian": 1,
+        "reductionPct": 50
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 2969,
+        "stellarMedian": 6512,
+        "reductionPct": -119.33310879083866
+      },
+      "filesOpened": {
+        "baselineMedian": 3,
+        "stellarMedian": 6,
+        "reductionPct": -100
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 5428,
+        "stellarMedian": 10900,
+        "reductionPct": -100.81061164333087
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.21261695698492497,
+          "stellarCv": 0.000866560271877777
+        },
+        "toolCalls": {
+          "baselineCv": 0.16329931618554522,
+          "stellarCv": 0
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.1114521392624158,
+          "stellarCv": 0
+        }
+      }
+    },
+    {
+      "repository": "nestmind",
+      "agent": "claude",
+      "taskId": "structured-json-retry-and-call-timeout",
+      "category": "navigation",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 143997,
+        "stellarMedian": 152798,
+        "reductionPct": -6.1119328874907115
+      },
+      "toolCalls": {
+        "baselineMedian": 3,
+        "stellarMedian": 3,
+        "reductionPct": 0
+      },
+      "searchCalls": {
+        "baselineMedian": 2,
+        "stellarMedian": 1,
+        "reductionPct": 50
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 5722,
+        "stellarMedian": 12420,
+        "reductionPct": -117.05697308633344
+      },
+      "filesOpened": {
+        "baselineMedian": 1,
+        "stellarMedian": 4,
+        "reductionPct": -300
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 5416,
+        "stellarMedian": 8203,
+        "reductionPct": -51.45864106351551
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.009162783499878256,
+          "stellarCv": 0.0076418896797919925
+        },
+        "toolCalls": {
+          "baselineCv": 0,
+          "stellarCv": 0
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.2717037242208436,
+          "stellarCv": 0.18795121411817928
+        }
+      }
+    },
+    {
+      "repository": "nestmind",
+      "agent": "claude",
+      "taskId": "usd-cost-calculation-callers",
+      "category": "impact",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 243915,
+        "stellarMedian": 156542,
+        "reductionPct": 35.82108521411148
+      },
+      "toolCalls": {
+        "baselineMedian": 8,
+        "stellarMedian": 3,
+        "reductionPct": 62.5
+      },
+      "searchCalls": {
+        "baselineMedian": 4,
+        "stellarMedian": 1,
+        "reductionPct": 75
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 14730,
+        "stellarMedian": 11087,
+        "reductionPct": 24.73183978275628
+      },
+      "filesOpened": {
+        "baselineMedian": 4,
+        "stellarMedian": 8,
+        "reductionPct": -100
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 4918,
+        "stellarMedian": 4300,
+        "reductionPct": 12.566083773891826
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.08683552803715733,
+          "stellarCv": 0.004901498355755458
+        },
+        "toolCalls": {
+          "baselineCv": 0.056568542494923796,
+          "stellarCv": 0.3535533905932738
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.011890501474719532,
+          "stellarCv": 0.08593768030804823
+        }
+      }
+    },
+    {
+      "repository": "nestmind",
+      "agent": "claude",
+      "taskId": "vector-similarity-result-consumers",
+      "category": "impact",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 186507,
+        "stellarMedian": 202190,
+        "reductionPct": -8.40879966971749
+      },
+      "toolCalls": {
+        "baselineMedian": 7,
+        "stellarMedian": 6,
+        "reductionPct": 14.285714285714285
+      },
+      "searchCalls": {
+        "baselineMedian": 3,
+        "stellarMedian": 2,
+        "reductionPct": 33.33333333333333
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 11910,
+        "stellarMedian": 9829,
+        "reductionPct": 17.472712006717046
+      },
+      "filesOpened": {
+        "baselineMedian": 5,
+        "stellarMedian": 8,
+        "reductionPct": -60
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 5250,
+        "stellarMedian": 4540,
+        "reductionPct": 13.523809523809524
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.1660500128612188,
+          "stellarCv": 0.16941871395610936
+        },
+        "toolCalls": {
+          "baselineCv": 0.11664236870396086,
+          "stellarCv": 0.1767766952966369
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.24799848025952467,
+          "stellarCv": 0.08522779802560783
+        }
+      }
+    },
+    {
+      "repository": "reefmori",
+      "agent": "claude",
+      "taskId": "apex-hunt-flow",
+      "category": "flow",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 340984,
+        "stellarMedian": 199861,
+        "reductionPct": 41.386985899631654
+      },
+      "toolCalls": {
+        "baselineMedian": 11,
+        "stellarMedian": 5,
+        "reductionPct": 54.54545454545454
+      },
+      "searchCalls": {
+        "baselineMedian": 5,
+        "stellarMedian": 2,
+        "reductionPct": 60
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 45595,
+        "stellarMedian": 9126,
+        "reductionPct": 79.98464743941221
+      },
+      "filesOpened": {
+        "baselineMedian": 5,
+        "stellarMedian": 3,
+        "reductionPct": 40
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 5307,
+        "stellarMedian": 4122,
+        "reductionPct": 22.328999434708873
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.1059190849003591,
+          "stellarCv": 0.2761482942913278
+        },
+        "toolCalls": {
+          "baselineCv": 0.09123958466923193,
+          "stellarCv": 0.3535533905932738
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.009397870479809474,
+          "stellarCv": 0.3572852782672488
+        }
+      }
+    },
+    {
+      "repository": "reefmori",
+      "agent": "claude",
+      "taskId": "cleaning-progression-flow",
+      "category": "flow",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 179837,
+        "stellarMedian": 71353,
+        "reductionPct": 60.32351518319366
+      },
+      "toolCalls": {
+        "baselineMedian": 6,
+        "stellarMedian": 1,
+        "reductionPct": 83.33333333333334
+      },
+      "searchCalls": {
+        "baselineMedian": 4,
+        "stellarMedian": 0,
+        "reductionPct": 100
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 4518,
+        "stellarMedian": 2680,
+        "reductionPct": 40.681717574147854
+      },
+      "filesOpened": {
+        "baselineMedian": 3,
+        "stellarMedian": 3,
+        "reductionPct": 0
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 5138,
+        "stellarMedian": 3956,
+        "reductionPct": 23.005060334760607
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.10377094309962791,
+          "stellarCv": 0.00005159985152242505
+        },
+        "toolCalls": {
+          "baselineCv": 0,
+          "stellarCv": 0
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.08735427425586702,
+          "stellarCv": 0
+        }
+      }
+    },
+    {
+      "repository": "reefmori",
+      "agent": "claude",
+      "taskId": "cleaning-tool-prep",
+      "category": "editing-prep",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 239951,
+        "stellarMedian": 151742,
+        "reductionPct": 36.761255422982195
+      },
+      "toolCalls": {
+        "baselineMedian": 7,
+        "stellarMedian": 3,
+        "reductionPct": 57.14285714285714
+      },
+      "searchCalls": {
+        "baselineMedian": 3,
+        "stellarMedian": 1,
+        "reductionPct": 66.66666666666666
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 16306,
+        "stellarMedian": 9208,
+        "reductionPct": 43.529988961118605
+      },
+      "filesOpened": {
+        "baselineMedian": 3,
+        "stellarMedian": 4,
+        "reductionPct": -33.33333333333333
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 4362,
+        "stellarMedian": 3996,
+        "reductionPct": 8.390646492434662
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.0699667477979317,
+          "stellarCv": 0.13754880785008655
+        },
+        "toolCalls": {
+          "baselineCv": 0.11664236870396086,
+          "stellarCv": 0.3741657386773941
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.028874686282110745,
+          "stellarCv": 0.21593549784132818
+        }
+      }
+    },
+    {
+      "repository": "reefmori",
+      "agent": "claude",
+      "taskId": "game-startup-navigation",
+      "category": "navigation",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 180582,
+        "stellarMedian": 71760,
+        "reductionPct": 60.26182011496163
+      },
+      "toolCalls": {
+        "baselineMedian": 4,
+        "stellarMedian": 1,
+        "reductionPct": 75
+      },
+      "searchCalls": {
+        "baselineMedian": 2,
+        "stellarMedian": 0,
+        "reductionPct": 100
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 7373,
+        "stellarMedian": 4206,
+        "reductionPct": 42.95402142954021
+      },
+      "filesOpened": {
+        "baselineMedian": 2,
+        "stellarMedian": 2,
+        "reductionPct": 0
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 4170,
+        "stellarMedian": 4162,
+        "reductionPct": 0.19184652278177458
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.2186270080042234,
+          "stellarCv": 0.00003476052235462269
+        },
+        "toolCalls": {
+          "baselineCv": 0.128564869306645,
+          "stellarCv": 0
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.10359221670292389,
+          "stellarCv": 0
+        }
+      }
+    },
+    {
+      "repository": "reefmori",
+      "agent": "claude",
+      "taskId": "predator-ai-navigation",
+      "category": "navigation",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 233890,
+        "stellarMedian": 146941,
+        "reductionPct": 37.175167813929626
+      },
+      "toolCalls": {
+        "baselineMedian": 7,
+        "stellarMedian": 3,
+        "reductionPct": 57.14285714285714
+      },
+      "searchCalls": {
+        "baselineMedian": 3,
+        "stellarMedian": 1,
+        "reductionPct": 66.66666666666666
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 35135,
+        "stellarMedian": 5306,
+        "reductionPct": 84.89824960865235
+      },
+      "filesOpened": {
+        "baselineMedian": 6,
+        "stellarMedian": 2,
+        "reductionPct": 66.66666666666666
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 4686,
+        "stellarMedian": 4365,
+        "reductionPct": 6.850192061459667
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.0402973847927177,
+          "stellarCv": 0.1391335688407851
+        },
+        "toolCalls": {
+          "baselineCv": 0.12297509238026913,
+          "stellarCv": 0.1767766952966369
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.184276345551699,
+          "stellarCv": 0.2725896993907975
+        }
+      }
+    },
+    {
+      "repository": "reefmori",
+      "agent": "claude",
+      "taskId": "predator-dodge-prep",
+      "category": "editing-prep",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 194984,
+        "stellarMedian": 109967,
+        "reductionPct": 43.60203914167317
+      },
+      "toolCalls": {
+        "baselineMedian": 6,
+        "stellarMedian": 2,
+        "reductionPct": 66.66666666666666
+      },
+      "searchCalls": {
+        "baselineMedian": 2,
+        "stellarMedian": 0,
+        "reductionPct": 100
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 56037,
+        "stellarMedian": 5458,
+        "reductionPct": 90.26000678123383
+      },
+      "filesOpened": {
+        "baselineMedian": 3,
+        "stellarMedian": 4,
+        "reductionPct": -33.33333333333333
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 5464,
+        "stellarMedian": 4232,
+        "reductionPct": 22.547584187408493
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.23707677857731208,
+          "stellarCv": 0.15911467217568445
+        },
+        "toolCalls": {
+          "baselineCv": 0.0744322927564787,
+          "stellarCv": 0.20203050891044214
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.012399653556026867,
+          "stellarCv": 0.26706539679808966
+        }
+      }
+    },
+    {
+      "repository": "reefmori",
+      "agent": "claude",
+      "taskId": "predator-hunt-flow",
+      "category": "flow",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 427818,
+        "stellarMedian": 155379,
+        "reductionPct": 63.68105128816459
+      },
+      "toolCalls": {
+        "baselineMedian": 11,
+        "stellarMedian": 3,
+        "reductionPct": 72.72727272727273
+      },
+      "searchCalls": {
+        "baselineMedian": 4,
+        "stellarMedian": 1,
+        "reductionPct": 75
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 87217,
+        "stellarMedian": 12181,
+        "reductionPct": 86.0336860933075
+      },
+      "filesOpened": {
+        "baselineMedian": 5,
+        "stellarMedian": 2,
+        "reductionPct": 60
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 5577,
+        "stellarMedian": 3675,
+        "reductionPct": 34.10435718128026
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.11717276132893932,
+          "stellarCv": 0.003938845151457201
+        },
+        "toolCalls": {
+          "baselineCv": 0.11785113019775793,
+          "stellarCv": 0.1414213562373095
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.049463491668014115,
+          "stellarCv": 0.058265279116460615
+        }
+      }
+    },
+    {
+      "repository": "reefmori",
+      "agent": "claude",
+      "taskId": "predator-pressure-impact",
+      "category": "impact",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 167239,
+        "stellarMedian": 155212,
+        "reductionPct": 7.191504373979754
+      },
+      "toolCalls": {
+        "baselineMedian": 4,
+        "stellarMedian": 3,
+        "reductionPct": 25
+      },
+      "searchCalls": {
+        "baselineMedian": 2,
+        "stellarMedian": 1,
+        "reductionPct": 50
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 18542,
+        "stellarMedian": 9362,
+        "reductionPct": 49.509222306115845
+      },
+      "filesOpened": {
+        "baselineMedian": 2,
+        "stellarMedian": 5,
+        "reductionPct": -150
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 3569,
+        "stellarMedian": 3823,
+        "reductionPct": -7.116839450826562
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.23192785528680995,
+          "stellarCv": 0.005044157458950814
+        },
+        "toolCalls": {
+          "baselineCv": 0.20203050891044214,
+          "stellarCv": 0.1414213562373095
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.4348031906682535,
+          "stellarCv": 0.02409000240935138
+        }
+      }
+    },
+    {
+      "repository": "reefmori",
+      "agent": "claude",
+      "taskId": "rush-cleaning-flow",
+      "category": "flow",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 273921,
+        "stellarMedian": 203933,
+        "reductionPct": 25.55043242394705
+      },
+      "toolCalls": {
+        "baselineMedian": 9,
+        "stellarMedian": 5,
+        "reductionPct": 44.44444444444444
+      },
+      "searchCalls": {
+        "baselineMedian": 5,
+        "stellarMedian": 1,
+        "reductionPct": 80
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 18577,
+        "stellarMedian": 14033,
+        "reductionPct": 24.460354201431876
+      },
+      "filesOpened": {
+        "baselineMedian": 5,
+        "stellarMedian": 4,
+        "reductionPct": 20
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 6094,
+        "stellarMedian": 4021,
+        "reductionPct": 34.01706596652445
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.19298362172871264,
+          "stellarCv": 0.11149412873133259
+        },
+        "toolCalls": {
+          "baselineCv": 0.11313708498984759,
+          "stellarCv": 0.10101525445522107
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.0893648481133802,
+          "stellarCv": 0.0862595249398122
+        }
+      }
+    },
+    {
+      "repository": "reefmori",
+      "agent": "claude",
+      "taskId": "rush-spawn-flow",
+      "category": "flow",
+      "pairedRuns": 3,
+      "inputTokens": {
+        "baselineMedian": 146001,
+        "stellarMedian": 154049,
+        "reductionPct": -5.5122910117054
+      },
+      "toolCalls": {
+        "baselineMedian": 6,
+        "stellarMedian": 6,
+        "reductionPct": 0
+      },
+      "searchCalls": {
+        "baselineMedian": 2,
+        "stellarMedian": 1,
+        "reductionPct": 50
+      },
+      "sourceBytesRead": {
+        "baselineMedian": 6168,
+        "stellarMedian": 8330,
+        "reductionPct": -35.05188067444877
+      },
+      "filesOpened": {
+        "baselineMedian": 2,
+        "stellarMedian": 3,
+        "reductionPct": -50
+      },
+      "firstRelevantMs": {
+        "baselineMedian": 3484,
+        "stellarMedian": 4215,
+        "reductionPct": -20.981630309988518
+      },
+      "stellarGroundedSuccessRate": 100,
+      "baselineGroundedSuccessRate": 100,
+      "determinism": {
+        "inputTokens": {
+          "baselineCv": 0.10896832652163281,
+          "stellarCv": 0.0010707359506267034
+        },
+        "toolCalls": {
+          "baselineCv": 0,
+          "stellarCv": 0.08318903308077029
+        },
+        "sourceBytesRead": {
+          "baselineCv": 0.10818591778705168,
+          "stellarCv": 0
+        }
+      }
+    }
+  ]
+}

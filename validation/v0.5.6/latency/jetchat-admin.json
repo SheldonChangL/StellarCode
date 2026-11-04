@@ -1,0 +1,353 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-04T03:04:30.844Z",
+  "projectRoot": "/Users/sheldon.chang/Projects/Private/stellar-holdout-v056/jetchat-admin",
+  "projectCommit": "c9256c06ff39fb2d3c4f5f73fe5be2439423cd9f",
+  "tasksFile": "/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete/validation/v0.5.6/jetchat-admin/tasks.json",
+  "taskHash": "9b37b0d66c2abf3408fd357823faa992a31ae30ce1c2cdfecee50ae3bc1fdf98",
+  "repeat": 7,
+  "runtime": {
+    "commit": "6c9eb49896a298f6edab6f7d0fa8cb59e03f2242",
+    "packageVersion": "0.5.5",
+    "dirty": false,
+    "dirtyFiles": [],
+    "contentHash": "85f9675e59cb8ab1692bb484d3fd621fb36f4708e8bb60b10f918e7162485095",
+    "files": 43,
+    "frozenTrees": {
+      "src/query": "d84e62ad4e748d28f0b4eead59d08a42838b0a14",
+      "src/indexer": "377d41f7260eccc3252cc7323115bc9b8a4fd47f",
+      "src/mcp": "b1e4e83c5285302163b42741be7cd1d7c7aa1feb",
+      "src/core": "bc2275b66042a77a4c5de0aa68bf0884689fbe7e",
+      "src/storage": "c1688a77174ec478246b0ea019bc5fc110d499b0",
+      "src/platform": "aa15ff53fbaee33367cd08d60971c29b72fbd447",
+      "src/web": "4bb79d1f7d8b675619b748fda12940e9934466b3"
+    }
+  },
+  "environment": {
+    "os": "Darwin 25.6.0 arm64",
+    "node": "v22.17.0",
+    "cpus": 14
+  },
+  "command": [
+    "stellar",
+    "context",
+    "<task prompt>",
+    "--compact",
+    "--with-source",
+    "--depth",
+    "1",
+    "--max-files",
+    "6",
+    "--max-lines",
+    "160",
+    "--max-bytes",
+    "12000",
+    "--json"
+  ],
+  "definitions": {
+    "cliMs": "Wall time of one new `node bin/stellar.js` process, including Node startup, measured from this harness.",
+    "cold": "New process on a freshly copied read-only index snapshot (OS page cache may be warm).",
+    "warm": "New process on an already-used snapshot file.",
+    "nodeCliFloorMs": "Wall time of `stellar --version`: the process-startup floor no context call can beat.",
+    "indexBuildMs": "Full `stellar sync` of the clean worktree into an empty data directory.",
+    "indexSyncNoopMs": "`stellar sync` with no source changes (lazy-sync cost when nothing changed)."
+  },
+  "indexedFiles": 186,
+  "nodeCliFloorMs": {
+    "n": 7,
+    "p50": 54.88650000000001,
+    "p95": 58.27820800000001,
+    "min": 53.25166699999994,
+    "max": 58.27820800000001
+  },
+  "indexBuildMs": 302.448667,
+  "indexSyncNoopMs": {
+    "n": 7,
+    "p50": 93.60612500000002,
+    "p95": 102.34337499999992,
+    "min": 91.434167,
+    "max": 102.34337499999992
+  },
+  "contextColdMs": {
+    "n": 84,
+    "p50": 97.15799999999945,
+    "p95": 108.56466600000022,
+    "min": 83.62699999999859,
+    "max": 146.4569589999992
+  },
+  "contextWarmMs": {
+    "n": 84,
+    "p50": 96.16562499999964,
+    "p95": 107.54325000000244,
+    "min": 82.86062499999935,
+    "max": 122.4126669999996
+  },
+  "contextJsonBytes": {
+    "n": 12,
+    "p50": 6324,
+    "p95": 10916,
+    "min": 1744,
+    "max": 10916
+  },
+  "embeddedSourceBytes": {
+    "n": 12,
+    "p50": 4230,
+    "p95": 7707,
+    "min": 858,
+    "max": 7707
+  },
+  "tasks": [
+    {
+      "taskId": "nav-unauthenticated-redirect-and-token-cache",
+      "category": "navigation",
+      "contextJsonBytes": 1744,
+      "embeddedSourceBytes": 858,
+      "targets": 1,
+      "coldMs": {
+        "n": 7,
+        "p50": 89.31791599999997,
+        "p95": 91.0155420000001,
+        "min": 88.40750000000003,
+        "max": 91.0155420000001
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 89.15137499999992,
+        "p95": 89.53858300000002,
+        "min": 87.00704199999973,
+        "max": 89.53858300000002
+      }
+    },
+    {
+      "taskId": "nav-malformed-ai-chart-rejection",
+      "category": "navigation",
+      "contextJsonBytes": 7780,
+      "embeddedSourceBytes": 5223,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 99.15016700000024,
+        "p95": 116.65962499999978,
+        "min": 93.00958300000002,
+        "max": 116.65962499999978
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 94.48816699999998,
+        "p95": 101.0860419999999,
+        "min": 93.33395800000017,
+        "max": 101.0860419999999
+      }
+    },
+    {
+      "taskId": "nav-all-organizations-account-listing",
+      "category": "navigation",
+      "contextJsonBytes": 4546,
+      "embeddedSourceBytes": 2314,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 93.46045800000047,
+        "p95": 95.20033299999977,
+        "min": 92.31595800000014,
+        "max": 95.20033299999977
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 95.90204199999971,
+        "p95": 122.4126669999996,
+        "min": 94.42070799999965,
+        "max": 122.4126669999996
+      }
+    },
+    {
+      "taskId": "flow-sign-in-to-session-cookie",
+      "category": "flow",
+      "contextJsonBytes": 8232,
+      "embeddedSourceBytes": 5778,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 97.65879200000018,
+        "p95": 99.39300000000003,
+        "min": 97.05720800000017,
+        "max": 99.39300000000003
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 95.37091699999928,
+        "p95": 104.16016599999966,
+        "min": 92.91295799999989,
+        "max": 104.16016599999966
+      }
+    },
+    {
+      "taskId": "flow-member-disable-and-enable",
+      "category": "flow",
+      "contextJsonBytes": 7246,
+      "embeddedSourceBytes": 4842,
+      "targets": 2,
+      "coldMs": {
+        "n": 7,
+        "p50": 93.56208300000071,
+        "p95": 99.71320800000012,
+        "min": 92.39804200000071,
+        "max": 99.71320800000012
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 94.16562499999964,
+        "p95": 97.05933300000015,
+        "min": 93.07133299999896,
+        "max": 97.05933300000015
+      }
+    },
+    {
+      "taskId": "flow-conversation-list-date-window",
+      "category": "flow",
+      "contextJsonBytes": 6917,
+      "embeddedSourceBytes": 4682,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 94.27258400000028,
+        "p95": 99.88600000000042,
+        "min": 90.23433299999851,
+        "max": 99.88600000000042
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 91.47454099999959,
+        "p95": 95.40812499999993,
+        "min": 88.8012920000001,
+        "max": 95.40812499999993
+      }
+    },
+    {
+      "taskId": "impact-shared-date-picker-props",
+      "category": "impact",
+      "contextJsonBytes": 3632,
+      "embeddedSourceBytes": 1664,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 96.74583399999938,
+        "p95": 99.44100000000071,
+        "min": 94.60370800000055,
+        "max": 99.44100000000071
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 98.46187499999905,
+        "p95": 104.84604199999922,
+        "min": 94.77954099999988,
+        "max": 104.84604199999922
+      }
+    },
+    {
+      "taskId": "impact-browser-readable-access-cookie",
+      "category": "impact",
+      "contextJsonBytes": 3265,
+      "embeddedSourceBytes": 1394,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 84.64208299999882,
+        "p95": 86.51179199999933,
+        "min": 83.62699999999859,
+        "max": 86.51179199999933
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 83.43174999999974,
+        "p95": 92.9263749999991,
+        "min": 82.86062499999935,
+        "max": 92.9263749999991
+      }
+    },
+    {
+      "taskId": "impact-ai-generation-settings-shape",
+      "category": "impact",
+      "contextJsonBytes": 3473,
+      "embeddedSourceBytes": 1470,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 101.37116699999933,
+        "p95": 117.78741599999921,
+        "min": 94.50804199999948,
+        "max": 117.78741599999921
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 101.37812499999927,
+        "p95": 102.8070829999997,
+        "min": 99.73824999999852,
+        "max": 102.8070829999997
+      }
+    },
+    {
+      "taskId": "edit-expose-organizations-module",
+      "category": "editing-prep",
+      "contextJsonBytes": 6324,
+      "embeddedSourceBytes": 4262,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 104.59516599999915,
+        "p95": 108.56466600000022,
+        "min": 100.55291599999873,
+        "max": 108.56466600000022
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 98.69841699999961,
+        "p95": 102.69154200000048,
+        "min": 96.55762499999946,
+        "max": 102.69154200000048
+      }
+    },
+    {
+      "taskId": "edit-new-ai-assistant-tool",
+      "category": "editing-prep",
+      "contextJsonBytes": 10916,
+      "embeddedSourceBytes": 7707,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 98.88650000000052,
+        "p95": 106.42900000000009,
+        "min": 97.7584169999991,
+        "max": 106.42900000000009
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 98.63458299999911,
+        "p95": 107.65666599999895,
+        "min": 97.8421670000007,
+        "max": 107.65666599999895
+      }
+    },
+    {
+      "taskId": "edit-group-admin-account-creation",
+      "category": "editing-prep",
+      "contextJsonBytes": 6964,
+      "embeddedSourceBytes": 4230,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 101.72329199999876,
+        "p95": 146.4569589999992,
+        "min": 97.95679200000086,
+        "max": 146.4569589999992
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 105.75833300000158,
+        "p95": 112.85233299999891,
+        "min": 100.44066600000224,
+        "max": 112.85233299999891
+      }
+    }
+  ]
+}
