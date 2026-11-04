@@ -4,6 +4,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import os from 'node:os'
 import { runAgent, benchmarkPrompt } from '../src/benchmark/agents.js'
+import { VERSION_LABEL } from '../src/core/version.js'
 
 test('raw stdout and stderr persist byte-for-byte with the actual prompt before evaluation', async () => {
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'stellar-raw-test-'))
@@ -126,7 +127,7 @@ test('a failed debug sample retains its worktree, real executable and metadata-o
     assert.equal(diagnostic.worktreeRetained,true)
     assert.equal(diagnostic.projectResolved,true)
     assert.equal(diagnostic.stellarAvailable,true)
-    assert.equal(diagnostic.stellarVersion,'StellarCode 0.5.3')
+    assert.equal(diagnostic.stellarVersion,VERSION_LABEL)
     const status=JSON.parse(execFileSync(diagnostic.stellarExecutable,['status','--json'],{cwd:diagnostic.worktreeRoot,encoding:'utf8'}))
     assert.equal(status.projectId,diagnostic.projectId)
     assert.deepEqual(diagnostic.filesActuallyRead,[])

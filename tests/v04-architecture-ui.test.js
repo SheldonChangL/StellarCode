@@ -10,6 +10,7 @@ import { classifyArchitecture, hierarchyForPath } from '../src/query/architectur
 import { architectureOverview, graphData, contextForTask } from '../src/query/query-service.js'
 import { createWebServer } from '../src/web/server.js'
 import { makeWorkspace } from './helpers.js'
+import { VERSION_LABEL } from '../src/core/version.js'
 
 const execFileAsync = promisify(execFile)
 
@@ -17,7 +18,7 @@ const execFileAsync = promisify(execFile)
 test('installed CLI wrapper suppresses only the sqlite experimental warning on help', async () => {
   const bin = new URL('../bin/stellar.js', import.meta.url)
   const result = await execFileAsync(process.execPath, [bin.pathname, 'help'])
-  assert.match(result.stdout, /StellarCode 0\.5\.3/)
+  assert.equal(result.stdout.split('\n')[0], VERSION_LABEL)
   assert.equal(result.stderr, '')
 })
 

@@ -1,6 +1,6 @@
 {
   "name": "stellarcode",
-  "version": "0.5.3",
+  "version": "0.5.5",
   "description": "A living map of your codebase for humans and AI agents.",
   "type": "module",
   "bin": {

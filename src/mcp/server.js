@@ -2,6 +2,7 @@ import readline from 'node:readline'
 import { searchProject, fileDetail, symbolLookup, related, impact, contextForTask, architectureOverview, sourceExcerpt } from '../query/query-service.js'
 import { projectSummaries } from '../storage/registry.js'
 import { resolveAnyProject } from '../core/global-runtime.js'
+import { VERSION } from '../core/version.js'
 
 const PROTOCOL_VERSION = '2025-06-18'
 const projectFields = {
@@ -47,7 +48,7 @@ function write(message, output = process.stdout) { output.write(JSON.stringify(m
 export async function handleMcpMessage(message, { defaultProject = null, queryOptions = {} } = {}) {
   const { id, method, params } = message
   if (method === 'initialize') {
-    return { jsonrpc:'2.0', id, result:{ protocolVersion: params?.protocolVersion || PROTOCOL_VERSION, capabilities:{ tools:{ listChanged:false } }, serverInfo:{ name:'stellarcode', version:'0.5.3' }, instructions:'StellarCode is global. Prefer one stellar_context call with withSource=true before broad search. Source in targets or relatedEvidence is grounded repository source and need not be re-read. relatedHints is navigation metadata only; do not cite it as inspected implementation.' } }
+    return { jsonrpc:'2.0', id, result:{ protocolVersion: params?.protocolVersion || PROTOCOL_VERSION, capabilities:{ tools:{ listChanged:false } }, serverInfo:{ name:'stellarcode', version:VERSION }, instructions:'StellarCode is global. Prefer one stellar_context call with withSource=true before broad search. Source in targets or relatedEvidence is grounded repository source and need not be re-read. relatedHints is navigation metadata only; do not cite it as inspected implementation.' } }
   }
   if (method === 'ping') return { jsonrpc:'2.0', id, result:{} }
   if (method === 'tools/list') return { jsonrpc:'2.0', id, result:{ tools } }

@@ -10,6 +10,7 @@ import { searchProject, fileDetail, related, impact, contextForTask, symbolLooku
 import { createWebServer } from './web/server.js'
 import { createGlobalWebServer } from './web/global-server.js'
 import { startMcpServer } from './mcp/server.js'
+import { VERSION_LABEL } from './core/version.js'
 import { benchmarkReport, writeBenchmarkReport } from './benchmark/report.js'
 import { initBenchmarkConfig, benchmarkConfigPath } from './benchmark/tasks.js'
 import { runBenchmark, benchmarkDoctor } from './benchmark/runner.js'
@@ -20,7 +21,7 @@ import { StellarError } from './core/errors.js'
 import { traceCliResult } from './core/benchmark-trace.js'
 
 function help() {
-  console.log(`StellarCode 0.5.3\n\nUsage:\n  stellar init [path] [--dry-run] [--install-agent-rule]\n  stellar projects [--json]\n  stellar ui [--port 7432]\n  stellar scan [path] [--json]\n  stellar sync [path] [--json]\n  stellar status [path] [--project NAME_OR_ID] [--json]\n  stellar search <query> [path] [--project NAME_OR_ID] [--json]\n  stellar find <query> [path] [--project NAME_OR_ID] [--json]  # alias\n  stellar file <relative-path> [project-path] [--project NAME_OR_ID] [--json]\n  stellar symbol <query> [project-path] [--project NAME_OR_ID] [--json]\n  stellar related <path-or-symbol> [project-path] [--project NAME_OR_ID] [--json]\n  stellar impact <path-or-symbol> [project-path] [--project NAME_OR_ID] [--depth N] [--json]\n  stellar context <task> [project-path] [--compact] [--with-source] [--max-files N] [--max-lines N] [--max-bytes N] [--project NAME_OR_ID] [--json]\n  stellar source <relative-path> [project-path] [--project NAME_OR_ID] [--lines START:END] [--json]\n  stellar architecture [project-path] [--project NAME_OR_ID] [--json]\n  stellar remove <project> [--purge] [--json]\n  stellar gc [--purge-orphaned] [--json]\n  stellar mcp [project-path]\n  stellar serve [project-path] [--port 7432]  # legacy single-project when path is supplied; otherwise global UI\n  stellar agent-rule\n  stellar benchmark init [project-path] [--force]\n  stellar benchmark doctor [--agent claude|codex|all] [--json]\n  stellar benchmark run [project-path] --agent claude|codex [--mode baseline|stellar|both] [--model MODEL] [--repeat N] [--limit N] [--tasks FILE] [--out DIR] [--keep-worktree-on-failure] [--json]\n  stellar benchmark report <baseline.jsonl> <stellar.jsonl> [--html FILE] [--json-out FILE]\n\nGlobal v0.5 workflow:\n  Run 'stellar init' once per repo. Then run 'stellar ui' from anywhere.\n`)
+  console.log(`${VERSION_LABEL}\n\nUsage:\n  stellar init [path] [--dry-run] [--install-agent-rule]\n  stellar projects [--json]\n  stellar ui [--port 7432]\n  stellar scan [path] [--json]\n  stellar sync [path] [--json]\n  stellar status [path] [--project NAME_OR_ID] [--json]\n  stellar search <query> [path] [--project NAME_OR_ID] [--json]\n  stellar find <query> [path] [--project NAME_OR_ID] [--json]  # alias\n  stellar file <relative-path> [project-path] [--project NAME_OR_ID] [--json]\n  stellar symbol <query> [project-path] [--project NAME_OR_ID] [--json]\n  stellar related <path-or-symbol> [project-path] [--project NAME_OR_ID] [--json]\n  stellar impact <path-or-symbol> [project-path] [--project NAME_OR_ID] [--depth N] [--json]\n  stellar context <task> [project-path] [--compact] [--with-source] [--max-files N] [--max-lines N] [--max-bytes N] [--project NAME_OR_ID] [--json]\n  stellar source <relative-path> [project-path] [--project NAME_OR_ID] [--lines START:END] [--json]\n  stellar architecture [project-path] [--project NAME_OR_ID] [--json]\n  stellar remove <project> [--purge] [--json]\n  stellar gc [--purge-orphaned] [--json]\n  stellar mcp [project-path]\n  stellar serve [project-path] [--port 7432]  # legacy single-project when path is supplied; otherwise global UI\n  stellar agent-rule\n  stellar benchmark init [project-path] [--force]\n  stellar benchmark doctor [--agent claude|codex|all] [--json]\n  stellar benchmark run [project-path] --agent claude|codex [--mode baseline|stellar|both] [--model MODEL] [--repeat N] [--limit N] [--tasks FILE] [--out DIR] [--keep-worktree-on-failure] [--json]\n  stellar benchmark report <baseline.jsonl> <stellar.jsonl> [--html FILE] [--json-out FILE]\n\nGlobal v0.5 workflow:\n  Run 'stellar init' once per repo. Then run 'stellar ui' from anywhere.\n`)
 }
 
 function hasFlag(args, flag) { return args.includes(flag) }
@@ -93,7 +94,7 @@ async function queryRoot(args, fallback) {
 async function main() {
   const [, , command, ...args] = process.argv
   if (!command || ['help','--help','-h'].includes(command)) return help()
-  if (command === '--version' || command === '-v') return console.log('StellarCode 0.5.3')
+  if (command === '--version' || command === '-v') return console.log(VERSION_LABEL)
   if (command === 'init') return cmdInit(args)
   if (command === 'projects') return cmdProjects(args)
   if (command === 'ui') {
