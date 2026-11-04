@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import fs from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { initializeProject } from './core/project.js'
@@ -14,6 +15,11 @@ import { VERSION_LABEL } from './core/version.js'
 import { benchmarkReport, writeBenchmarkReport } from './benchmark/report.js'
 import { initBenchmarkConfig, benchmarkConfigPath } from './benchmark/tasks.js'
 import { runBenchmark, benchmarkDoctor } from './benchmark/runner.js'
+import { writeComparison } from './benchmark/generalization-report.js'
+import { runLocalLatency } from './benchmark/latency.js'
+import { lintTaskSet } from './benchmark/tasklint.js'
+import { decomposeDiagnosticDirectory } from './benchmark/campaign.js'
+import { readJsonl } from './benchmark/report.js'
 import { installAgentRule, AGENT_RULE } from './core/agent-rule.js'
 import { appDirectories } from './platform/paths.js'
 import { projectSummaries, removeRegisteredProject, garbageCollect, reconcileProjects } from './storage/registry.js'
@@ -21,7 +27,7 @@ import { StellarError } from './core/errors.js'
 import { traceCliResult } from './core/benchmark-trace.js'
 
 function help() {
-  console.log(`${VERSION_LABEL}\n\nUsage:\n  stellar init [path] [--dry-run] [--install-agent-rule]\n  stellar projects [--json]\n  stellar ui [--port 7432]\n  stellar scan [path] [--json]\n  stellar sync [path] [--json]\n  stellar status [path] [--project NAME_OR_ID] [--json]\n  stellar search <query> [path] [--project NAME_OR_ID] [--json]\n  stellar find <query> [path] [--project NAME_OR_ID] [--json]  # alias\n  stellar file <relative-path> [project-path] [--project NAME_OR_ID] [--json]\n  stellar symbol <query> [project-path] [--project NAME_OR_ID] [--json]\n  stellar related <path-or-symbol> [project-path] [--project NAME_OR_ID] [--json]\n  stellar impact <path-or-symbol> [project-path] [--project NAME_OR_ID] [--depth N] [--json]\n  stellar context <task> [project-path] [--compact] [--with-source] [--max-files N] [--max-lines N] [--max-bytes N] [--project NAME_OR_ID] [--json]\n  stellar source <relative-path> [project-path] [--project NAME_OR_ID] [--lines START:END] [--json]\n  stellar architecture [project-path] [--project NAME_OR_ID] [--json]\n  stellar remove <project> [--purge] [--json]\n  stellar gc [--purge-orphaned] [--json]\n  stellar mcp [project-path]\n  stellar serve [project-path] [--port 7432]  # legacy single-project when path is supplied; otherwise global UI\n  stellar agent-rule\n  stellar benchmark init [project-path] [--force]\n  stellar benchmark doctor [--agent claude|codex|all] [--json]\n  stellar benchmark run [project-path] --agent claude|codex [--mode baseline|stellar|both] [--model MODEL] [--repeat N] [--limit N] [--tasks FILE] [--out DIR] [--keep-worktree-on-failure] [--json]\n  stellar benchmark report <baseline.jsonl> <stellar.jsonl> [--html FILE] [--json-out FILE]\n\nGlobal v0.5 workflow:\n  Run 'stellar init' once per repo. Then run 'stellar ui' from anywhere.\n`)
+  console.log(`${VERSION_LABEL}\n\nUsage:\n  stellar init [path] [--dry-run] [--install-agent-rule]\n  stellar projects [--json]\n  stellar ui [--port 7432]\n  stellar scan [path] [--json]\n  stellar sync [path] [--json]\n  stellar status [path] [--project NAME_OR_ID] [--json]\n  stellar search <query> [path] [--project NAME_OR_ID] [--json]\n  stellar find <query> [path] [--project NAME_OR_ID] [--json]  # alias\n  stellar file <relative-path> [project-path] [--project NAME_OR_ID] [--json]\n  stellar symbol <query> [project-path] [--project NAME_OR_ID] [--json]\n  stellar related <path-or-symbol> [project-path] [--project NAME_OR_ID] [--json]\n  stellar impact <path-or-symbol> [project-path] [--project NAME_OR_ID] [--depth N] [--json]\n  stellar context <task> [project-path] [--compact] [--with-source] [--max-files N] [--max-lines N] [--max-bytes N] [--project NAME_OR_ID] [--json]\n  stellar source <relative-path> [project-path] [--project NAME_OR_ID] [--lines START:END] [--json]\n  stellar architecture [project-path] [--project NAME_OR_ID] [--json]\n  stellar remove <project> [--purge] [--json]\n  stellar gc [--purge-orphaned] [--json]\n  stellar mcp [project-path]\n  stellar serve [project-path] [--port 7432]  # legacy single-project when path is supplied; otherwise global UI\n  stellar agent-rule\n  stellar benchmark init [project-path] [--force]\n  stellar benchmark doctor [--agent claude|codex|all] [--json]\n  stellar benchmark run [project-path] --agent claude|codex [--mode baseline|stellar|both] [--model MODEL] [--repeat N] [--limit N] [--tasks FILE] [--out DIR] [--keep-worktree-on-failure] [--json]\n  stellar benchmark report <baseline.jsonl> <stellar.jsonl> [--html FILE] [--json-out FILE]\n  stellar benchmark compare [NAME=]<report.json>... [--html FILE] [--json-out FILE]\n  stellar benchmark latency [project-path] --tasks FILE [--repeat N] [--json-out FILE]\n  stellar benchmark lint-tasks <tasks.json> [--repo PATH] [--commit REV] [--json]\n  stellar benchmark first-relevant <run-dir> [--json-out FILE]\n\nGlobal v0.5 workflow:\n  Run 'stellar init' once per repo. Then run 'stellar ui' from anywhere.\n`)
 }
 
 function hasFlag(args, flag) { return args.includes(flag) }
@@ -195,7 +201,7 @@ async function main() {
       const agent=flagValue(args,'--agent',null)
       if(!agent)throw new StellarError('benchmark run requires --agent claude|codex','USAGE',2)
       const result=await runBenchmark({
-        projectRoot:root,agent,mode:flagValue(args,'--mode','both'),model:flagValue(args,'--model',undefined),repeat:Number(flagValue(args,'--repeat',1)),limit:Number(flagValue(args,'--limit',0)),
+        projectRoot:root,agent,repository:flagValue(args,'--repository',undefined),mode:flagValue(args,'--mode','both'),model:flagValue(args,'--model',undefined),repeat:Number(flagValue(args,'--repeat',1)),limit:Number(flagValue(args,'--limit',0)),
         keepWorktreeOnFailure:hasFlag(args,'--keep-worktree-on-failure'),tasksFile:flagValue(args,'--tasks',undefined),outDir:flagValue(args,'--out',undefined),
         onProgress:hasFlag(args,'--json')?undefined:e=>{if(e.phase==='start')console.error(`[${e.completed+1}/${e.total}] ${e.mode} ${e.task}`)}
       })
@@ -211,7 +217,40 @@ async function main() {
       const report=await writeBenchmarkReport(pos[1],pos[2],{jsonFile:flagValue(args,'--json-out',undefined),htmlFile:flagValue(args,'--html',undefined)})
       return print(report,true)
     }
-    throw new StellarError('Usage: stellar benchmark init|doctor|run|report ...','USAGE',2)
+    if(sub==='compare') {
+      const specs=pos.slice(1)
+      if(!specs.length)throw new StellarError('Usage: stellar benchmark compare [NAME=]<report.json>... [--html FILE] [--json-out FILE]','USAGE',2)
+      return print(await writeComparison(specs,{jsonFile:flagValue(args,'--json-out',undefined),htmlFile:flagValue(args,'--html',undefined)}),true)
+    }
+    if(sub==='latency') {
+      const tasksFile=flagValue(args,'--tasks',null)
+      if(!tasksFile)throw new StellarError('benchmark latency requires --tasks FILE','USAGE',2)
+      const root=path.resolve(pos[1]??process.cwd())
+      const result=await runLocalLatency({projectRoot:root,tasksFile:path.resolve(tasksFile),repeat:Number(flagValue(args,'--repeat',5)),onProgress:e=>console.error(`[${e.done}/${e.total}] ${e.task}`)})
+      const out=flagValue(args,'--json-out',undefined)
+      if(out)await fs.writeFile(out,JSON.stringify(result,null,2)+'\n')
+      return print(result,true)
+    }
+    if(sub==='lint-tasks'&&pos[1]) {
+      const result=await lintTaskSet(pos[1],{repoRoot:flagValue(args,'--repo',null),commit:flagValue(args,'--commit','HEAD')})
+      if(!result.ok)process.exitCode=1
+      return print(result,true)
+    }
+    if(sub==='first-relevant'&&pos[1]) {
+      const runDir=path.resolve(pos[1]),rows=[]
+      const tasks=JSON.parse(await fs.readFile(JSON.parse(await fs.readFile(path.join(runDir,'manifest.json'),'utf8')).tasksFile,'utf8')).tasks
+      for(const mode of ['baseline','stellar']) {
+        for(const row of await readJsonl(path.join(runDir,`${mode}.jsonl`))) {
+          const task=tasks.find(t=>t.id===row.taskId)
+          const decomposition=await decomposeDiagnosticDirectory(path.join(runDir,'diagnostics',encodeURIComponent(row.taskId),`${mode}-${row.repetition??1}`),{expectedFiles:task?.expectedFiles??[],firstRelevantMs:row.firstRelevantMs})
+          rows.push({mode,taskId:row.taskId,repetition:row.repetition??1,category:row.category??null,firstRelevantMs:row.firstRelevantMs??null,durationMs:row.durationMs??null,toolCalls:row.toolCalls??null,...(decomposition??{decomposition:'unavailable'})})
+        }
+      }
+      const out=flagValue(args,'--json-out',undefined),result={runDir,rows}
+      if(out)await fs.writeFile(out,JSON.stringify(result,null,2)+'\n')
+      return print(result,true)
+    }
+    throw new StellarError('Usage: stellar benchmark init|doctor|run|report|compare|latency|lint-tasks|first-relevant ...','USAGE',2)
   }
   throw new StellarError(`Unknown command: ${command}`,'USAGE',2)
 }

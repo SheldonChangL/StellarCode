@@ -10,6 +10,7 @@ import { loadBenchmarkTasks, benchmarkConfigPath } from './tasks.js'
 import { StellarError } from '../core/errors.js'
 import { sourceCoverage } from './evidence.js'
 import { classifyIntent } from '../query/intent.js'
+import { runtimeFingerprint, fileSha256, latencyDecomposition, repositoryIdentity } from './campaign.js'
 
 const execFileAsync=promisify(execFile)
 
@@ -76,7 +77,7 @@ export async function benchmarkDoctor({agents=['claude','codex'],env=process.env
   return results
 }
 
-export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='both',model,limit,repeat=1,outDir,stellarBin,env=process.env,onProgress,keepWorktreeOnFailure=false}) {
+export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='both',model,limit,repeat=1,outDir,stellarBin,env=process.env,onProgress,keepWorktreeOnFailure=false,repository}) {
   const configFile=tasksFile ?? await benchmarkConfigPath(projectRoot)
   const {tasks:allTasks}=await loadBenchmarkTasks(configFile)
   const tasks=Number(limit)>0?allTasks.slice(0,Number(limit)):allTasks
@@ -95,12 +96,25 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
   await Promise.all(Object.values(files).map(f=>fs.writeFile(f,'')))
   const packageRoot=path.resolve(fileURLToPath(new URL('../../',import.meta.url)))
   stellarBin=stellarBin??path.join(packageRoot,'bin','stellar.js')
+  // Campaign identity is recorded for comparability only; none of it reaches the agent or
+  // StellarCode. The runtime fingerprint must not change while the campaign runs.
+  const startedAt=new Date().toISOString()
+  const runtime=await runtimeFingerprint(packageRoot)
+  const taskHash=await fileSha256(configFile)
+  const assertRuntimeUnchanged=async()=>{
+    const now=await runtimeFingerprint(packageRoot)
+    if(now.contentHash!==runtime.contentHash){
+      await fs.writeFile(path.join(destination,'manifest.json'),JSON.stringify({schemaVersion:3,invalid:true,reason:'runtime source changed during campaign',startedAt,runtime:{...runtime,changedDuringCampaign:true,contentHashAfter:now.contentHash}},null,2)+'\n')
+      throw new StellarError('StellarCode runtime source changed during the benchmark campaign; the campaign is invalid.','BENCHMARK_RUNTIME_CHANGED',2)
+    }
+  }
   let completed=0,total=tasks.length*modes.length*repeat
   for(let r=1;r<=repeat;r++) {
     for(let i=0;i<tasks.length;i++) {
       const task=tasks[i]
       const ordered=mode==='both' && (i+r)%2===1?[...modes].reverse():modes
       for(const condition of ordered) {
+        await assertRuntimeUnchanged()
         const base=await fs.mkdtemp(path.join(os.tmpdir(),'stellar-bench-'))
         const {worktree,cleanup}=await makeWorktree(projectRoot,base)
         let failed=true
@@ -134,12 +148,13 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
           const firstRelevantCandidates=(result.metrics.sourceReads??[]).filter(read=>task.expectedFiles.includes(read.path)).map(read=>read.atMs).filter(v=>v!=null&&Number.isFinite(v))
           const firstRelevantMs=firstRelevantCandidates.length?Math.min(...firstRelevantCandidates):null
           const coverage=await sourceCoverage(worktree,result.metrics.sourceReads??[],task.expectedFiles)
+          const latency=latencyDecomposition(result.metrics,firstRelevantMs)
           // Diagnostic only: what StellarCode's deterministic classifier infers from the prompt,
           // recorded next to the author's category to measure classification accuracy later.
           const classifiedIntent=classifyIntent(task.prompt).intent
           const row={
-            schemaVersion:3,taskId:task.id,repetition:r,category:task.category,categorySource:task.categorySource,benchmarkCategory:task.category,classifiedIntent,mode:condition,agent,agentVersion:agentInfo.version,model:model??null,
-            projectCommit:commit,projectDirtyCount:dirty,exitCode:result.exitCode,durationMs:result.durationMs,firstRelevantMs,firstRelevantSourceMs:firstRelevantMs,
+            schemaVersion:4,taskId:task.id,repetition:r,category:task.category,categorySource:task.categorySource,benchmarkCategory:task.category,classifiedIntent,mode:condition,agent,agentVersion:agentInfo.version,model:model??null,signal:result.signal??null,
+            projectCommit:commit,projectDirtyCount:dirty,exitCode:result.exitCode,durationMs:result.durationMs,firstRelevantMs,firstRelevantSourceMs:firstRelevantMs,...latency,
             inputTokens:result.metrics.usage.inputTokens,uncachedInputTokens:result.metrics.usage.uncachedInputTokens,cachedInputTokens:result.metrics.usage.cachedInputTokens,cacheWriteInputTokens:result.metrics.usage.cacheWriteInputTokens,
             outputTokens:result.metrics.usage.outputTokens,reasoningOutputTokens:result.metrics.usage.reasoningOutputTokens,costUsd:result.metrics.costUsd,
             toolCalls:result.metrics.toolCalls,searchCalls:result.metrics.searchCalls,stellarCalls:result.metrics.stellarCalls,filesOpened:sourceReadPaths.length,filesOpenedList:sourceReadPaths,filesActuallyRead:sourceReadPaths,sourceReads:result.metrics.sourceReads??[],rawSourceBytesRead:result.metrics.sourceBytesRead,sourceBytesRead:coverage.uniqueSourceBytesRead,...coverage,
@@ -167,7 +182,9 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
       }
     }
   }
-  const manifest={schemaVersion:2,createdAt:new Date().toISOString(),agent,agentVersion:agentInfo.version,model:model??null,projectRoot,projectCommit:commit,projectDirtyCount:dirty,tasksFile:configFile,taskCount:tasks.length,repeat,modes,files,isolation:{freshAgentSession:true,detachedWorktree:true,stellarRulesRemovedFromWorktree:true,stellarContractInjectedViaPrompt:true,stableProjectIdentity:true,readOnlyIndexSnapshot:true,userMcpConfigIgnored:true,stellarIndexPreparedBeforeTimedRun:true,sourceGroundingRequired:true,rawAgentTelemetryPersisted:true}}
+  await assertRuntimeUnchanged()
+  const manifest={schemaVersion:3,createdAt:new Date().toISOString(),startedAt,completedAt:new Date().toISOString(),repository:repository??path.basename(projectRoot),repositoryIdentity:await repositoryIdentity(projectRoot),agent,agentVersion:agentInfo.version,model:model??null,projectRoot,projectCommit:commit,projectDirtyCount:dirty,tasksFile:configFile,taskHash,taskCount:tasks.length,repeat,modes,files,
+    runtime:{...runtime,changedDuringCampaign:false},environment:{os:`${os.type()} ${os.release()} ${os.arch()}`,platform:process.platform,node:process.version},isolation:{freshAgentSession:true,detachedWorktree:true,stellarRulesRemovedFromWorktree:true,stellarContractInjectedViaPrompt:true,stableProjectIdentity:true,readOnlyIndexSnapshot:true,userMcpConfigIgnored:true,stellarIndexPreparedBeforeTimedRun:true,sourceGroundingRequired:true,rawAgentTelemetryPersisted:true}}
   await fs.writeFile(path.join(destination,'manifest.json'),JSON.stringify(manifest,null,2)+'\n')
   return {outDir:destination,files,manifest}
 }

@@ -108,6 +108,11 @@ export async function commandVersion(agent, env = process.env) {
   return {agent,bin,available:true,compatible:missingFlags.length===0,missingFlags,version:version.out,exitCode:version.code}
 }
 
+// The exact StellarCode context command the STELLAR condition must run first. Shared with
+// the local latency benchmark so both measure the same request. Built from the prompt only.
+export const STELLAR_CONTEXT_FLAGS = ['--compact', '--with-source', '--depth', '1', '--max-files', '6', '--max-lines', '160', '--max-bytes', '12000', '--json']
+export function stellarContextArgs(prompt) { return ['context', String(prompt), ...STELLAR_CONTEXT_FLAGS] }
+
 export function benchmarkPrompt(task, mode) {
   const common = `You are running a repository-navigation benchmark. Work only inside the current repository. Do not modify files.
 
@@ -119,7 +124,7 @@ Repository source is the source of truth. Before making implementation claims, y
 Benchmark condition: BASELINE. StellarCode is disabled. Use your normal repository exploration tools (search, grep, file reads, directory inspection) as needed. Do not list a file in the final answer unless you opened its source.`
   return `${common}
 
-Benchmark condition: STELLAR. Your first action must be exactly one command: stellar context ${JSON.stringify(task.prompt)} --compact --with-source --depth 1 --max-files 6 --max-lines 160 --max-bytes 12000 --json. Any item in targets or relatedEvidence with a "source" field contains repository source read live from the working tree, with line numbers, and counts as inspected source for that range. Do not re-read those same embedded ranges. relatedHints are navigation metadata only: never list a hinted file in the final answer unless you separately inspect its source. Paths, symbols, confidence values and relation metadata without source are never source-of-truth. If targets plus relatedEvidence cover every part the task asks about, answer immediately with no further tool calls. If a concrete part is still unsupported, inspect only the smallest relevant hinted file/range (stellar source <path> --lines START:END --json or your file reader), then answer. Do not answer from paths or symbol names alone. Do not fall back to broad find/tree/grep/rg unless the returned grounded evidence is clearly unrelated.`
+Benchmark condition: STELLAR. Your first action must be exactly one command: stellar context ${JSON.stringify(task.prompt)} ${STELLAR_CONTEXT_FLAGS.join(' ')}. Any item in targets or relatedEvidence with a "source" field contains repository source read live from the working tree, with line numbers, and counts as inspected source for that range. Do not re-read those same embedded ranges. relatedHints are navigation metadata only: never list a hinted file in the final answer unless you separately inspect its source. Paths, symbols, confidence values and relation metadata without source are never source-of-truth. If targets plus relatedEvidence cover every part the task asks about, answer immediately with no further tool calls. If a concrete part is still unsupported, inspect only the smallest relevant hinted file/range (stellar source <path> --lines START:END --json or your file reader), then answer. Do not answer from paths or symbol names alone. Do not fall back to broad find/tree/grep/rg unless the returned grounded evidence is clearly unrelated.`
 }
 
 export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, onEvent, diagnosticDir, diagnostic = {} }) {
@@ -150,7 +155,7 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
   const closeOutputs=()=>{for(const fd of outputFiles.splice(0))closeSync(fd)}
   const started=performance.now()
   const startedAtEpochMs=Date.now()
-  const metrics={toolCalls:0,searchCalls:0,stellarCalls:0,filesMentioned:new Set(),filesOpened:new Set(),sourceReads:[],sourceBytesRead:0,firstRelevantMs:null,usage:{inputTokens:0,uncachedInputTokens:0,cachedInputTokens:0,cacheWriteInputTokens:0,outputTokens:0,reasoningOutputTokens:0},costUsd:null,finalText:'',structured:null,rawEvents:0}
+  const metrics={timing:{firstEventMs:null,firstModelEventMs:null},toolCalls:0,searchCalls:0,stellarCalls:0,filesMentioned:new Set(),filesOpened:new Set(),sourceReads:[],sourceBytesRead:0,firstRelevantMs:null,usage:{inputTokens:0,uncachedInputTokens:0,cachedInputTokens:0,cacheWriteInputTokens:0,outputTokens:0,reasoningOutputTokens:0},costUsd:null,finalText:'',structured:null,rawEvents:0}
   const pending=new Set()
   const commands=[]
   const toolInputs=new Map(), interactions=[]
@@ -167,7 +172,7 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
     const atMs=Math.round(performance.now()-started)
     const request=flattenStrings(input).join('\n'),response=flattenStrings(output).join('\n')
     const name=typeof input==='string'?input.slice(0,120):(input?.tool??input?.name??via)
-    const interaction={sequence:++interactionSequence,tool:name,kind:interactionKind(input),requestBytes:Buffer.byteLength(request),responseBytes:Buffer.byteLength(response),estimatedRequestTokens:estimateTokens(request),estimatedResponseTokens:estimateTokens(response),durationMs:startedAt==null?null:Math.max(0,atMs-startedAt),success:Boolean(ok)}
+    const interaction={sequence:++interactionSequence,tool:name,kind:interactionKind(input),requestBytes:Buffer.byteLength(request),responseBytes:Buffer.byteLength(response),estimatedRequestTokens:estimateTokens(request),estimatedResponseTokens:estimateTokens(response),durationMs:startedAt==null?null:Math.max(0,atMs-startedAt),startedAtMs:startedAt,completedAtMs:atMs,success:Boolean(ok)}
     interactions.push(interaction)
     if(outputFiles.length)writeSync(outputFiles[4],JSON.stringify(interaction)+'\n')
     const evidenceVia=/\bstellar\s+source\b|stellar_source/.test(flattenStrings(input).join(' '))?'stellar':via
@@ -195,6 +200,9 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
     async function processLine(line) {
       const event=parseJsonLine(line); if(!event)return
       metrics.rawEvents++
+      const eventAtMs=Math.round(performance.now()-started)
+      if(metrics.timing.firstEventMs==null)metrics.timing.firstEventMs=eventAtMs
+      if(metrics.timing.firstModelEventMs==null && (event.type==='assistant' || (event.type==='item.started'||event.type==='item.completed')))metrics.timing.firstModelEventMs=eventAtMs
       if(outputFiles.length)writeSync(outputFiles[3],JSON.stringify({event:metrics.rawEvents,atMs:Math.round(performance.now()-started),type:event.type,itemId:event.item?.id??null})+'\n')
       onEvent?.(event)
       if (agent==='codex') {
@@ -238,7 +246,7 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
       }
     }
 
-    child.on('close',async code=>{
+    child.on('close',async (code,signal)=>{
       if(buffer.trim()) await processLine(buffer.trim())
       closeOutputs()
       await Promise.allSettled([...pending])
@@ -256,7 +264,7 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
         estimated.unattributedVsProvider=Math.max(0,metrics.usage.inputTokens-estimated.knownTotal)
         await fs.writeFile(path.join(diagnosticDir,'token-attribution.json'),JSON.stringify({providerReported:{inputTokens:metrics.usage.inputTokens,cachedInputTokens:metrics.usage.cachedInputTokens,outputTokens:metrics.usage.outputTokens},estimated:{...estimated,note:'Estimated from UTF-8 bytes divided by four; provider input includes model context and tool schema that cannot be attributed exactly.'},interactions},null,2)+'\n')
       }
-      resolve({exitCode:code,stdout,stderr,durationMs,startedAtEpochMs,commands,metrics:{...metrics,interactions,filesMentioned:[...metrics.filesMentioned].sort(),filesOpened:[...metrics.filesOpened].sort(),structured}})
+      resolve({exitCode:code,signal:signal??null,stdout,stderr,durationMs,startedAtEpochMs,commands,metrics:{...metrics,interactions,filesMentioned:[...metrics.filesMentioned].sort(),filesOpened:[...metrics.filesOpened].sort(),structured}})
     })
   })
 }
