@@ -4,6 +4,7 @@ import path from 'node:path'
 import { spawn } from 'node:child_process'
 
 import { completedEvidence, strings as flattenStrings } from './evidence.js'
+import { GROUNDING_CONTRACT } from './delivery.js'
 
 function parseJsonLine(line) {
   try { return JSON.parse(line) } catch { return null }
@@ -113,7 +114,12 @@ export async function commandVersion(agent, env = process.env) {
 export const STELLAR_CONTEXT_FLAGS = ['--compact', '--with-source', '--depth', '1', '--max-files', '6', '--max-lines', '160', '--max-bytes', '12000', '--json']
 export function stellarContextArgs(prompt) { return ['context', String(prompt), ...STELLAR_CONTEXT_FLAGS] }
 
-export function benchmarkPrompt(task, mode) {
+const STELLAR_GUIDANCE = `Any item in targets or relatedEvidence with a "source" field contains repository source read live from the working tree, with line numbers, and counts as inspected source for that range. Do not re-read those same embedded ranges. relatedHints are navigation metadata only: never list a hinted file in the final answer unless you separately inspect its source. Paths, symbols, confidence values and relation metadata without source are never source-of-truth. If targets plus relatedEvidence cover every part the task asks about, answer immediately with no further tool calls. If a concrete part is still unsupported, inspect only the smallest relevant hinted file/range (stellar source <path> --lines START:END --json or your file reader), then answer. Do not answer from paths or symbol names alone. Do not fall back to broad find/tree/grep/rg unless the returned grounded evidence is clearly unrelated.`
+
+// The prompt is built from the task prompt and, for prefetch modes, the StellarCode
+// envelope only. Benchmark metadata (category, expected files, match mode) is never an
+// input here: callers pass { prompt } alone.
+export function benchmarkPrompt(task, mode, { envelope = null } = {}) {
   const common = `You are running a repository-navigation benchmark. Work only inside the current repository. Do not modify files.
 
 Task: ${task.prompt}
@@ -122,13 +128,24 @@ Repository source is the source of truth. Before making implementation claims, y
   if (mode === 'baseline') return `${common}
 
 Benchmark condition: BASELINE. StellarCode is disabled. Use your normal repository exploration tools (search, grep, file reads, directory inspection) as needed. Do not list a file in the final answer unless you opened its source.`
+  if (mode === 'prefetch' || mode === 'prefetch-contract') {
+    if (!envelope) throw new Error(`${mode} requires a prefetched StellarCode envelope`)
+    // Identical to the pull condition except for delivery: the output of the same
+    // stellar context command is already attached, so no first call is needed.
+    const contract = mode === 'prefetch-contract' ? `\n\nGrounding contract: ${GROUNDING_CONTRACT}` : ''
+    return `${common}
+
+Benchmark condition: STELLAR. The output of the command stellar context ${JSON.stringify(task.prompt)} ${STELLAR_CONTEXT_FLAGS.join(' ')} was already retrieved for this repository before you started; it is attached below as <stellar-grounded-context> (targets and related evidence with source, then related hints). Do not run that command again. ${STELLAR_GUIDANCE}
+
+${envelope}${contract}`
+  }
   return `${common}
 
-Benchmark condition: STELLAR. Your first action must be exactly one command: stellar context ${JSON.stringify(task.prompt)} ${STELLAR_CONTEXT_FLAGS.join(' ')}. Any item in targets or relatedEvidence with a "source" field contains repository source read live from the working tree, with line numbers, and counts as inspected source for that range. Do not re-read those same embedded ranges. relatedHints are navigation metadata only: never list a hinted file in the final answer unless you separately inspect its source. Paths, symbols, confidence values and relation metadata without source are never source-of-truth. If targets plus relatedEvidence cover every part the task asks about, answer immediately with no further tool calls. If a concrete part is still unsupported, inspect only the smallest relevant hinted file/range (stellar source <path> --lines START:END --json or your file reader), then answer. Do not answer from paths or symbol names alone. Do not fall back to broad find/tree/grep/rg unless the returned grounded evidence is clearly unrelated.`
+Benchmark condition: STELLAR. Your first action must be exactly one command: stellar context ${JSON.stringify(task.prompt)} ${STELLAR_CONTEXT_FLAGS.join(' ')}. ${STELLAR_GUIDANCE}`
 }
 
-export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, onEvent, diagnosticDir, diagnostic = {} }) {
-  const prompt = benchmarkPrompt(task, mode)
+export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, onEvent, diagnosticDir, diagnostic = {}, envelope = null }) {
+  const prompt = benchmarkPrompt({ prompt: task.prompt }, mode, { envelope })
   const bin = agentBinary(agent, env)
   let args
   if (agent === 'codex') {
@@ -155,7 +172,10 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
   const closeOutputs=()=>{for(const fd of outputFiles.splice(0))closeSync(fd)}
   const started=performance.now()
   const startedAtEpochMs=Date.now()
-  const metrics={timing:{firstEventMs:null,firstModelEventMs:null},toolCalls:0,searchCalls:0,stellarCalls:0,filesMentioned:new Set(),filesOpened:new Set(),sourceReads:[],sourceBytesRead:0,firstRelevantMs:null,usage:{inputTokens:0,uncachedInputTokens:0,cachedInputTokens:0,cacheWriteInputTokens:0,outputTokens:0,reasoningOutputTokens:0},costUsd:null,finalText:'',structured:null,rawEvents:0}
+  const metrics={timing:{firstEventMs:null,firstModelEventMs:null},toolCalls:0,searchCalls:0,stellarCalls:0,filesMentioned:new Set(),filesOpened:new Set(),sourceReads:[],sourceBytesRead:0,firstRelevantMs:null,usage:{inputTokens:0,uncachedInputTokens:0,cachedInputTokens:0,cacheWriteInputTokens:0,outputTokens:0,reasoningOutputTokens:0},costUsd:null,finalText:'',structured:null,rawEvents:0,turns:[],resultNumTurns:null}
+  // Model turns: one per distinct assistant message id (one provider call each). Usage on
+  // an assistant message is that call's own input accounting.
+  const turnById=new Map()
   const pending=new Set()
   const commands=[]
   const toolInputs=new Map(), interactions=[]
@@ -168,17 +188,24 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
     if(typeof input==='string')commands.push(input)
     else if(input?.command)commands.push(input.command)
   }
-  const observe=(input,output,ok,via,startedAt=null)=>{
+  const observe=(input,output,ok,via,startedAt=null,turn=null)=>{
     const atMs=Math.round(performance.now()-started)
     const request=flattenStrings(input).join('\n'),response=flattenStrings(output).join('\n')
     const name=typeof input==='string'?input.slice(0,120):(input?.tool??input?.name??via)
-    const interaction={sequence:++interactionSequence,tool:name,kind:interactionKind(input),requestBytes:Buffer.byteLength(request),responseBytes:Buffer.byteLength(response),estimatedRequestTokens:estimateTokens(request),estimatedResponseTokens:estimateTokens(response),durationMs:startedAt==null?null:Math.max(0,atMs-startedAt),startedAtMs:startedAt,completedAtMs:atMs,success:Boolean(ok)}
+    const interaction={sequence:++interactionSequence,turn,tool:name,kind:interactionKind(input),search:isSearchText([name,...flattenStrings(input)].join(' ')),requestBytes:Buffer.byteLength(request),responseBytes:Buffer.byteLength(response),estimatedRequestTokens:estimateTokens(request),estimatedResponseTokens:estimateTokens(response),durationMs:startedAt==null?null:Math.max(0,atMs-startedAt),startedAtMs:startedAt,completedAtMs:atMs,success:Boolean(ok)}
+    if(interaction.kind==='stellarContext') {
+      // Which file the agent's own context call returned first (delivery stratification).
+      const text=flattenStrings(output).join('\n')
+      for(const candidate of [text,...jsonObjectsFromText(text).reverse()]) {
+        try { const parsed=JSON.parse(candidate); if(parsed?.targets){interaction.topTarget=parsed.targets[0]?.path??null;break} } catch {}
+      }
+    }
     interactions.push(interaction)
     if(outputFiles.length)writeSync(outputFiles[4],JSON.stringify(interaction)+'\n')
-    const evidenceVia=/\bstellar\s+source\b|stellar_source/.test(flattenStrings(input).join(' '))?'stellar':via
+    const evidenceVia=/\bstellar\s+source\b|stellar_source/.test(flattenStrings(input).join(' '))?'stellar':interaction.kind==='stellarContext'?'stellar-context':via
     const p=completedEvidence({input,output,ok,cwd,atMs,via:evidenceVia}).then(e=>{
       for(const file of e.discovered)metrics.filesMentioned.add(file)
-      for(const read of e.reads){metrics.filesOpened.add(read.path);metrics.sourceReads.push(read);metrics.sourceBytesRead+=read.bytes}
+      for(const read of e.reads){const r={...read,turn};metrics.filesOpened.add(r.path);metrics.sourceReads.push(r);metrics.sourceBytesRead+=r.bytes}
     })
     pending.add(p);p.finally(()=>pending.delete(p))
   }
@@ -229,17 +256,26 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
           metrics.costUsd=event.total_cost_usd ?? null
           metrics.finalText=event.result ?? metrics.finalText
           metrics.structured=event.structured_output ?? null
+          metrics.resultNumTurns=Number.isFinite(Number(event.num_turns))?Number(event.num_turns):null
         }
         if(event.type==='user' && Array.isArray(event.message?.content)) {
           for(const block of event.message.content) if(block.type==='tool_result') {
             const tool=toolInputs.get(block.tool_use_id)
-            if(tool)observe(tool.input,block.content,!block.is_error,tool.name,tool.startedAt)
+            if(tool)observe(tool.input,block.content,!block.is_error,tool.name,tool.startedAt,tool.turn)
           }
         }
         const content=event?.message?.content
+        let turn=null
+        if (event.type==='assistant' && event.message?.id) {
+          if(!turnById.has(event.message.id)){const record={turn:turnById.size+1,id:event.message.id,inputTokens:null,outputTokens:null,toolUses:0};turnById.set(event.message.id,record);metrics.turns.push(record)}
+          const record=turnById.get(event.message.id);turn=record.turn
+          const usage=event.message.usage
+          if(usage)record.inputTokens=Number(usage.input_tokens??0)+Number(usage.cache_creation_input_tokens??0)+Number(usage.cache_read_input_tokens??0),record.outputTokens=Number(usage.output_tokens??0)
+          if(Array.isArray(content))record.toolUses+=content.filter(block=>block?.type==='tool_use').length
+        }
         if (event.type==='assistant' && Array.isArray(content)) {
           for (const block of content) if(block?.type==='tool_use') {
-            toolInputs.set(block.id,{name:block.name,input:block.input,startedAt:Math.round(performance.now()-started)})
+            toolInputs.set(block.id,{name:block.name,input:block.input,startedAt:Math.round(performance.now()-started),turn})
             countTool(block.input,block.name)
           }
         }

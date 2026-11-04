@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "notes": "goodjobshare v0.5.8 holdout, commit 72fe987d884b1006d28ac9c4667ce7058f138a7b. Authored and independently reviewed without StellarCode (see AUTHORING.md). Frozen before any v0.5.8 benchmark run on this repository.",
+  "tasks": [
+    {
+      "id": "nav-interview-share-completeness-score",
+      "enabled": true,
+      "category": "navigation",
+      "prompt": "When someone finishes sharing an interview experience, the GA conversion event we fire carries a numeric value that scores how complete the write-up is: fixed points for each filled field (company, region, job title, interview time, salary, sensitive questions, ...) plus the character length of the section texts and Q&A pairs, minus the length of the default template text. Where is that score computed?",
+      "expectedFiles": [
+        "src/utils/uploadSuccessValueCalc.js"
+      ],
+      "expectedMatch": "any"
+    },
+    {
+      "id": "nav-first-visit-content-access-grant",
+      "enabled": true,
+      "category": "navigation",
+      "prompt": "A device visiting the site for the very first time is allowed to view gated salary/experience content for free; on later visits whether the visitor can view is decided by asking the backend if the logged-in user has search access. Which code implements that first-visit-vs-returning-visitor decision (the browser storage marker check and the resulting can-view state update)?",
+      "expectedFiles": [
+        "src/hooks/usePermission.js"
+      ],
+      "expectedMatch": "any"
+    },
+    {
+      "id": "nav-company-rating-structured-data",
+      "enabled": true,
+      "category": "navigation",
+      "prompt": "Search engines get a schema.org JSON-LD object on the company overview page describing the company's average review score from employees (rounded to one decimal, with best/worst bounds of 5 and 1, and the reviewed Organization). Which component builds that structured-data object?",
+      "expectedFiles": [
+        "src/components/CompanyAndJobTitle/Overview/EmployerAggregateRatingSeo.js"
+      ],
+      "expectedMatch": "any"
+    },
+    {
+      "id": "flow-card-checkout-to-3ds-redirect",
+      "enabled": true,
+      "category": "flow",
+      "prompt": "On the buy page, a logged-in user types credit-card details and presses the 付款 button. Trace how the card fields are turned into a one-time prime token via the third-party card SDK, how that prime plus the selected plan's SKU are sent to the backend checkout mutation and how its response is unpacked, and how the result decides between sending the browser to an external 3-D Secure URL and navigating to the in-app /buy/result page.",
+      "expectedFiles": [
+        "src/components/Buy/PaymentSection/useForm.js",
+        "src/components/Buy/PaymentSection/useTapPay.js",
+        "src/apis/payment.js"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "flow-ssr-prefetch-state-hydration",
+      "enabled": true,
+      "category": "flow",
+      "prompt": "Route components can expose a static fetchData method for SSR. Trace how an incoming request URL is matched to a route so that fetchData gets run against a fresh Redux store, how the resulting store state is embedded into the rendered page document, and how the browser bundle reads it back as the preloaded state when it creates its own store and hydrates.",
+      "expectedFiles": [
+        "src/server.js",
+        "src/helpers/Html.js",
+        "src/client.js"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "flow-google-signin-forbidden-to-alert",
+      "enabled": true,
+      "category": "flow",
+      "prompt": "After a Google sign-in credential is exchanged with our backend, the GraphQL endpoint can answer HTTP 200 with an `errors` array whose first entry has extensions.code = FORBIDDEN. Trace how that response is turned into a thrown error object carrying the list of codes, how the Google sign-in logic maps FORBIDDEN to one of our ERxxxx error codes, and how that error code is turned into a dispatched ALERT-severity pop-up notification plus the internal Rollbar report. The wording of the error messages and how the pop-up is drawn on screen are out of scope.",
+      "expectedFiles": [
+        "src/utils/graphqlClient.ts",
+        "src/utils/errors/graphqlError.js",
+        "src/actions/auth.js",
+        "src/actions/toastNotification.js"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "impact-countdown-hook-signature",
+      "enabled": true,
+      "category": "impact",
+      "prompt": "We want to change the shared React countdown/stopwatch hook that ticks every second while a counting/pause/stop status says so, fires a callback once the elapsed duration reaches a limit, and returns the elapsed duration. The plan is to take a single options object instead of positional arguments and return remaining time instead of elapsed time. Which production source files must be reviewed? Include the hook's own module and every production file that imports it directly; ignore tests and indirect users.",
+      "expectedFiles": [
+        "src/hooks/useTimer.js",
+        "src/components/BuyResultPage/PaymentResult/Success.js",
+        "src/components/BuyResultPage/PaymentResult/InProgress.js",
+        "src/components/ToastNotification/Notification.js"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "impact-rest-helper-calling-convention",
+      "enabled": true,
+      "category": "impact",
+      "prompt": "Most API calls go through GraphQL, but a small REST helper still builds get/post/patch/delete callers for an endpoint path (adding a Bearer header, a qs query string, and throwing an HTTP error on non-OK responses). We are changing its calling convention so each method takes positional (body, token) arguments instead of one options object. Which production files must be reviewed? Include the helper's own module and every production module that imports it directly; ignore tests and indirect callers.",
+      "expectedFiles": [
+        "src/utils/fetchUtil.js",
+        "src/apis/experiencesApi.js",
+        "src/apis/timeAndSalaryApi.js"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "impact-query-search-term-selector",
+      "enabled": true,
+      "category": "impact",
+      "prompt": "There is a tiny selector that pulls the search term out of an already-parsed query-string object (the `q` parameter) and coerces anything that is not a string to ''. We want it to take the raw location.search string instead of a parsed object. Which production files must be reviewed? Include the selector's own module and every production file that imports it directly; ignore tests.",
+      "expectedFiles": [
+        "src/selectors/routing/keyword.js",
+        "src/components/App/Header/Searchbar.js",
+        "src/components/TimeAndSalary/SearchBar.js",
+        "src/components/TimeAndSalary/SearchScreen/SearchScreen.js"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "edit-add-success-toast-severity",
+      "enabled": true,
+      "category": "editing-prep",
+      "prompt": "We want a fourth severity for the transient pop-up toast messages, SUCCESS, next to INFO/WARNING/ALERT. It must have its own distinct color and show the check-mark glyph (unknown severities currently fall through to the close/X glyph and the default color). Before making this change, which files must be changed?",
+      "expectedFiles": [
+        "src/constants/toastNotification.js",
+        "src/components/ToastNotification/helpers.js",
+        "src/components/ToastNotification/NotificationIcon.js"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "edit-salary-questionnaire-company-size",
+      "enabled": true,
+      "category": "editing-prep",
+      "prompt": "Add a new optional radio question \"公司規模\" (company size: <50, 50-500, >500) to the step-by-step questionnaire for sharing salary and working hours, placed right after the gender question, and send its answer as company_size in the submitted payload. Implement it the same way the existing gender question is defined and wired into that questionnaire. Which files must be changed?",
+      "expectedFiles": [
+        "src/components/ShareExperience/constants.js",
+        "src/components/ShareExperience/questionCreators.js",
+        "src/components/ShareExperience/TimeSalaryForm/TypeForm.js"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "edit-explainer-article-updated-date",
+      "enabled": true,
+      "category": "editing-prep",
+      "prompt": "On a single article page of the 勞動知識小教室 employment-law explainer section, we want to show the article's last-updated date (the backend already exposes an updatedAt field on that entry) directly under the article title. Which files must be changed to fetch the field, carry it through the typed entry data, and render it?",
+      "expectedFiles": [
+        "src/graphql/laborRight.ts",
+        "src/components/LaborRightsSingle/index.tsx",
+        "src/components/LaborRightsSingle/Body.js"
+      ],
+      "expectedMatch": "all"
+    }
+  ]
+}
