@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "notes": "jetchat-admin v0.5.6 holdout, commit c9256c06ff39fb2d3c4f5f73fe5be2439423cd9f. Authored and independently reviewed without StellarCode (see AUTHORING.md). Frozen before any v0.5.6 benchmark run on this repository.",
+  "tasks": [
+    {
+      "id": "nav-unauthenticated-redirect-and-token-cache",
+      "enabled": true,
+      "category": "navigation",
+      "prompt": "When someone opens a dashboard URL without a valid session cookie, where does the app bounce them to the sign-in screen, and where is the backend token-verification result cached between requests (and for how long)?",
+      "expectedFiles": [
+        "src/middleware.ts"
+      ],
+      "expectedMatch": "any"
+    },
+    {
+      "id": "nav-malformed-ai-chart-rejection",
+      "enabled": true,
+      "category": "navigation",
+      "prompt": "In the AI assistant's generated reports, where is an AI-produced chart specification checked for structural validity, and what decides to show an 'invalid configuration' error box instead of drawing the chart?",
+      "expectedFiles": [
+        "src/components/ai-assistant/report/dynamic-chart-renderer.tsx",
+        "src/lib/ai/chart-validation.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "nav-all-organizations-account-listing",
+      "enabled": true,
+      "category": "navigation",
+      "prompt": "On the admin-account management screen, when a system admin picks the 'All Organizations' option in the organization picker, which code decides to call the system-wide account listing endpoint instead of the organization/group-scoped one?",
+      "expectedFiles": [
+        "src/hooks/use-users-list.ts"
+      ],
+      "expectedMatch": "any"
+    },
+    {
+      "id": "flow-sign-in-to-session-cookie",
+      "enabled": true,
+      "category": "flow",
+      "prompt": "Trace what happens when an admin submits the email/password sign-in form: where the credentials go to Firebase and then to the backend sign-in endpoint, where accounts without any dashboard access are rejected, how the post-sign-in landing route is chosen, and where the 'remember me' choice becomes the session cookie's lifetime.",
+      "expectedFiles": [
+        "src/components/auth/login-form.tsx",
+        "src/hooks/use-auth.ts",
+        "src/lib/services/auth.ts",
+        "src/app/actions/auth.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "flow-member-disable-and-enable",
+      "enabled": true,
+      "category": "flow",
+      "prompt": "On a member's detail screen, trace disabling a member with an optional reason (and re-enabling them): from the confirm handler to the outgoing HTTP request, including which backend path is hit, and how the response updates the displayed 'disabled by / disabled at' fields.",
+      "expectedFiles": [
+        "src/app/[locale]/(dashboard)/members/[id]/page.tsx",
+        "src/lib/services/member.service.ts",
+        "src/lib/constants/api-endpoints.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "flow-conversation-list-date-window",
+      "enabled": true,
+      "category": "flow",
+      "prompt": "How does the conversation list get its rows? Trace from the default 30-day date window (or the date range the admin picks) through to the backend list request and its start_date/end_date query parameters.",
+      "expectedFiles": [
+        "src/components/conversations/conversations-management.tsx",
+        "src/hooks/use-conversations-list.ts",
+        "src/lib/services/conversation.service.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "impact-shared-date-picker-props",
+      "enabled": true,
+      "category": "impact",
+      "prompt": "The shared calendar-popover picker for choosing a from/to period, shown above the list tables, takes a value, a change callback and a placeholder translation key. If those props are renamed or their types change, which production files — the picker itself and every component that renders it — must be reviewed?",
+      "expectedFiles": [
+        "src/components/shared/date-range-filter.tsx",
+        "src/components/members/member-management.tsx",
+        "src/components/users/user-data-table.tsx",
+        "src/components/conversations/conversation-table.tsx"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "impact-browser-readable-access-cookie",
+      "enabled": true,
+      "category": "impact",
+      "prompt": "If the JSON shape of the non-httpOnly cookie that exposes the signed-in user's role and module access rights to browser code changes, which code writes that cookie and which code parses it?",
+      "expectedFiles": [
+        "src/middleware.ts",
+        "src/stores/permission-store.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "impact-ai-generation-settings-shape",
+      "enabled": true,
+      "category": "impact",
+      "prompt": "The AI assistant's model name, temperature, topK/topP and its two output-token limits are loaded at runtime from Firebase rather than hard-coded. If that settings object gains or renames a field, which production modules that load or consume it need review?",
+      "expectedFiles": [
+        "src/lib/firebase/remote-config.ts",
+        "src/lib/ai/firebase-ai-client.ts",
+        "src/hooks/use-ai-chat.ts",
+        "src/components/ai-assistant/dialogs/ai-assistant-dialog.tsx"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "edit-expose-organizations-module",
+      "enabled": true,
+      "category": "editing-prep",
+      "prompt": "The system-level organization management module is already defined but hidden from the left-hand menu, and its URL is refused for every role. Before exposing it to system admins, which files control its menu visibility and whether the server-side route guard lets a user holding that module through?",
+      "expectedFiles": [
+        "src/lib/constants/navigation-modules.ts",
+        "src/lib/utils/route-permissions.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "edit-new-ai-assistant-tool",
+      "enabled": true,
+      "category": "editing-prep",
+      "prompt": "Before adding a new tool the AI assistant can call (for example 'search organizations'), which files define the tool schemas offered to the Gemini model and route a tool call returned by the model to the code that runs it?",
+      "expectedFiles": [
+        "src/lib/ai/function-declarations.ts",
+        "src/lib/ai/function-execution/index.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "edit-group-admin-account-creation",
+      "enabled": true,
+      "category": "editing-prep",
+      "prompt": "Product wants organization group admins to be able to create plain organization users from the organization-scoped admin-account screen. Before changing this, which files decide which roles a creator may assign and which creator roles the new-account dialog's submit logic actually supports?",
+      "expectedFiles": [
+        "src/lib/utils/role-filters.ts",
+        "src/components/users/dialogs/create/create-user-dialog.tsx"
+      ],
+      "expectedMatch": "all"
+    }
+  ]
+}

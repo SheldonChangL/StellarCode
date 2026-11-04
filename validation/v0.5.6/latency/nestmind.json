@@ -1,0 +1,353 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-04T03:04:52.846Z",
+  "projectRoot": "/Users/sheldon.chang/Projects/Private/stellar-holdout-v056/nestmind",
+  "projectCommit": "3dc749f17631259529aec8a13ff8e2ce5e4b3920",
+  "tasksFile": "/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete/validation/v0.5.6/nestmind/tasks.json",
+  "taskHash": "202b18e852f25e391bfe5654213dca96adc948e634ae37228dd7bc3df57d88d0",
+  "repeat": 7,
+  "runtime": {
+    "commit": "6c9eb49896a298f6edab6f7d0fa8cb59e03f2242",
+    "packageVersion": "0.5.5",
+    "dirty": false,
+    "dirtyFiles": [],
+    "contentHash": "85f9675e59cb8ab1692bb484d3fd621fb36f4708e8bb60b10f918e7162485095",
+    "files": 43,
+    "frozenTrees": {
+      "src/query": "d84e62ad4e748d28f0b4eead59d08a42838b0a14",
+      "src/indexer": "377d41f7260eccc3252cc7323115bc9b8a4fd47f",
+      "src/mcp": "b1e4e83c5285302163b42741be7cd1d7c7aa1feb",
+      "src/core": "bc2275b66042a77a4c5de0aa68bf0884689fbe7e",
+      "src/storage": "c1688a77174ec478246b0ea019bc5fc110d499b0",
+      "src/platform": "aa15ff53fbaee33367cd08d60971c29b72fbd447",
+      "src/web": "4bb79d1f7d8b675619b748fda12940e9934466b3"
+    }
+  },
+  "environment": {
+    "os": "Darwin 25.6.0 arm64",
+    "node": "v22.17.0",
+    "cpus": 14
+  },
+  "command": [
+    "stellar",
+    "context",
+    "<task prompt>",
+    "--compact",
+    "--with-source",
+    "--depth",
+    "1",
+    "--max-files",
+    "6",
+    "--max-lines",
+    "160",
+    "--max-bytes",
+    "12000",
+    "--json"
+  ],
+  "definitions": {
+    "cliMs": "Wall time of one new `node bin/stellar.js` process, including Node startup, measured from this harness.",
+    "cold": "New process on a freshly copied read-only index snapshot (OS page cache may be warm).",
+    "warm": "New process on an already-used snapshot file.",
+    "nodeCliFloorMs": "Wall time of `stellar --version`: the process-startup floor no context call can beat.",
+    "indexBuildMs": "Full `stellar sync` of the clean worktree into an empty data directory.",
+    "indexSyncNoopMs": "`stellar sync` with no source changes (lazy-sync cost when nothing changed)."
+  },
+  "indexedFiles": 223,
+  "nodeCliFloorMs": {
+    "n": 7,
+    "p50": 53.27491600000002,
+    "p95": 55.092915999999974,
+    "min": 52.319500000000005,
+    "max": 55.092915999999974
+  },
+  "indexBuildMs": 473.901791,
+  "indexSyncNoopMs": {
+    "n": 7,
+    "p50": 95.29370799999992,
+    "p95": 133.7159160000001,
+    "min": 94.50637500000016,
+    "max": 133.7159160000001
+  },
+  "contextColdMs": {
+    "n": 84,
+    "p50": 116.63591699999961,
+    "p95": 143.43737500000134,
+    "min": 96.6719999999998,
+    "max": 185.76004099999773
+  },
+  "contextWarmMs": {
+    "n": 84,
+    "p50": 116.94774999999936,
+    "p95": 140.69583299999977,
+    "min": 94.99112500000001,
+    "max": 197.64629199999945
+  },
+  "contextJsonBytes": {
+    "n": 12,
+    "p50": 6471,
+    "p95": 11324,
+    "min": 3909,
+    "max": 11324
+  },
+  "embeddedSourceBytes": {
+    "n": 12,
+    "p50": 4174,
+    "p95": 7998,
+    "min": 1782,
+    "max": 7998
+  },
+  "tasks": [
+    {
+      "taskId": "repo-access-token-encryption-at-rest",
+      "category": "navigation",
+      "contextJsonBytes": 3909,
+      "embeddedSourceBytes": 1782,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 100.15033400000016,
+        "p95": 103.61079199999995,
+        "min": 96.6719999999998,
+        "max": 103.61079199999995
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 95.74245800000017,
+        "p95": 99.30329099999972,
+        "min": 94.99112500000001,
+        "max": 99.30329099999972
+      }
+    },
+    {
+      "taskId": "structured-json-retry-and-call-timeout",
+      "category": "navigation",
+      "contextJsonBytes": 5333,
+      "embeddedSourceBytes": 3215,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 106.43312500000002,
+        "p95": 115.43875000000025,
+        "min": 104.58962500000007,
+        "max": 115.43875000000025
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 105.35654199999954,
+        "p95": 107.00883299999987,
+        "min": 104.92416599999979,
+        "max": 107.00883299999987
+      }
+    },
+    {
+      "taskId": "live-update-stream-fanout",
+      "category": "navigation",
+      "contextJsonBytes": 6468,
+      "embeddedSourceBytes": 3810,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 126.73266700000022,
+        "p95": 129.04225000000042,
+        "min": 125.23441699999967,
+        "max": 129.04225000000042
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 125.86783399999968,
+        "p95": 126.87541599999986,
+        "min": 124.98424999999952,
+        "max": 126.87541599999986
+      }
+    },
+    {
+      "taskId": "ci-hook-to-recorded-outcome",
+      "category": "flow",
+      "contextJsonBytes": 7477,
+      "embeddedSourceBytes": 4455,
+      "targets": 2,
+      "coldMs": {
+        "n": 7,
+        "p50": 107.92975000000024,
+        "p95": 116.8241250000001,
+        "min": 107.49987499999952,
+        "max": 116.8241250000001
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 112.21999999999935,
+        "p95": 116.82824999999957,
+        "min": 107.71379199999956,
+        "max": 116.82824999999957
+      }
+    },
+    {
+      "taskId": "approval-resumes-work-dispatch",
+      "category": "flow",
+      "contextJsonBytes": 8495,
+      "embeddedSourceBytes": 5335,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 143.43737500000134,
+        "p95": 156.41300000000047,
+        "min": 141.5244160000002,
+        "max": 156.41300000000047
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 141.02508399999897,
+        "p95": 197.64629199999945,
+        "min": 139.5610830000005,
+        "max": 197.64629199999945
+      }
+    },
+    {
+      "taskId": "generated-code-to-searchable-vectors",
+      "category": "flow",
+      "contextJsonBytes": 7823,
+      "embeddedSourceBytes": 5227,
+      "targets": 2,
+      "coldMs": {
+        "n": 7,
+        "p50": 118.21008299999994,
+        "p95": 120.89833399999952,
+        "min": 117.09970800000156,
+        "max": 120.89833399999952
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 119.3978330000009,
+        "p95": 119.84904199999983,
+        "min": 118.60320800000045,
+        "max": 119.84904199999983
+      }
+    },
+    {
+      "taskId": "usd-cost-calculation-callers",
+      "category": "impact",
+      "contextJsonBytes": 11027,
+      "embeddedSourceBytes": 7803,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 120.23070800000096,
+        "p95": 126.93366699999933,
+        "min": 118.66037499999948,
+        "max": 126.93366699999933
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 121.76500000000124,
+        "p95": 125.2219589999986,
+        "min": 119.94591600000058,
+        "max": 125.2219589999986
+      }
+    },
+    {
+      "taskId": "vector-similarity-result-consumers",
+      "category": "impact",
+      "contextJsonBytes": 11324,
+      "embeddedSourceBytes": 7998,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 111.56820899999911,
+        "p95": 114.81262500000048,
+        "min": 109.33899999999994,
+        "max": 114.81262500000048
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 117.58995799999866,
+        "p95": 122.10974999999962,
+        "min": 109.81612499999937,
+        "max": 122.10974999999962
+      }
+    },
+    {
+      "taskId": "job-trace-helper-signature-change",
+      "category": "impact",
+      "contextJsonBytes": 8146,
+      "embeddedSourceBytes": 5084,
+      "targets": 2,
+      "coldMs": {
+        "n": 7,
+        "p50": 121.21791600000142,
+        "p95": 124.16337500000009,
+        "min": 120.10199999999895,
+        "max": 124.16337500000009
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 120.49416699999892,
+        "p95": 123.64820900000086,
+        "min": 119.40104100000099,
+        "max": 123.64820900000086
+      }
+    },
+    {
+      "taskId": "add-go-to-sandboxed-execution",
+      "category": "editing-prep",
+      "contextJsonBytes": 5740,
+      "embeddedSourceBytes": 2642,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 114.18954200000007,
+        "p95": 123.78125,
+        "min": 110.14025000000038,
+        "max": 123.78125
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 115.31183299999975,
+        "p95": 122.79870800000208,
+        "min": 112.10845799999879,
+        "max": 122.79870800000208
+      }
+    },
+    {
+      "taskId": "async-report-job-ownership-check",
+      "category": "editing-prep",
+      "contextJsonBytes": 6471,
+      "embeddedSourceBytes": 4174,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 115.31004100000064,
+        "p95": 132.1313749999972,
+        "min": 108.47199999999793,
+        "max": 132.1313749999972
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 113.1342500000028,
+        "p95": 116.94774999999936,
+        "min": 107.96558300000106,
+        "max": 116.94774999999936
+      }
+    },
+    {
+      "taskId": "require-access-token-signing-secret",
+      "category": "editing-prep",
+      "contextJsonBytes": 6255,
+      "embeddedSourceBytes": 4090,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 110.00737499999741,
+        "p95": 185.76004099999773,
+        "min": 106.8272500000021,
+        "max": 185.76004099999773
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 103.45524999999907,
+        "p95": 104.79616700000042,
+        "min": 101.41350000000239,
+        "max": 104.79616700000042
+      }
+    }
+  ]
+}

@@ -1,0 +1,311 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-04T01:30:27.580Z",
+  "projectRoot": "/Users/sheldon.chang/Projects/Private/stellar-holdout-v056/reefmori",
+  "projectCommit": "6f2b9a5593c82f8b1430c1dc651e1d435808de69",
+  "tasksFile": "/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete/validation/v0.5.6/reefmori/tasks.json",
+  "taskHash": "c1ed9e17e30fb9a55705723f5cb3abd56865800c78cf192faa044b0898633f10",
+  "repeat": 7,
+  "runtime": {
+    "commit": "6c9eb49896a298f6edab6f7d0fa8cb59e03f2242",
+    "packageVersion": "0.5.5",
+    "dirty": false,
+    "dirtyFiles": [],
+    "contentHash": "85f9675e59cb8ab1692bb484d3fd621fb36f4708e8bb60b10f918e7162485095",
+    "files": 43,
+    "frozenTrees": {
+      "src/query": "d84e62ad4e748d28f0b4eead59d08a42838b0a14",
+      "src/indexer": "377d41f7260eccc3252cc7323115bc9b8a4fd47f",
+      "src/mcp": "b1e4e83c5285302163b42741be7cd1d7c7aa1feb",
+      "src/core": "bc2275b66042a77a4c5de0aa68bf0884689fbe7e",
+      "src/storage": "c1688a77174ec478246b0ea019bc5fc110d499b0",
+      "src/platform": "aa15ff53fbaee33367cd08d60971c29b72fbd447",
+      "src/web": "4bb79d1f7d8b675619b748fda12940e9934466b3"
+    }
+  },
+  "environment": {
+    "os": "Darwin 25.6.0 arm64",
+    "node": "v22.17.0",
+    "cpus": 14
+  },
+  "command": [
+    "stellar",
+    "context",
+    "<task prompt>",
+    "--compact",
+    "--with-source",
+    "--depth",
+    "1",
+    "--max-files",
+    "6",
+    "--max-lines",
+    "160",
+    "--max-bytes",
+    "12000",
+    "--json"
+  ],
+  "definitions": {
+    "cliMs": "Wall time of one new `node bin/stellar.js` process, including Node startup, measured from this harness.",
+    "cold": "New process on a freshly copied read-only index snapshot (OS page cache may be warm).",
+    "warm": "New process on an already-used snapshot file.",
+    "nodeCliFloorMs": "Wall time of `stellar --version`: the process-startup floor no context call can beat.",
+    "indexBuildMs": "Full `stellar sync` of the clean worktree into an empty data directory.",
+    "indexSyncNoopMs": "`stellar sync` with no source changes (lazy-sync cost when nothing changed)."
+  },
+  "indexedFiles": 100,
+  "nodeCliFloorMs": {
+    "n": 7,
+    "p50": 57.94520800000004,
+    "p95": 60.07495800000004,
+    "min": 53.249000000000024,
+    "max": 60.07495800000004
+  },
+  "indexBuildMs": 361.88029199999994,
+  "indexSyncNoopMs": {
+    "n": 7,
+    "p50": 95.08241699999985,
+    "p95": 102.14679199999978,
+    "min": 93.26404200000002,
+    "max": 102.14679199999978
+  },
+  "contextColdMs": {
+    "n": 70,
+    "p50": 127.7810419999987,
+    "p95": 178.6620840000005,
+    "min": 91.41574999999648,
+    "max": 245.41983299999993
+  },
+  "contextWarmMs": {
+    "n": 70,
+    "p50": 131.25933299999815,
+    "p95": 168.12904200000048,
+    "min": 92.3627919999999,
+    "max": 182.8784999999989
+  },
+  "contextJsonBytes": {
+    "n": 10,
+    "p50": 6912,
+    "p95": 13385,
+    "min": 3406,
+    "max": 13385
+  },
+  "embeddedSourceBytes": {
+    "n": 10,
+    "p50": 4673,
+    "p95": 10854,
+    "min": 1663,
+    "max": 10854
+  },
+  "tasks": [
+    {
+      "taskId": "predator-ai-navigation",
+      "category": "navigation",
+      "contextJsonBytes": 3406,
+      "embeddedSourceBytes": 1663,
+      "targets": 2,
+      "coldMs": {
+        "n": 7,
+        "p50": 112.9513330000002,
+        "p95": 116.5312080000001,
+        "min": 105.46916699999997,
+        "max": 116.5312080000001
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 109.61625000000004,
+        "p95": 117.26733400000012,
+        "min": 107.19779199999994,
+        "max": 117.26733400000012
+      }
+    },
+    {
+      "taskId": "predator-hunt-flow",
+      "category": "flow",
+      "contextJsonBytes": 8826,
+      "embeddedSourceBytes": 6536,
+      "targets": 1,
+      "coldMs": {
+        "n": 7,
+        "p50": 147.98225000000002,
+        "p95": 150.85895800000026,
+        "min": 140.22404099999994,
+        "max": 150.85895800000026
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 156.0704999999998,
+        "p95": 162.16733399999976,
+        "min": 150.3535410000004,
+        "max": 162.16733399999976
+      }
+    },
+    {
+      "taskId": "predator-pressure-impact",
+      "category": "impact",
+      "contextJsonBytes": 9819,
+      "embeddedSourceBytes": 7285,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 166.21283399999993,
+        "p95": 178.6620840000005,
+        "min": 161.48962500000016,
+        "max": 178.6620840000005
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 163.81679200000053,
+        "p95": 167.74512499999946,
+        "min": 151.47508300000027,
+        "max": 167.74512499999946
+      }
+    },
+    {
+      "taskId": "apex-hunt-flow",
+      "category": "flow",
+      "contextJsonBytes": 8472,
+      "embeddedSourceBytes": 5817,
+      "targets": 2,
+      "coldMs": {
+        "n": 7,
+        "p50": 152.65337499999987,
+        "p95": 162.63687499999833,
+        "min": 145.54758399999992,
+        "max": 162.63687499999833
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 154.4541250000002,
+        "p95": 162.6095409999998,
+        "min": 151.45570800000132,
+        "max": 162.6095409999998
+      }
+    },
+    {
+      "taskId": "rush-spawn-flow",
+      "category": "flow",
+      "contextJsonBytes": 8384,
+      "embeddedSourceBytes": 6318,
+      "targets": 1,
+      "coldMs": {
+        "n": 7,
+        "p50": 145.7639589999999,
+        "p95": 156.67583399999967,
+        "min": 141.54920800000036,
+        "max": 156.67583399999967
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 141.03654199999983,
+        "p95": 152.58200000000033,
+        "min": 137.0700420000012,
+        "max": 152.58200000000033
+      }
+    },
+    {
+      "taskId": "rush-cleaning-flow",
+      "category": "flow",
+      "contextJsonBytes": 13385,
+      "embeddedSourceBytes": 10854,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 177.6860830000005,
+        "p95": 245.41983299999993,
+        "min": 172.23304199999984,
+        "max": 245.41983299999993
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 168.12904200000048,
+        "p95": 182.8784999999989,
+        "min": 164.1004580000008,
+        "max": 182.8784999999989
+      }
+    },
+    {
+      "taskId": "cleaning-progression-flow",
+      "category": "flow",
+      "contextJsonBytes": 4993,
+      "embeddedSourceBytes": 3001,
+      "targets": 2,
+      "coldMs": {
+        "n": 7,
+        "p50": 111.3875420000004,
+        "p95": 117.51841599999898,
+        "min": 110.4466250000005,
+        "max": 117.51841599999898
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 116.87120799999866,
+        "p95": 122.54595800000061,
+        "min": 111.04570899999999,
+        "max": 122.54595800000061
+      }
+    },
+    {
+      "taskId": "cleaning-tool-prep",
+      "category": "editing-prep",
+      "contextJsonBytes": 6912,
+      "embeddedSourceBytes": 4543,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 94.57587500000045,
+        "p95": 103.74250000000029,
+        "min": 91.41574999999648,
+        "max": 103.74250000000029
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 95.1809170000015,
+        "p95": 131.25933299999815,
+        "min": 92.3627919999999,
+        "max": 131.25933299999815
+      }
+    },
+    {
+      "taskId": "predator-dodge-prep",
+      "category": "editing-prep",
+      "contextJsonBytes": 4962,
+      "embeddedSourceBytes": 3053,
+      "targets": 3,
+      "coldMs": {
+        "n": 7,
+        "p50": 119.23479099999895,
+        "p95": 127.7810419999987,
+        "min": 118.64333299999998,
+        "max": 127.7810419999987
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 117.8413330000003,
+        "p95": 119.92262500000288,
+        "min": 115.48824999999852,
+        "max": 119.92262500000288
+      }
+    },
+    {
+      "taskId": "game-startup-navigation",
+      "category": "navigation",
+      "contextJsonBytes": 6343,
+      "embeddedSourceBytes": 4673,
+      "targets": 1,
+      "coldMs": {
+        "n": 7,
+        "p50": 110.49250000000029,
+        "p95": 114.96179199999824,
+        "min": 108.66887499999939,
+        "max": 114.96179199999824
+      },
+      "warmMs": {
+        "n": 7,
+        "p50": 114.22733299999891,
+        "p95": 120.71150000000125,
+        "min": 113.27191699999821,
+        "max": 120.71150000000125
+      }
+    }
+  ]
+}

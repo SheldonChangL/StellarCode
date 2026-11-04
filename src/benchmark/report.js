@@ -1,6 +1,10 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { BENCHMARK_CATEGORIES } from './tasks.js'
+import { campaignFromReport, taskStats, winLossDistribution, catastrophicRegressions, determinismSummary, median as medianOf, METHODOLOGY, PROVIDER_DRIFT_NOTE } from './generalization.js'
+
+export const REPORT_SCHEMA_VERSION = 5
+export const LATENCY_FIELDS = ['firstEventMs','firstModelEventMs','agentStartToFirstToolMs','firstToolDurationMs','stellarContextDurationMs','firstRelevantToolStartedAtMs','firstRelevantToolDurationMs','firstRelevantSourceCompletionMs']
 
 export async function readJsonl(file) {
   const text = await fs.readFile(file, 'utf8')
@@ -32,6 +36,7 @@ function normalizeRow(row) {
     categorySource:row.categorySource ?? (row.category ? 'explicit' : 'legacy-default'),
     expectedSourceBytes:optionalNumber(row.expectedSourceBytes),
     nonExpectedSourceBytes:optionalNumber(row.nonExpectedSourceBytes),
+    ...Object.fromEntries(LATENCY_FIELDS.map(field=>[field,optionalNumber(row[field])])),
     firstRelevantMs: row.firstRelevantMs == null ? (row.durationToRelevantMs == null ? null : n(row.durationToRelevantMs)) : n(row.firstRelevantMs),
     verified: row.verified ?? (row.success != null),
     success: row.success == null ? null : Boolean(row.success),
@@ -178,8 +183,10 @@ export async function benchmarkReport(baselineFile, stellarFile) {
   // failures and interrupted invocations are reported as coverage gaps, not silently mixed
   // into unequal aggregate samples. A completed agent run with incorrect/ungrounded output
   // remains in the comparison because correctness failures are product evidence.
-  const paired=availablePairs.filter(({baseline,stellar}) =>
-    (baseline.exitCode==null || baseline.exitCode===0) && (stellar.exitCode==null || stellar.exitCode===0))
+  // A row that records exitCode must have exited 0; a null exitCode means the agent was
+  // killed by a signal (truncated run). Only legacy rows without the field count as ok.
+  const completed=row=>!('exitCode' in row) || row.exitCode===0
+  const paired=availablePairs.filter(({baseline,stellar}) => completed(baseline) && completed(stellar))
   // Both sides of a pair must be judged under one category, or category metrics and the
   // navigation gate would compare different task sets. An explicit category wins over the
   // legacy default (rows written before v0.5.5 carry none); a true conflict is counted.
@@ -224,6 +231,7 @@ export async function benchmarkReport(baselineFile, stellarFile) {
     expectedFileSourcePrecisionDeltaPoints: baseline.expectedFileSourcePrecision==null||stellar.expectedFileSourcePrecision==null?null:(stellar.expectedFileSourcePrecision-baseline.expectedFileSourcePrecision)*100
   }
   const summaries=taskSummaries(paired)
+  const campaign=await campaignMetadata(path.dirname(baselineFile),pairedBaseline[0]??baselineRows[0]??null)
   const correctnessVerified=baseline.verifiedRuns===baseline.runs && stellar.verifiedRuns===stellar.runs && baseline.runs>0 && stellar.runs>0
   const acceptance = {
     overallInputTokens: delta.inputTokenReductionPct >= 20,
@@ -245,8 +253,9 @@ export async function benchmarkReport(baselineFile, stellarFile) {
   // null marks a gate that does not apply to this run (no navigation-category tasks).
   const efficiencyPass=Object.values(acceptance).every(v=>v===true||v===null) && Object.values(acceptance).some(v=>v===true)
   const overallPass=correctnessPass && efficiencyPass
-  return {
-    schemaVersion:4,
+  const report={
+    schemaVersion:REPORT_SCHEMA_VERSION,
+    campaign,
     baselineFile:path.resolve(baselineFile),stellarFile:path.resolve(stellarFile),
     baseline,stellar,delta,correctnessVerified,acceptance,correctnessGate,attribution,coverage,
     categories:categoryBreakdown(paired),
@@ -263,7 +272,57 @@ export async function benchmarkReport(baselineFile, stellarFile) {
     // correctness-only, which prevents a token-regressing run from being labelled PASS.
     passGate:overallPass,
     mvpThresholdsMet:efficiencyPass,
-    pairs:paired.map(({key,baseline:b,stellar:s})=>({key,taskId:b.taskId,repetition:b.repetition??1,category:b.category,classifiedIntent:s.classifiedIntent??null,baseline:{inputTokens:b.inputTokens,toolCalls:b.toolCalls,searchCalls:b.searchCalls,filesOpened:b.filesOpened,firstRelevantMs:b.firstRelevantMs,discoverySuccess:b.discoverySuccess,sourceGrounded:b.sourceGrounded,answerSuccess:b.answerSuccess,success:b.success},stellar:{inputTokens:s.inputTokens,toolCalls:s.toolCalls,searchCalls:s.searchCalls,filesOpened:s.filesOpened,firstRelevantMs:s.firstRelevantMs,discoverySuccess:s.discoverySuccess,sourceGrounded:s.sourceGrounded,answerSuccess:s.answerSuccess,success:s.success,expectedSourceBytes:s.expectedSourceBytes,nonExpectedSourceBytes:s.nonExpectedSourceBytes},inputTokenReductionPct:pctReduction(b.inputTokens,s.inputTokens)}))
+    pairs:paired.map(({key,baseline:b,stellar:s})=>({key,taskId:b.taskId,repetition:b.repetition??1,category:b.category,classifiedIntent:s.classifiedIntent??null,baseline:pairSide(b),stellar:pairSide(s),inputTokenReductionPct:pctReduction(b.inputTokens,s.inputTokens)}))
+  }
+  // v0.5.6 single-campaign generalization views, computed from the same paired runs.
+  const stats=taskStats(campaignFromReport(report).pairs)
+  report.methodology=METHODOLOGY
+  report.winLoss=winLossDistribution(stats)
+  report.catastrophicRegressionTasks=catastrophicRegressions(stats)
+  report.determinism=determinismSummary(stats)
+  report.firstRelevantDecomposition=firstRelevantDecomposition(paired)
+  report.notes={providerDrift:PROVIDER_DRIFT_NOTE}
+  return report
+}
+
+function pairSide(r) {
+  return {inputTokens:r.inputTokens,toolCalls:r.toolCalls,searchCalls:r.searchCalls,filesOpened:r.filesOpened,sourceBytesRead:r.sourceBytesRead,firstRelevantMs:r.firstRelevantMs,
+    ...Object.fromEntries(LATENCY_FIELDS.map(field=>[field,r[field]])),
+    discoverySuccess:r.discoverySuccess,sourceGrounded:r.sourceGrounded,answerSuccess:r.answerSuccess,success:r.success,expectedSourceBytes:r.expectedSourceBytes,nonExpectedSourceBytes:r.nonExpectedSourceBytes}
+}
+
+// Median of each latency component per condition. Components are milliseconds from agent
+// process spawn; null (n/a) when the runs predate v0.5.6 telemetry.
+function firstRelevantDecomposition(paired) {
+  const out={}
+  for(const side of ['baseline','stellar']) {
+    out[side]={}
+    for(const field of LATENCY_FIELDS)out[side][field]=medianOf(paired.map(p=>p[side][field]))
+    out[side].runsWithTelemetry=paired.filter(p=>p[side].agentStartToFirstToolMs!=null).length
+  }
+  out.note='firstRelevantMs is measured from agent process spawn to completion of the first tool call that read an expected file. It therefore includes agent startup, provider latency for every model turn before that call, and tool execution.'
+  return out
+}
+
+async function campaignMetadata(dir,firstRow) {
+  let manifest=null
+  try{manifest=JSON.parse(await fs.readFile(path.join(dir,'manifest.json'),'utf8'))}catch{}
+  return {
+    repository:manifest?.repository??(manifest?.projectRoot?path.basename(manifest.projectRoot):null),
+    agent:manifest?.agent??firstRow?.agent??null,
+    agentVersion:manifest?.agentVersion??firstRow?.agentVersion??null,
+    model:manifest?.model??firstRow?.model??null,
+    runtimeCommit:manifest?.runtime?.commit??null,
+    runtimePackageVersion:manifest?.runtime?.packageVersion??null,
+    runtimeDirty:manifest?.runtime?.dirty??null,
+    runtimeChangedDuringCampaign:manifest?.runtime?.changedDuringCampaign??null,
+    runtimeContentHash:manifest?.runtime?.contentHash??null,
+    repoCommit:manifest?.projectCommit??firstRow?.projectCommit??null,
+    taskHash:manifest?.taskHash??null,
+    campaignStartedAt:manifest?.startedAt??manifest?.createdAt??null,
+    repeat:manifest?.repeat??null,
+    environment:manifest?.environment??null,
+    manifestSchemaVersion:manifest?.schemaVersion??null
   }
 }
 

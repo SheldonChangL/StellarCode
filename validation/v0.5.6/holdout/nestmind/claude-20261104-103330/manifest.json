@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 3,
+  "createdAt": "2026-11-04T03:03:42.838Z",
+  "startedAt": "2026-11-04T02:33:30.838Z",
+  "completedAt": "2026-11-04T03:03:42.838Z",
+  "repository": "nestmind",
+  "repositoryIdentity": {
+    "rootCommits": [
+      "4aa1734bce6bc1c646fde58b1ca0f5c20b327cd5"
+    ],
+    "remote": "https://gitlab.saikah.com/harness/nestmind.git"
+  },
+  "agent": "claude",
+  "agentVersion": "2.1.317 (Claude Code)",
+  "model": null,
+  "projectRoot": "/Users/sheldon.chang/Projects/Private/stellar-holdout-v056/nestmind",
+  "projectCommit": "3dc749f17631259529aec8a13ff8e2ce5e4b3920",
+  "projectDirtyCount": 0,
+  "tasksFile": "/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete/validation/v0.5.6/nestmind/tasks.json",
+  "taskHash": "202b18e852f25e391bfe5654213dca96adc948e634ae37228dd7bc3df57d88d0",
+  "taskCount": 12,
+  "repeat": 3,
+  "modes": [
+    "baseline",
+    "stellar"
+  ],
+  "files": {
+    "baseline": "/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete/validation/v0.5.6/holdout/nestmind/claude-20261104-103330/baseline.jsonl",
+    "stellar": "/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete/validation/v0.5.6/holdout/nestmind/claude-20261104-103330/stellar.jsonl"
+  },
+  "runtime": {
+    "commit": "6c9eb49896a298f6edab6f7d0fa8cb59e03f2242",
+    "packageVersion": "0.5.5",
+    "dirty": false,
+    "dirtyFiles": [],
+    "contentHash": "85f9675e59cb8ab1692bb484d3fd621fb36f4708e8bb60b10f918e7162485095",
+    "files": 43,
+    "frozenTrees": {
+      "src/query": "d84e62ad4e748d28f0b4eead59d08a42838b0a14",
+      "src/indexer": "377d41f7260eccc3252cc7323115bc9b8a4fd47f",
+      "src/mcp": "b1e4e83c5285302163b42741be7cd1d7c7aa1feb",
+      "src/core": "bc2275b66042a77a4c5de0aa68bf0884689fbe7e",
+      "src/storage": "c1688a77174ec478246b0ea019bc5fc110d499b0",
+      "src/platform": "aa15ff53fbaee33367cd08d60971c29b72fbd447",
+      "src/web": "4bb79d1f7d8b675619b748fda12940e9934466b3"
+    },
+    "changedDuringCampaign": false
+  },
+  "environment": {
+    "os": "Darwin 25.6.0 arm64",
+    "platform": "darwin",
+    "node": "v22.17.0"
+  },
+  "isolation": {
+    "freshAgentSession": true,
+    "detachedWorktree": true,
+    "stellarRulesRemovedFromWorktree": true,
+    "stellarContractInjectedViaPrompt": true,
+    "stableProjectIdentity": true,
+    "readOnlyIndexSnapshot": true,
+    "userMcpConfigIgnored": true,
+    "stellarIndexPreparedBeforeTimedRun": true,
+    "sourceGroundingRequired": true,
+    "rawAgentTelemetryPersisted": true
+  }
+}

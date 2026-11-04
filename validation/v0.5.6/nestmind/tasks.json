@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "notes": "nestmind v0.5.6 holdout, commit 3dc749f17631259529aec8a13ff8e2ce5e4b3920. Authored and independently reviewed without StellarCode (see AUTHORING.md). Frozen before any v0.5.6 benchmark run on this repository.",
+  "tasks": [
+    {
+      "id": "repo-access-token-encryption-at-rest",
+      "enabled": true,
+      "category": "navigation",
+      "prompt": "Where is a project's stored GitLab personal access token encrypted at rest and decrypted again for use (cipher, IV handling, auth tag), and how is the key derived when the configured key is not a 64-character hex string? Point to the implementation that does the cryptography, not the endpoint that stores the token.",
+      "expectedFiles": [
+        "apps/api/src/modules/projects/credential.service.ts"
+      ],
+      "expectedMatch": "any"
+    },
+    {
+      "id": "structured-json-retry-and-call-timeout",
+      "enabled": true,
+      "category": "navigation",
+      "prompt": "When a model call that must return structured JSON comes back as non-JSON, where does the backend retry once with a stricter instruction, and where is the hard per-call timeout that aborts a stalled provider request enforced? Identify the provider-agnostic chat layer, not an individual vendor adapter.",
+      "expectedFiles": [
+        "apps/api/src/modules/llm/llm.service.ts"
+      ],
+      "expectedMatch": "any"
+    },
+    {
+      "id": "live-update-stream-fanout",
+      "enabled": true,
+      "category": "navigation",
+      "prompt": "Browsers watching a running session receive live task and stage updates plus a periodic heartbeat over a server-sent stream. Find the service-layer code that keeps the per-session subscriber list, converts internal task/stage lifecycle events into stream messages, and emits the 30-second heartbeat (not the HTTP route that merely returns the stream).",
+      "expectedFiles": [
+        "apps/api/src/modules/sessions/session-events.service.ts"
+      ],
+      "expectedMatch": "any"
+    },
+    {
+      "id": "ci-hook-to-recorded-outcome",
+      "enabled": true,
+      "category": "flow",
+      "prompt": "Trace an inbound GitLab 'Pipeline Hook' webhook from the HTTP endpoint to the session record: where the shared-secret header is checked, where non-terminal states are ignored, how the owning session is located from the project URL and merge-request iid, and where the terminal outcome is written idempotently and the status-updated event is emitted.",
+      "expectedFiles": [
+        "apps/api/src/modules/webhooks/webhooks.controller.ts",
+        "apps/api/src/modules/webhooks/webhooks.service.ts",
+        "apps/api/src/modules/webhooks/pipeline-status.service.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "approval-resumes-work-dispatch",
+      "enabled": true,
+      "category": "flow",
+      "prompt": "In a tuning-mode (non-lifecycle) session, trace what happens after a user approves a task that is awaiting approval: where the task and session state change is persisted, which event is raised and which handler reacts to it, and how the next pending work items whose dependencies are satisfied are selected and started under the per-session parallelism cap.",
+      "expectedFiles": [
+        "apps/api/src/modules/tasks/tasks.service.ts",
+        "apps/api/src/modules/orchestrator/orchestrator.service.ts",
+        "apps/api/src/modules/orchestrator/dispatcher.service.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "generated-code-to-searchable-vectors",
+      "enabled": true,
+      "category": "flow",
+      "prompt": "Trace how source files that agents generate during a session become embedded, searchable chunks of the session's primary project: where the files are collected from the session's code messages (latest version per path wins), how they are upserted as chunks keyed by content hash without any git clone, and how only not-yet-embedded, non-blank chunks get vectors written back.",
+      "expectedFiles": [
+        "apps/api/src/modules/orchestrator/session-artifact-index.service.ts",
+        "apps/api/src/modules/ingestion/ingestion.service.ts",
+        "apps/api/src/modules/embedding/embedding.service.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "usd-cost-calculation-callers",
+      "enabled": true,
+      "category": "impact",
+      "prompt": "If the per-call USD cost calculation for model usage changes (for example cache-read and cache-write token counts become required arguments, or the per-1K price table is re-keyed), which production call sites must be reviewed? Include the module that owns the calculation.",
+      "expectedFiles": [
+        "apps/api/src/modules/llm/pricing.ts",
+        "apps/api/src/modules/orchestrator/agent-runner.service.ts",
+        "apps/api/src/modules/orchestrator/planner.service.ts",
+        "apps/api/src/modules/sessions/sessions.service.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "vector-similarity-result-consumers",
+      "enabled": true,
+      "category": "impact",
+      "prompt": "If the vector-similarity search over a project's embedded code chunks changes its result shape (for example similarity becomes a raw cosine distance, or chunk content is no longer returned), which production code that calls this search directly must be reviewed? Include the search implementation itself.",
+      "expectedFiles": [
+        "apps/api/src/modules/embedding/retrieval.service.ts",
+        "apps/api/src/modules/tools/builtin/knowledge.tools.ts",
+        "apps/api/src/modules/orchestrator/project-context.service.ts",
+        "apps/api/src/modules/projects/projects.controller.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "job-trace-helper-signature-change",
+      "enabled": true,
+      "category": "impact",
+      "prompt": "The shared helpers that process CI job traces (error-excerpt extraction, normalized failure fingerprinting, pipeline-id parsing from a URL) are about to change their exported function signatures. Which production files import and call these helpers directly and need review? Include the helper module itself; ignore code that only reads previously stored fingerprints and ignore standalone scripts.",
+      "expectedFiles": [
+        "apps/api/src/common/ci-log.util.ts",
+        "apps/api/src/modules/webhooks/pipeline-status.service.ts",
+        "apps/api/src/modules/tools/builtin/gitlab.tools.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "add-go-to-sandboxed-execution",
+      "enabled": true,
+      "category": "editing-prep",
+      "prompt": "Before adding Go as a supported language for the sandboxed code-execution tool that agents call, which files must be inspected and updated: the shared per-language table of container image and run command used by both the Docker and Kubernetes backends, and the tool definition that advertises the allowed languages and picks the default script file extension?",
+      "expectedFiles": [
+        "apps/api/src/modules/executor/language-map.ts",
+        "apps/api/src/modules/executor/executor.tools.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "async-report-job-ownership-check",
+      "enabled": true,
+      "category": "editing-prep",
+      "prompt": "Asynchronous PDF generation jobs verify project ownership only while the job runs; polling a job's status and downloading the finished file do not check who is asking. Before adding a per-user ownership check to those two endpoints, which implementation files (HTTP layer and the service holding the in-memory job store) must be inspected?",
+      "expectedFiles": [
+        "apps/api/src/modules/pdf-report/pdf-report.service.ts",
+        "apps/api/src/modules/pdf-report/pdf-report.controller.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "require-access-token-signing-secret",
+      "enabled": true,
+      "category": "editing-prep",
+      "prompt": "Today the access-token signing secret silently falls back to a hard-coded default when its environment variable is missing. Before making the API fail fast instead, which files configure that secret for signing access tokens and for verifying them, both from the Authorization bearer header and from a URL query parameter?",
+      "expectedFiles": [
+        "apps/api/src/modules/auth/auth.module.ts",
+        "apps/api/src/modules/auth/strategies/jwt.strategy.ts",
+        "apps/api/src/modules/auth/strategies/jwt-query.strategy.ts"
+      ],
+      "expectedMatch": "all"
+    }
+  ]
+}

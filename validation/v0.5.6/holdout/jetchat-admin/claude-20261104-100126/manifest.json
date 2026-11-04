@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 3,
+  "createdAt": "2026-11-04T02:33:29.959Z",
+  "startedAt": "2026-11-04T02:01:27.779Z",
+  "completedAt": "2026-11-04T02:33:29.959Z",
+  "repository": "jetchat-admin",
+  "repositoryIdentity": {
+    "rootCommits": [
+      "2268f67797d8ddabb9690bc73944f3f5f0984b6c"
+    ],
+    "remote": "https://github.com/jet-opto/jetchat-admin.git"
+  },
+  "agent": "claude",
+  "agentVersion": "2.1.317 (Claude Code)",
+  "model": null,
+  "projectRoot": "/Users/sheldon.chang/Projects/Private/stellar-holdout-v056/jetchat-admin",
+  "projectCommit": "c9256c06ff39fb2d3c4f5f73fe5be2439423cd9f",
+  "projectDirtyCount": 0,
+  "tasksFile": "/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete/validation/v0.5.6/jetchat-admin/tasks.json",
+  "taskHash": "9b37b0d66c2abf3408fd357823faa992a31ae30ce1c2cdfecee50ae3bc1fdf98",
+  "taskCount": 12,
+  "repeat": 3,
+  "modes": [
+    "baseline",
+    "stellar"
+  ],
+  "files": {
+    "baseline": "/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete/validation/v0.5.6/holdout/jetchat-admin/claude-20261104-100126/baseline.jsonl",
+    "stellar": "/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete/validation/v0.5.6/holdout/jetchat-admin/claude-20261104-100126/stellar.jsonl"
+  },
+  "runtime": {
+    "commit": "6c9eb49896a298f6edab6f7d0fa8cb59e03f2242",
+    "packageVersion": "0.5.5",
+    "dirty": false,
+    "dirtyFiles": [],
+    "contentHash": "85f9675e59cb8ab1692bb484d3fd621fb36f4708e8bb60b10f918e7162485095",
+    "files": 43,
+    "frozenTrees": {
+      "src/query": "d84e62ad4e748d28f0b4eead59d08a42838b0a14",
+      "src/indexer": "377d41f7260eccc3252cc7323115bc9b8a4fd47f",
+      "src/mcp": "b1e4e83c5285302163b42741be7cd1d7c7aa1feb",
+      "src/core": "bc2275b66042a77a4c5de0aa68bf0884689fbe7e",
+      "src/storage": "c1688a77174ec478246b0ea019bc5fc110d499b0",
+      "src/platform": "aa15ff53fbaee33367cd08d60971c29b72fbd447",
+      "src/web": "4bb79d1f7d8b675619b748fda12940e9934466b3"
+    },
+    "changedDuringCampaign": false
+  },
+  "environment": {
+    "os": "Darwin 25.6.0 arm64",
+    "platform": "darwin",
+    "node": "v22.17.0"
+  },
+  "isolation": {
+    "freshAgentSession": true,
+    "detachedWorktree": true,
+    "stellarRulesRemovedFromWorktree": true,
+    "stellarContractInjectedViaPrompt": true,
+    "stableProjectIdentity": true,
+    "readOnlyIndexSnapshot": true,
+    "userMcpConfigIgnored": true,
+    "stellarIndexPreparedBeforeTimedRun": true,
+    "sourceGroundingRequired": true,
+    "rawAgentTelemetryPersisted": true
+  }
+}

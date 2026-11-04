@@ -45,7 +45,9 @@ test('v0.5.4 benchmark aggregate uses only comparable paired runs and exposes ex
     await fs.writeFile(stellarFile,stellar.map(v=>JSON.stringify(v)).join('\n')+'\n')
 
     const report=await benchmarkReport(baselineFile,stellarFile)
-    assert.equal(report.schemaVersion,4)
+    // v0.5.6 bumped the report contract to 5 (campaign metadata, win/loss, determinism,
+    // latency decomposition); every v4 field asserted below is unchanged.
+    assert.equal(report.schemaVersion,5)
     assert.deepEqual(report.coverage,{
       baselineRuns:2,stellarRuns:1,pairedAvailableRuns:1,pairedRuns:1,
       excludedFailedPairs:0,unpairedBaseline:1,unpairedStellar:0
