@@ -1,0 +1,481 @@
+{
+ "index": {
+  "files": 100,
+  "symbols": 940,
+  "semanticEdges": {
+   "CALLS": 946,
+   "IMPLEMENTS": 77,
+   "REGISTERS": 18,
+   "CONSUMES": 538
+  },
+  "ms": 520
+ },
+ "semantic": {
+  "summary": {
+   "tasks": 10,
+   "tasksWithSemanticEdges": 10,
+   "annotatedTasks": 0,
+   "requiredEdges": 0,
+   "requiredEdgeRecallContext": null,
+   "requiredEdgeRecallIndex": null,
+   "expectedFileGroundingRate": 0.9473684210526315,
+   "medianSourceBytes": 6672
+  },
+  "tasks": [
+   {
+    "taskId": "predator-ai-navigation",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/game/rush/PredatorAI.ts#isSuccessfulDodge",
+    "topTargetExpected": true,
+    "semanticEdges": 1,
+    "confidence": {
+     "high": 1,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 1,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 2616,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 1,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "predator-hunt-flow",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/game/scenes/RushScene.ts#RushScene.stepHunter",
+    "topTargetExpected": true,
+    "semanticEdges": 6,
+    "confidence": {
+     "high": 6,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 6,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 6672,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "predator-pressure-impact",
+    "category": "impact",
+    "intent": "impact",
+    "primary": "src/config/predator.ts#PRESSURE",
+    "topTargetExpected": false,
+    "semanticEdges": 8,
+    "confidence": {
+     "high": 8,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 8
+    },
+    "sourceBytes": 10363,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "apex-hunt-flow",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/game/scenes/RushScene.ts#RushScene.startApex",
+    "topTargetExpected": true,
+    "semanticEdges": 6,
+    "confidence": {
+     "high": 6,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 6,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 8019,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 2
+   },
+   {
+    "taskId": "rush-spawn-flow",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/game/scenes/RushScene.ts#RushScene.spawn",
+    "topTargetExpected": true,
+    "semanticEdges": 6,
+    "confidence": {
+     "high": 6,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 6,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 8154,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 2
+   },
+   {
+    "taskId": "rush-cleaning-flow",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/game/scenes/RushScene.ts#RushScene.finishRun",
+    "topTargetExpected": false,
+    "semanticEdges": 6,
+    "confidence": {
+     "high": 6,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 6,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 11986,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 2,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "cleaning-progression-flow",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/game/meta/RunFlow.ts#applyCleaningEnd",
+    "topTargetExpected": true,
+    "semanticEdges": 6,
+    "confidence": {
+     "high": 6,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 6,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 5141,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 2
+   },
+   {
+    "taskId": "cleaning-tool-prep",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "src/game/scenes/CleaningScene.ts#CleaningScene.makeTool",
+    "topTargetExpected": true,
+    "semanticEdges": 6,
+    "confidence": {
+     "high": 6,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 4,
+     "CONSUMES": 2
+    },
+    "sourceBytes": 6153,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "predator-dodge-prep",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "src/game/rush/PredatorPressure.ts#PredatorCoordinator.removePressure",
+    "topTargetExpected": true,
+    "semanticEdges": 5,
+    "confidence": {
+     "high": 5,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 4,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 1
+    },
+    "sourceBytes": 5510,
+    "expectedFilesGrounded": 3,
+    "expectedFiles": 3,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "game-startup-navigation",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/main.ts#start",
+    "topTargetExpected": true,
+    "semanticEdges": 1,
+    "confidence": {
+     "high": 1,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 1,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 4782,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 1,
+    "semanticPathLength": 1
+   }
+  ]
+ },
+ "lexical": {
+  "summary": {
+   "tasks": 10,
+   "tasksWithSemanticEdges": 0,
+   "annotatedTasks": 0,
+   "requiredEdges": 0,
+   "requiredEdgeRecallContext": null,
+   "requiredEdgeRecallIndex": null,
+   "expectedFileGroundingRate": 0.8947368421052632,
+   "medianSourceBytes": 5817
+  },
+  "tasks": [
+   {
+    "taskId": "predator-ai-navigation",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/game/rush/PredatorAI.ts#isSuccessfulDodge",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1663,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "predator-hunt-flow",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/game/scenes/RushScene.ts#RushScene.stepHunter",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 6536,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "predator-pressure-impact",
+    "category": "impact",
+    "intent": "impact",
+    "primary": "src/config/predator.ts#PRESSURE",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 7285,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "apex-hunt-flow",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/game/scenes/RushScene.ts#RushScene.startApex",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 5817,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "rush-spawn-flow",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/game/scenes/RushScene.ts#RushScene.spawn",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 6318,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "rush-cleaning-flow",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/game/scenes/RushScene.ts#RushScene.finishRun",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 11732,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "cleaning-progression-flow",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/game/meta/RunFlow.ts#applyCleaningEnd",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3001,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "cleaning-tool-prep",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "src/game/scenes/CleaningScene.ts#CleaningScene.makeTool",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 4543,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "predator-dodge-prep",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "src/game/rush/PredatorPressure.ts#PredatorCoordinator.removePressure",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3053,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "game-startup-navigation",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/main.ts#start",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 4673,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   }
+  ]
+ }
+}

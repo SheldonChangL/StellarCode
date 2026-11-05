@@ -1,0 +1,569 @@
+{
+ "index": {
+  "files": 223,
+  "symbols": 1573,
+  "semanticEdges": {
+   "CALLS": 816,
+   "IMPLEMENTS": 90,
+   "REGISTERS": 0,
+   "CONSUMES": 675
+  },
+  "ms": 787
+ },
+ "semantic": {
+  "summary": {
+   "tasks": 12,
+   "tasksWithSemanticEdges": 12,
+   "annotatedTasks": 0,
+   "requiredEdges": 0,
+   "requiredEdgeRecallContext": null,
+   "requiredEdgeRecallIndex": null,
+   "expectedFileGroundingRate": 0.6333333333333333,
+   "medianSourceBytes": 6756
+  },
+  "tasks": [
+   {
+    "taskId": "repo-access-token-encryption-at-rest",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "apps/api/src/modules/projects/credential.service.ts#CredentialService.encrypt",
+    "topTargetExpected": true,
+    "semanticEdges": 2,
+    "confidence": {
+     "high": 2,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 2,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 2338,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 1,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "structured-json-retry-and-call-timeout",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "apps/api/src/modules/executor/executor.interfaces.ts#ExecutorBackend",
+    "topTargetExpected": false,
+    "semanticEdges": 3,
+    "confidence": {
+     "high": 3,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 3,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 6756,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 1,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "live-update-stream-fanout",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "apps/api/src/modules/orchestrator/lifecycle/stage-coordinator.service.ts#StageCoordinatorService.startStage",
+    "topTargetExpected": false,
+    "semanticEdges": 3,
+    "confidence": {
+     "high": 3,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 3,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 7930,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 1,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "ci-hook-to-recorded-outcome",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "apps/api/src/modules/webhooks/dto/gitlab-pipeline-event.dto.ts#GitlabPipelineMergeRequestDto",
+    "topTargetExpected": false,
+    "semanticEdges": 6,
+    "confidence": {
+     "high": 6,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 6,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 10194,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 3,
+    "semanticPathLength": 2
+   },
+   {
+    "taskId": "approval-resumes-work-dispatch",
+    "category": "flow",
+    "intent": "impact",
+    "primary": "apps/api/src/modules/sessions/sessions.controller.ts#SessionsController.getPendingApproval",
+    "topTargetExpected": false,
+    "semanticEdges": 8,
+    "confidence": {
+     "high": 8,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 8,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 5384,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "generated-code-to-searchable-vectors",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "apps/api/src/modules/ingestion/ingestion.service.ts#IngestionService.upsertChunks",
+    "topTargetExpected": true,
+    "semanticEdges": 4,
+    "confidence": {
+     "high": 4,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 4,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 8419,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 3,
+    "semanticPathLength": 2
+   },
+   {
+    "taskId": "usd-cost-calculation-callers",
+    "category": "impact",
+    "intent": "impact",
+    "primary": "apps/api/src/modules/llm/llm.types.ts#ILlmProvider.resolveModel",
+    "topTargetExpected": false,
+    "semanticEdges": 8,
+    "confidence": {
+     "high": 8,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 6,
+     "CONSUMES": 2
+    },
+    "sourceBytes": 8290,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 4,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "vector-similarity-result-consumers",
+    "category": "impact",
+    "intent": "impact",
+    "primary": "apps/api/src/modules/embedding/retrieval.service.ts#RetrievalService.search",
+    "topTargetExpected": true,
+    "semanticEdges": 8,
+    "confidence": {
+     "high": 8,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 3,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 5
+    },
+    "sourceBytes": 7767,
+    "expectedFilesGrounded": 4,
+    "expectedFiles": 4,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "job-trace-helper-signature-change",
+    "category": "impact",
+    "intent": "flow",
+    "primary": "apps/api/src/modules/tools/builtin/gitlab.tools.ts#parsePipelineId",
+    "topTargetExpected": true,
+    "semanticEdges": 6,
+    "confidence": {
+     "high": 6,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 6,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 6097,
+    "expectedFilesGrounded": 3,
+    "expectedFiles": 3,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "add-go-to-sandboxed-execution",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "apps/api/src/modules/executor/executor.tools.ts#defaultScriptName",
+    "topTargetExpected": true,
+    "semanticEdges": 4,
+    "confidence": {
+     "high": 4,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 2,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 1,
+     "CONSUMES": 1
+    },
+    "sourceBytes": 2040,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "async-report-job-ownership-check",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "apps/api/src/modules/pdf-report/pdf-report.controller.ts#PdfReportController.download",
+    "topTargetExpected": true,
+    "semanticEdges": 3,
+    "confidence": {
+     "high": 3,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 2,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 1
+    },
+    "sourceBytes": 2455,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "require-access-token-signing-secret",
+    "category": "editing-prep",
+    "intent": "navigation",
+    "primary": "apps/web/src/app/services/token.service.ts#TokenService.getAccessToken",
+    "topTargetExpected": false,
+    "semanticEdges": 3,
+    "confidence": {
+     "high": 3,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 3,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 5838,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 1
+   }
+  ]
+ },
+ "lexical": {
+  "summary": {
+   "tasks": 12,
+   "tasksWithSemanticEdges": 0,
+   "annotatedTasks": 0,
+   "requiredEdges": 0,
+   "requiredEdgeRecallContext": null,
+   "requiredEdgeRecallIndex": null,
+   "expectedFileGroundingRate": 0.5666666666666667,
+   "medianSourceBytes": 4522
+  },
+  "tasks": [
+   {
+    "taskId": "repo-access-token-encryption-at-rest",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "apps/api/src/modules/projects/credential.service.ts#CredentialService.encrypt",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1782,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "structured-json-retry-and-call-timeout",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "apps/api/src/modules/executor/executor.interfaces.ts#ExecutorBackend",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 4522,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "live-update-stream-fanout",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "apps/api/src/modules/orchestrator/lifecycle/stage-coordinator.service.ts#StageCoordinatorService.startStage",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 6184,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "ci-hook-to-recorded-outcome",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "apps/api/src/modules/webhooks/dto/gitlab-pipeline-event.dto.ts#GitlabPipelineMergeRequestDto",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 4455,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "approval-resumes-work-dispatch",
+    "category": "flow",
+    "intent": "impact",
+    "primary": "apps/api/src/modules/sessions/sessions.controller.ts#SessionsController.getPendingApproval",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 4345,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "generated-code-to-searchable-vectors",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "apps/api/src/modules/ingestion/ingestion.service.ts#IngestionService.upsertChunks",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 5227,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "usd-cost-calculation-callers",
+    "category": "impact",
+    "intent": "impact",
+    "primary": "apps/api/src/modules/llm/llm.types.ts#ILlmProvider.resolveModel",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 6645,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 4,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "vector-similarity-result-consumers",
+    "category": "impact",
+    "intent": "impact",
+    "primary": "apps/api/src/modules/embedding/retrieval.service.ts#RetrievalService.search",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 6911,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 4,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "job-trace-helper-signature-change",
+    "category": "impact",
+    "intent": "flow",
+    "primary": "apps/api/src/modules/tools/builtin/gitlab.tools.ts#parsePipelineId",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 5084,
+    "expectedFilesGrounded": 3,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "add-go-to-sandboxed-execution",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "apps/api/src/modules/executor/executor.tools.ts#defaultScriptName",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 2083,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "async-report-job-ownership-check",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "apps/api/src/modules/pdf-report/pdf-report.controller.ts#PdfReportController.download",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 2273,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "require-access-token-signing-secret",
+    "category": "editing-prep",
+    "intent": "navigation",
+    "primary": "apps/web/src/app/services/token.service.ts#TokenService.getAccessToken",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 4090,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   }
+  ]
+ }
+}

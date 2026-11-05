@@ -1,0 +1,205 @@
+{
+  "version": 1,
+  "notes": "kc002-ota v0.5.8 holdout, commit a5718677c5fbb7a59f29812cf12a105ca8dd8230. Authored and independently reviewed without StellarCode (see AUTHORING.md). Frozen before any v0.5.8 benchmark run on this repository.",
+  "tasks": [
+    {
+      "id": "nav-fixed-window-request-throttle",
+      "enabled": true,
+      "category": "navigation",
+      "prompt": "Where is the in-memory fixed-window request throttling middleware implemented — the code that keeps a counter bucket per key (client IP or a custom key function), lazily sweeps expired buckets, and answers HTTP 429? I want the implementation itself, not the places where individual endpoint limits are configured.",
+      "expectedFiles": [
+        "src/api/middlewares/rateLimit.ts"
+      ],
+      "expectedMatch": "any"
+    },
+    {
+      "id": "nav-startup-schema-guard",
+      "enabled": true,
+      "category": "navigation",
+      "prompt": "Which code makes the API server refuse to start when some .sql files in the migrations folder have not been recorded as applied in the database? I mean the boot-time guard that exits the process, not the runner that actually applies migrations.",
+      "expectedFiles": [
+        "src/data/migrationCheck.ts"
+      ],
+      "expectedMatch": "any"
+    },
+    {
+      "id": "nav-inbox-pagination-cursor",
+      "enabled": true,
+      "category": "navigation",
+      "prompt": "Where is the opaque pagination cursor for a mobile user's in-app notification inbox produced and validated (the versioned base64url token, plus the default/maximum page size checks)?",
+      "expectedFiles": [
+        "src/services/notificationService.ts"
+      ],
+      "expectedMatch": "any"
+    },
+    {
+      "id": "flow-kc003-firmware-key-wrapping",
+      "enabled": true,
+      "category": "flow",
+      "prompt": "Trace how a KC003 camera's firmware download request (POST /api/kc003/download, not the KC002 /api/download route) ends up with the X-Encrypted-Key response header: start at the request handler for that KC003 endpoint and follow the call chain down to where the one-time AES key and IV are generated and wrapped with the device's RSA public key.",
+      "expectedFiles": [
+        "src/api/controllers/kc003/otaController.ts",
+        "src/services/otaService.ts",
+        "src/services/cryptoService.ts"
+      ],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        {
+          "from": "src/api/routes.ts",
+          "relation": "REGISTERS",
+          "to": "src/api/controllers/kc003/otaController.ts#downloadUpdate"
+        },
+        {
+          "from": "src/api/controllers/kc003/otaController.ts#downloadUpdate",
+          "relation": "CALLS",
+          "to": "src/services/otaService.ts#OtaService.getDownloadStream"
+        },
+        {
+          "from": "src/services/otaService.ts#OtaService.getDownloadStream",
+          "relation": "CALLS",
+          "to": "src/services/cryptoService.ts#CryptoService.createHybridEncryptedStream"
+        }
+      ]
+    },
+    {
+      "id": "flow-user-reset-queues-alerts",
+      "enabled": true,
+      "category": "flow",
+      "prompt": "Trace how a mobile user's request to factory-reset a camera ends up queuing a push alert for every account that had that camera bound. Follow it from the HTTP handler that validates the camera password and operation id, through the business layer, to the transactional database writes that create the per-user inbox rows and queue them for delivery. Stop at the point the rows are queued; actual delivery is out of scope.",
+      "expectedFiles": [
+        "src/api/controllers/deviceController.ts",
+        "src/services/deviceService.ts",
+        "src/data/repositories/factoryResetRepository.ts"
+      ],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        {
+          "from": "src/api/routes.ts",
+          "relation": "REGISTERS",
+          "to": "src/api/controllers/deviceController.ts#factoryReset"
+        },
+        {
+          "from": "src/api/controllers/deviceController.ts#factoryReset",
+          "relation": "CALLS",
+          "to": "src/services/deviceService.ts#DeviceService.factoryReset"
+        },
+        {
+          "from": "src/services/deviceService.ts#DeviceService.factoryReset",
+          "relation": "CALLS",
+          "to": "src/data/repositories/factoryResetRepository.ts#FactoryResetRepository.executeReset"
+        }
+      ]
+    },
+    {
+      "id": "flow-admin-delete-revokes-mobile-jwt",
+      "enabled": true,
+      "category": "flow",
+      "prompt": "When an administrator soft-deletes a user through the admin API, how do that user's already-issued 30-day mobile JWTs stop working on their very next request? Trace the application-layer chain: the admin request handler, the short-lived in-memory per-account deletion verdict it invalidates, and the mobile auth check that consults that verdict. Stop at the data-access calls: the SQL that sets or reads the user's deleted_at is out of scope.",
+      "expectedFiles": [
+        "src/api/controllers/adminController.ts",
+        "src/services/accountStatusCache.ts",
+        "src/api/middlewares/requireMobileAuth.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "impact-fcm-registration-store",
+      "enabled": true,
+      "category": "impact",
+      "prompt": "We plan to change the method signatures and returned record type of the data-access module that stores mobile FCM registration tokens per app installation (upsert, list a user's active tokens, mark a token invalid, delete all of a user's tokens). Which production files must be reviewed? List the module that owns that data access plus every production file that imports it directly; ignore tests and indirect callers further up the stack.",
+      "expectedFiles": [
+        "src/data/repositories/pushTokenRepository.ts",
+        "src/services/pushTokenService.ts",
+        "src/services/notificationOutboxWorker.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "impact-logout-revocation-list",
+      "enabled": true,
+      "category": "impact",
+      "prompt": "The in-memory list of JWTs revoked by logout is going to change its API (how a token is added with its expiry, how revocation is checked, and how the singleton is exported). Which production files must be reviewed? Include the module that owns that revocation list and every production file that imports it directly; ignore tests.",
+      "expectedFiles": [
+        "src/services/tokenDenylist.ts",
+        "src/services/mobileUserService.ts",
+        "src/api/middlewares/requireMobileAuth.ts"
+      ],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        {
+          "from": "src/api/middlewares/requireMobileAuth.ts#requireMobileAuth",
+          "relation": "CALLS",
+          "to": "src/services/tokenDenylist.ts#TokenDenylist.isDenied"
+        },
+        {
+          "from": "src/services/mobileUserService.ts#MobileUserService.logout",
+          "relation": "CALLS",
+          "to": "src/services/tokenDenylist.ts#TokenDenylist.deny"
+        }
+      ]
+    },
+    {
+      "id": "impact-signup-confirmation-token-store",
+      "enabled": true,
+      "category": "impact",
+      "prompt": "If the data-access module for the sign-up confirmation tokens we email to newly registered addresses (create a token with expiry, look up a still-valid unused token, mark one used, invalidate all of a user's outstanding tokens) changes its method signatures or record shape, which production files must be reviewed? Give the owning module plus every production file that imports it directly. Ignore tests, and ignore raw SQL in other repositories that happens to query the same table.",
+      "expectedFiles": [
+        "src/data/repositories/emailVerificationRepository.ts",
+        "src/services/emailVerificationService.ts",
+        "src/services/mobileUserService.ts"
+      ],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        {
+          "from": "src/services/emailVerificationService.ts#EmailVerificationService.verifyToken",
+          "relation": "CALLS",
+          "to": "src/data/repositories/emailVerificationRepository.ts#EmailVerificationRepository.findByToken"
+        },
+        {
+          "from": "src/services/emailVerificationService.ts#EmailVerificationService.createAndSendToken",
+          "relation": "CALLS",
+          "to": "src/data/repositories/emailVerificationRepository.ts#EmailVerificationRepository.create"
+        },
+        {
+          "from": "src/services/mobileUserService.ts#MobileUserService.resendVerification",
+          "relation": "CALLS",
+          "to": "src/data/repositories/emailVerificationRepository.ts#EmailVerificationRepository.invalidateByUserId"
+        }
+      ]
+    },
+    {
+      "id": "edit-spreadsheet-import-model-column",
+      "enabled": true,
+      "category": "editing-prep",
+      "prompt": "The production-line spreadsheet import (admin uploads an Excel/CSV of serial number, MAC, SSID and Wi-Fi PSK) must accept a new required 'model' column, with header aliases like 'Model' and 'Product Model', and persist it per serial number. The SQL migration will be written separately, seed scripts are out of scope, and no API response needs to expose the new field yet. Which existing source files must be changed?",
+      "expectedFiles": [
+        "src/services/factoryDeviceService.ts",
+        "src/data/repositories/factoryDeviceRepository.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "edit-android-alert-channel",
+      "enabled": true,
+      "category": "editing-prep",
+      "prompt": "Every push the backend sends should carry an Android notification channel ID chosen by the sender, and the factory-reset alerts must use a 'device_alerts' channel. Which files must be changed so the sending code can specify the channel and the outgoing Firebase message actually includes it?",
+      "expectedFiles": [
+        "src/services/pushProvider.ts",
+        "src/services/notificationOutboxWorker.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "edit-firmware-semver-rejection",
+      "enabled": true,
+      "category": "editing-prep",
+      "prompt": "Firmware uploads from the admin console must reject a version string that is not strict semver (e.g. 1.2.3) with HTTP 400 and a new dedicated machine-readable failure code, on both the KC002 and the KC003 upload endpoints. Put the check next to the existing missing-file/missing-version check in each upload request handler; the OTA business layer stays unchanged. Server-side only; docs and tests are out of scope. Which source files must be changed?",
+      "expectedFiles": [
+        "src/api/errorCodes.ts",
+        "src/api/controllers/adminController.ts",
+        "src/api/controllers/kc003/adminController.ts"
+      ],
+      "expectedMatch": "all"
+    }
+  ]
+}

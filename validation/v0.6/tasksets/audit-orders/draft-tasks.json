@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "notes": "author: mapped the Express app (routes -> controllers -> one large reconciliation service, plus auth/upload request filters and JWT util) with rg/sed, then wrote tasks around real behaviors (energy rollover, token auth, report generation/email, history records, hard-coded storage dir) and verified every path and edge in source.",
+  "tasks": [
+    {
+      "id": "nav-meter-rollover-energy",
+      "category": "navigation",
+      "prompt": "Where is the energy delivered in a charging session computed from the meter start/stop readings, including the case where the stop reading is lower than the start reading because the meter rolled over?",
+      "expectedFiles": ["src/services/audit.service.ts"],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        { "from": "src/services/audit.service.ts#AuditService._calculateEnergyUsage", "relation": "CALLS", "to": "src/services/audit.service.ts#AuditService._findClosestPowersOfTwo" }
+      ]
+    },
+    {
+      "id": "nav-bearer-token-identity",
+      "category": "navigation",
+      "prompt": "Where does the service read the bearer token from the Authorization header (or from a token query parameter), verify it, and attach the decoded caller identity to the response locals for later handlers?",
+      "expectedFiles": ["src/middlewares/deserializeUser.ts"],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        { "from": "src/middlewares/deserializeUser.ts#deserializeUser", "relation": "CALLS", "to": "src/utils/jwt.ts#verifyJwt" }
+      ]
+    },
+    {
+      "id": "nav-incoming-file-disk-name",
+      "category": "navigation",
+      "prompt": "When a client sends a spreadsheet file to the server, where is the destination directory and the timestamp-based on-disk filename for that file decided?",
+      "expectedFiles": ["src/middlewares/uploadFile.ts"],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "flow-reconcile-to-history-record",
+      "category": "flow",
+      "prompt": "A logged-in user posts a cash-flow spreadsheet and an e-invoice CSV to request a reconciliation report. Trace the request from the HTTP endpoint to where the generated report is recorded as a history row in the database.",
+      "expectedFiles": ["src/routes/audit.route.ts", "src/controllers/audit.controller.ts", "src/services/audit.service.ts"],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        { "from": "src/routes/audit.route.ts#AuditRoute.setRoutes", "relation": "CALLS", "to": "src/controllers/audit.controller.ts#AuditController.audit" },
+        { "from": "src/controllers/audit.controller.ts#AuditController.audit", "relation": "CALLS", "to": "src/services/audit.service.ts#AuditService.audit" },
+        { "from": "src/services/audit.service.ts#AuditService.audit", "relation": "CALLS", "to": "src/services/audit.service.ts#AuditService._createAuditRecord" }
+      ]
+    },
+    {
+      "id": "flow-invalid-token-rejected",
+      "category": "flow",
+      "prompt": "A request to generate a reconciliation report arrives with an expired or forged bearer token. Trace how the token is checked and how the request ends up rejected with the 'You don't have permission' response.",
+      "expectedFiles": ["src/middlewares/deserializeUser.ts", "src/utils/jwt.ts", "src/middlewares/requireUser.ts", "src/routes/audit.route.ts"],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        { "from": "src/middlewares/deserializeUser.ts#deserializeUser", "relation": "CALLS", "to": "src/utils/jwt.ts#verifyJwt" },
+        { "from": "src/routes/audit.route.ts#AuditRoute.setRoutes", "relation": "REGISTERS", "to": "src/middlewares/requireUser.ts#requireUser" }
+      ]
+    },
+    {
+      "id": "flow-monthly-report-email",
+      "category": "flow",
+      "prompt": "When someone requests the monthly charging-station revenue report for a date range, the resulting spreadsheet is also emailed to the finance staff. Trace this from the HTTP endpoint to the outbound HTTP call to the internal mail server.",
+      "expectedFiles": ["src/routes/audit.route.ts", "src/controllers/audit.controller.ts", "src/services/audit.service.ts"],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        { "from": "src/routes/audit.route.ts#AuditRoute.setRoutes", "relation": "CALLS", "to": "src/controllers/audit.controller.ts#AuditController.monthAudit" },
+        { "from": "src/controllers/audit.controller.ts#AuditController.monthAudit", "relation": "CALLS", "to": "src/services/audit.service.ts#AuditService.monthAudit" },
+        { "from": "src/services/audit.service.ts#AuditService.monthAudit", "relation": "CALLS", "to": "src/services/audit.service.ts#AuditService.sendEmail" }
+      ]
+    },
+    {
+      "id": "impact-token-verify-throws",
+      "category": "impact",
+      "prompt": "If the helper that verifies RS256 access tokens is changed to throw on an invalid or expired token instead of returning null, which production code must be reviewed or changed?",
+      "expectedFiles": ["src/utils/jwt.ts", "src/middlewares/deserializeUser.ts"],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        { "from": "src/middlewares/deserializeUser.ts#deserializeUser", "relation": "CALLS", "to": "src/utils/jwt.ts#verifyJwt" }
+      ]
+    },
+    {
+      "id": "impact-schema-check-decorator",
+      "category": "impact",
+      "prompt": "The @-annotation wrapper that parses the first argument of the report-generation and listing methods with a zod definition currently swallows parse errors and returns a 400 response object. If it is changed to rethrow instead, which production code must be reviewed?",
+      "expectedFiles": ["src/decorator/validate-input.ts", "src/services/audit.service.ts"],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "impact-history-record-columns",
+      "category": "impact",
+      "prompt": "If a column of the stored reconciliation-history record is renamed (for example the field holding the generated report's file name), which production code must be reviewed or changed?",
+      "expectedFiles": ["src/models/energy-db/audit.model.ts", "src/models/interfaces/IAudit.ts", "src/services/audit.service.ts"],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "edit-history-list-date-filter",
+      "category": "editing-prep",
+      "prompt": "The paginated listing of past reconciliation reports should accept optional begin/end date query parameters, validate them, and only return reports in that window. Which files must be edited?",
+      "expectedFiles": ["src/schema/audit.schema.ts", "src/services/audit.service.ts"],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "edit-storage-dir-configurable",
+      "category": "editing-prep",
+      "prompt": "The server directory where incoming spreadsheets are saved, report spreadsheets are written and downloads are served from is hard-coded. Make it a per-environment setting. Which source files must be edited?",
+      "expectedFiles": ["src/middlewares/uploadFile.ts", "src/controllers/audit.controller.ts", "src/services/audit.service.ts", "src/config/index.ts"],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "edit-owner-only-history-delete",
+      "category": "editing-prep",
+      "prompt": "Deleting a reconciliation history entry currently requires no login. Change it so only the logged-in account that generated the entry may delete it. Which files must be edited?",
+      "expectedFiles": ["src/routes/audit.route.ts", "src/controllers/audit.controller.ts", "src/services/audit.service.ts"],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        { "from": "src/routes/audit.route.ts#AuditRoute.setRoutes", "relation": "CALLS", "to": "src/controllers/audit.controller.ts#AuditController.delete" },
+        { "from": "src/controllers/audit.controller.ts#AuditController.delete", "relation": "CALLS", "to": "src/services/audit.service.ts#AuditService.delete" }
+      ]
+    }
+  ]
+}
