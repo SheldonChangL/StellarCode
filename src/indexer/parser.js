@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import crypto from 'node:crypto'
+import { extractSemanticFacts } from './semantic-extract.js'
 
 function id(parts) {
   return crypto.createHash('sha1').update(parts.join('|')).digest('hex')
@@ -34,6 +35,23 @@ function stripCommentsAndStrings(text) {
     if (state === 'code') {
       if (c === '/' && n === '/') { out += '  '; i += 2; state = 'lineComment'; continue }
       if (c === '/' && n === '*') { out += '  '; i += 2; state = 'blockComment'; continue }
+      // A regex literal (`/"/g`) must not flip string state. It starts where an operand is
+      // expected: after an operator/punctuator, at the start, or after a keyword.
+      if (c === '/' && regexAllowed(out)) {
+        let j = i + 1, inClass = false
+        while (j < text.length && text[j] !== '\n') {
+          if (text[j] === '\\') { j += 2; continue }
+          if (text[j] === '[') inClass = true
+          else if (text[j] === ']') inClass = false
+          else if (text[j] === '/' && !inClass) break
+          j++
+        }
+        if (j < text.length && text[j] === '/') {
+          j++
+          while (/[A-Za-z]/.test(text[j] ?? '')) j++
+          out += ' '.repeat(j - i); i = j; continue
+        }
+      }
       if (c === '"' || c === "'" || c === '`') { quote = c; out += ' '; i++; state = 'string'; continue }
       out += c; i++; continue
     }
@@ -52,6 +70,21 @@ function stripCommentsAndStrings(text) {
     }
   }
   return out
+}
+
+const REGEX_KEYWORDS = new Set(['return', 'typeof', 'case', 'do', 'else', 'in', 'of', 'void', 'yield', 'await', 'throw', 'delete', 'instanceof', 'new'])
+
+// Scans backward from the end (constant work per `/`, not proportional to the file).
+function regexAllowed(out) {
+  let i = out.length - 1
+  while (i >= 0 && /\s/.test(out[i])) i--
+  if (i < 0) return true
+  const last = out[i]
+  if ('(,=:[!&|?{};+-*%<>~^'.includes(last)) return true
+  if (!/[\w$]/.test(last)) return false
+  let j = i
+  while (j >= 0 && i - j < 12 && /[\w$]/.test(out[j])) j--
+  return REGEX_KEYWORDS.has(out.slice(j + 1, i + 1))
 }
 
 function findBlockEnd(masked, openIndex) {
@@ -104,6 +137,17 @@ function parseJsTs(text, file) {
       importedNames: parseJSImportBindings(match[2], Boolean(match[1]))
     })
   }
+  // `export { a as b } from './m'` and `export * from './m'` are module dependencies too:
+  // without them a barrel index is a dead end in the graph.
+  for (const match of text.matchAll(/\bexport\s+(type\s+)?(?:\*(?:\s+as\s+[A-Za-z_$][\w$]*)?|\{([^}]*)\})\s*from\s*["']([^"']+)["']/g)) {
+    const importedNames = []
+    for (let part of String(match[2] ?? '').split(',')) {
+      part = part.trim().replace(/^type\s+/, '')
+      const named = part.match(/^([A-Za-z_$][\w$]*)(?:\s+as\s+([A-Za-z_$][\w$]*))?$/)
+      if (named && named[1] !== 'default') importedNames.push({ importedName: named[1], localName: named[2] ?? named[1], kind: match[1] ? 'type' : 'named' })
+    }
+    imports.push({ specifier: match[3], line: lineAt(text, match.index), sourceOffset: `re${match.index}`, importedNames })
+  }
   for (const match of text.matchAll(/\bimport\s+["']([^"']+)["']/g)) {
     imports.push({ specifier: match[1], line: lineAt(text, match.index), sourceOffset: match.index, importedNames: [] })
   }
@@ -151,8 +195,13 @@ function parseJsTs(text, file) {
         const end = findBlockEnd(masked, brace)
         const body = masked.slice(brace + 1, end)
         const methodRe = /(?:^|\n)\s*(?:public\s+|private\s+|protected\s+|static\s+|async\s+|readonly\s+)*([A-Za-z_$][\w$]*)\s*\([^;{}]*\)\s*(?::\s*[^={]+)?\s*\{/g
+        // Only class-body members (depth 0): `name() {` inside a method body is an
+        // object-literal method or a nested block, not a member of this class.
+        const depthAt = new Int32Array(body.length + 1)
+        for (let k = 0, d = 0; k < body.length; k++) { depthAt[k] = d; const ch = body[k]; if (ch === '{' || ch === '(' || ch === '[') d++; else if (ch === '}' || ch === ')' || ch === ']') d-- }
         for (const mm of body.matchAll(methodRe)) {
           const methodName = mm[1]
+          if (depthAt[mm.index + Math.max(0, mm[0].indexOf(methodName))] !== 0) continue
           if (['if','for','while','switch','catch','constructor'].includes(methodName)) {
             if (methodName !== 'constructor') continue
           }
@@ -191,7 +240,9 @@ function parseJsTs(text, file) {
     }
   }
 
-  return { symbols, imports }
+  const { facts, extraSymbols } = extractSemanticFacts({ text, masked, symbols, imports, file })
+  for (const extra of extraSymbols) symbols.push({ ...extra, symbolId: makeSymbolId(file, extra.kind, extra.qualifiedName, extra.startLine, extra.sourceOffset), sourceOffset: undefined })
+  return { symbols, imports, semantic: facts }
 }
 
 function pythonBlockEnd(lines, startIndex, indent) {
@@ -257,7 +308,15 @@ function parsePython(text, file) {
       }
     }
   }
-  return { symbols, imports }
+  const { facts } = extractSemanticFacts({ text, symbols, imports, file })
+  // Keep `as` aliases and parenthesized multi-line names that the line scan above cannot see.
+  for (const imp of facts.imports) {
+    const existing = imports.find(entry => entry.specifier === imp.specifier && entry.line === imp.line)
+    const importedNames = imp.bindings.map(b => ({ importedName: b.imported, localName: b.local, kind: 'named' }))
+    if (existing) existing.importedNames = importedNames
+    else imports.push({ specifier: imp.specifier, line: imp.line, sourceOffset: `py${imp.line}`, importedNames })
+  }
+  return { symbols, imports, semantic: facts }
 }
 
 export async function parseFile(file) {

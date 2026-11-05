@@ -9,6 +9,7 @@ import { withTransaction } from '../storage/db.js'
 import { readProjectMetadata } from '../core/project.js'
 import { INDEXER_VERSION, SUPPORTED_EXTENSIONS } from '../core/constants.js'
 import { markProjectIndexed } from '../storage/registry.js'
+import { resolveSemanticEdges } from './semantic-resolve.js'
 
 function edgeId(source, target, type) {
   return crypto.createHash('sha1').update(`${source}|${target}|${type}`).digest('hex')
@@ -58,12 +59,16 @@ export async function loadPathAliases(root) {
 }
 
 function jsCandidates(base) {
+  // TypeScript ESM imports name the emitted file (`./repo.js`) while the source is `repo.ts`.
+  const emitted = base.match(/^(.*)\.(m|c)?jsx?$/)
+  const sourceTwins = emitted ? [`${emitted[1]}.${emitted[2] ?? ''}ts`, `${emitted[1]}.tsx`] : []
   return [
     base,
     `${base}.ts`, `${base}.tsx`, `${base}.mts`, `${base}.cts`,
     `${base}.js`, `${base}.jsx`, `${base}.mjs`, `${base}.cjs`,
     path.posix.join(base, 'index.ts'), path.posix.join(base, 'index.tsx'),
-    path.posix.join(base, 'index.js'), path.posix.join(base, 'index.jsx')
+    path.posix.join(base, 'index.js'), path.posix.join(base, 'index.jsx'),
+    ...sourceTwins
   ]
 }
 
@@ -113,6 +118,7 @@ function resolveImport(source, specifier, fileSet, aliases) {
 }
 
 function rebuildEdges(db, aliases = []) {
+  const semanticFileSet = new Set(db.prepare('SELECT path FROM files').all().map(row => row.path))
   db.exec('DELETE FROM edges')
   const insert = db.prepare(`INSERT OR REPLACE INTO edges(edge_id,source_id,target_id,edge_type,weight,confidence,source_file_id,metadata_json)
     VALUES(?,?,?,?,?,?,?,?)`)
@@ -150,6 +156,11 @@ function rebuildEdges(db, aliases = []) {
       }
     }
   }
+  // v0.6 semantic relations, resolved over every file's stored facts.
+  return resolveSemanticEdges(db, {
+    resolveImport: (source, specifier) => resolveImport(source, specifier, semanticFileSet, aliases),
+    resolvePythonModule: (source, specifier) => resolvePythonImport(source, specifier, semanticFileSet)
+  })
 }
 
 function normalize(value, max) {
@@ -276,6 +287,7 @@ export async function syncProject(root, options = {}) {
   }
 
   let graphVersion
+  let semanticEdges = null
   withTransaction(db, () => {
     graphVersion = nextGraphVersion(db)
     for (const p of deleted) db.prepare('DELETE FROM files WHERE path=?').run(p)
@@ -292,6 +304,7 @@ export async function syncProject(root, options = {}) {
     const insertSymbol = db.prepare(`INSERT INTO symbols(symbol_id,file_id,qualified_name,name,kind,start_line,end_line,exported,signature,summary)
       VALUES(?,?,?,?,?,?,?,?,?,?)`)
     const insertImport = db.prepare(`INSERT INTO unresolved_imports(import_id,source_file_id,specifier,imported_names,line) VALUES(?,?,?,?,?)`)
+    const upsertFacts = db.prepare(`INSERT INTO semantic_facts(file_id,facts_json) VALUES(?,?) ON CONFLICT(file_id) DO UPDATE SET facts_json=excluded.facts_json`)
 
     for (const { file, facts } of parsed) {
       upsertFile.run(file.fileId, file.path, file.name, file.extension, file.language, file.sizeBytes, file.lineCount,
@@ -302,6 +315,8 @@ export async function syncProject(root, options = {}) {
         insertSymbol.run(s.symbolId, s.fileId, s.qualifiedName, s.name, s.kind, s.startLine, s.endLine,
           s.exported ? 1 : 0, s.signature, null)
       }
+      if (facts.semantic) upsertFacts.run(file.fileId, JSON.stringify(facts.semantic))
+      else db.prepare('DELETE FROM semantic_facts WHERE file_id=?').run(file.fileId)
       for (const imp of facts.imports) {
         insertImport.run(importId(file.fileId, imp.specifier, imp.line, imp.sourceOffset), file.fileId, imp.specifier,
           JSON.stringify(imp.importedNames ?? []), imp.line ?? null)
@@ -316,7 +331,7 @@ export async function syncProject(root, options = {}) {
       }
     }
 
-    rebuildEdges(db, aliases)
+    semanticEdges = rebuildEdges(db, aliases)
     updateImportance(db, gitCounts)
     for (const r of renames) {
       db.prepare('INSERT OR REPLACE INTO rename_hints(old_path,new_path,detected_at,confidence) VALUES(?,?,?,?)')
@@ -348,6 +363,7 @@ export async function syncProject(root, options = {}) {
     warnings,
     git: { head, statusCount: status.length },
     indexerVersion: INDEXER_VERSION,
+    semanticEdges,
     semanticReindex,
     durationMs: Math.round(performance.now() - started),
     dbPath: registration.db_path

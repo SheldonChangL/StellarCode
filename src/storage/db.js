@@ -107,6 +107,11 @@ export function migrateProject(db) {
       FOREIGN KEY(source_file_id) REFERENCES files(file_id) ON DELETE CASCADE
     );
     CREATE INDEX IF NOT EXISTS idx_imports_source ON unresolved_imports(source_file_id);
+    CREATE TABLE IF NOT EXISTS semantic_facts (
+      file_id TEXT PRIMARY KEY,
+      facts_json TEXT NOT NULL,
+      FOREIGN KEY(file_id) REFERENCES files(file_id) ON DELETE CASCADE
+    );
     CREATE TABLE IF NOT EXISTS edges (
       edge_id TEXT PRIMARY KEY,
       source_id TEXT NOT NULL,
