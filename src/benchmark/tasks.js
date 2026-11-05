@@ -17,6 +17,17 @@ function taskCategory(raw) {
   throw new StellarError(`Unknown benchmark category "${raw.category}" for task ${raw.id}. Use one of: ${BENCHMARK_CATEGORIES.join(', ')} (legacy 'edit' is accepted but not runnable).`, 'BENCHMARK_TASKS_INVALID', 2)
 }
 
+const SEMANTIC_RELATIONS = new Set(['CALLS', 'IMPLEMENTS', 'REGISTERS', 'CONSUMES'])
+
+function semanticEdgeKey(raw) {
+  if (raw.expectedSemanticEdges == null) return undefined
+  if (!Array.isArray(raw.expectedSemanticEdges)) throw new StellarError(`expectedSemanticEdges must be an array for task ${raw.id}`, 'BENCHMARK_TASKS_INVALID', 2)
+  return raw.expectedSemanticEdges.map(edge => {
+    if (!edge?.from || !edge?.to || !SEMANTIC_RELATIONS.has(edge.relation)) throw new StellarError(`Invalid expectedSemanticEdges entry for task ${raw.id}: use {from:"path#Symbol", relation:"CALLS|IMPLEMENTS|REGISTERS|CONSUMES", to:"path#Symbol"}`, 'BENCHMARK_TASKS_INVALID', 2)
+    return { from: String(edge.from), relation: edge.relation, to: String(edge.to) }
+  })
+}
+
 export function defaultBenchmarkConfig() {
   return {
     version: BENCHMARK_SCHEMA_VERSION,
@@ -87,7 +98,9 @@ export async function loadBenchmarkTasks(file) {
       prompt: String(raw.prompt),
       expectedFiles: Array.isArray(raw.expectedFiles) ? raw.expectedFiles.map(v => String(v).replaceAll('\\','/')) : [],
       expectedMatch: raw.expectedMatch === 'all' ? 'all' : 'any',
-      maxTurns: Number.isFinite(raw.maxTurns) ? Math.max(1, Number(raw.maxTurns)) : undefined
+      maxTurns: Number.isFinite(raw.maxTurns) ? Math.max(1, Number(raw.maxTurns)) : undefined,
+      // v0.6 evaluation-only answer key: never passed to the agent or to StellarCode.
+      expectedSemanticEdges: semanticEdgeKey(raw)
     })
   }
   if (!tasks.length) throw new StellarError(`No enabled benchmark tasks in ${file}. Edit the file and enable real tasks first.`, 'BENCHMARK_TASKS_EMPTY', 2)

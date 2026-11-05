@@ -213,8 +213,13 @@ export function deliveryMetrics({ condition, result, prefetch = null, expectedFi
   const expected = new Set(expectedFiles)
   const relevantTurns = reads.filter(read => expected.has(read.path)).map(read => Number(read.turn ?? NaN)).filter(Number.isFinite)
   const firstRelevantTurn = relevantTurns.length ? Math.min(...relevantTurns) : null
+  const turns = turnMetrics(metrics.turns, { availableTurn, firstRelevantTurn })
+  const contextInteraction = interactions.find(interaction => interaction.kind === 'stellarContext')
   return {
     deliveryMode: condition === 'stellar' ? 'pull' : condition,
+    // v0.6 primary KPI: model turns after grounded context that still inspect the repository.
+    postContextExplorationTurns: turns.turnsAfterGroundedContextAvailable ?? null,
+    semanticEdgesReturned: contextInteraction?.semanticEdges ?? null,
     prefetchLocalMs: prefetch?.localMs ?? null,
     prefetchSourceBytes: prefetch ? prefetch.envelope.sourceBytes : null,
     prefetchPayloadBytes: prefetch ? prefetch.envelope.payloadBytes : null,
@@ -229,6 +234,6 @@ export function deliveryMetrics({ condition, result, prefetch = null, expectedFi
     verificationClass: availableTurn == null ? null : verificationClass({ postContextToolCalls, duplicateReadRanges: duplicates.duplicateReadRanges, postContextSearchCalls }),
     contextReuseRate: availableTurn == null ? null : contextReuseRate(contextRanges, answerFiles, duplicateBytesByPath(contextRanges, laterReads)),
     resultNumTurns: metrics.resultNumTurns ?? null,
-    ...turnMetrics(metrics.turns, { availableTurn, firstRelevantTurn })
+    ...turns
   }
 }

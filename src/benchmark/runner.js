@@ -24,10 +24,10 @@ async function writeShim(binDir, mode, stellarBin, snapshot) {
   await fs.mkdir(binDir,{recursive:true})
   const file=path.join(binDir,process.platform==='win32'?'stellar.cmd':'stellar')
   if(process.platform==='win32') {
-    const body=mode!=='baseline' ? `@echo off\r\n"${process.execPath}" "${stellarBin}" %*\r\n` : '@echo off\r\necho StellarCode disabled for baseline benchmark 1>&2\r\nexit /b 64\r\n'
+    const body=mode!=='baseline' ? `@echo off\r\nset STELLAR_SEMANTIC_SLICE=${mode==='stellar-lexical'?'0':'1'}\r\n"${process.execPath}" "${stellarBin}" %*\r\n` : '@echo off\r\necho StellarCode disabled for baseline benchmark 1>&2\r\nexit /b 64\r\n'
     await fs.writeFile(file,body)
   } else {
-    const body=mode!=='baseline' ? `#!/bin/sh\n${snapshot ? `export STELLAR_BENCH_INDEX_FILE=${shellQuote(snapshot.indexFile)}\n` : ''}exec ${shellQuote(process.execPath)} ${shellQuote(stellarBin)} "$@"\n` : '#!/bin/sh\necho "StellarCode disabled for baseline benchmark" >&2\nexit 64\n'
+    const body=mode!=='baseline' ? `#!/bin/sh\n${snapshot ? `export STELLAR_BENCH_INDEX_FILE=${shellQuote(snapshot.indexFile)}\n` : ''}export STELLAR_SEMANTIC_SLICE=${mode==='stellar-lexical'?'0':'1'}\nexec ${shellQuote(process.execPath)} ${shellQuote(stellarBin)} "$@"\n` : '#!/bin/sh\necho "StellarCode disabled for baseline benchmark" >&2\nexit 64\n'
     await fs.writeFile(file,body,{mode:0o755})
   }
   return file
@@ -79,7 +79,9 @@ export async function benchmarkDoctor({agents=['claude','codex'],env=process.env
   return results
 }
 
-export const BENCHMARK_CONDITIONS = ['baseline', 'stellar', ...DELIVERY_MODES]
+// `stellar-lexical` is the v0.6 comparison condition: the same runtime, index and prompt
+// as `stellar`, with the semantic slice switched off inside the stellar shim.
+export const BENCHMARK_CONDITIONS = ['baseline', 'stellar', 'stellar-lexical', ...DELIVERY_MODES]
 
 // --mode both | delivery | a condition | a comma-separated list of conditions.
 export function parseBenchmarkModes(mode) {

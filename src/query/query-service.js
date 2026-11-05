@@ -3,6 +3,7 @@ import path from 'node:path'
 import { withFreshProjectDb } from '../core/runtime.js'
 import { loadArchitectureHints, classifyArchitecture, architectureRank, hierarchyForPath, summarizeHierarchy } from './architecture.js'
 import { classifyIntent } from './intent.js'
+import { semanticSlice, semanticSliceEnabled, capabilityFor } from './semantic-slice.js'
 import { stemTerm, termMatch, termWeights, weightedScore, termCoverage, rankFileSymbols, focusRange, overlapLines, subtractTaken, allocateBudget, densestWindow, identifierPattern } from './precision.js'
 
 const QUERY_CONCEPTS = [
@@ -586,6 +587,10 @@ export async function contextForTask(projectPath, task, options = {}) {
       const targets=kept.slice(0,Math.min(3,limit)).map(v=>({path:v.path,lines:v.read.lines,symbol:v.symbols?.[0]?.qualifiedName??null,confidence:Number((v.score/(kept[0].score||1)).toFixed(2)),reason:v.precisionReason}))
       const targetPaths=new Set(targets.map(target=>target.path))
       const relatedHints=depth>0?relatedFiles.filter(v=>!targetPaths.has(v.path)).slice(0,Math.max(0,limit-targets.length)).map(v=>({path:v.path,lines:v.read.lines,symbol:v.symbols?.[0]?.qualifiedName??null,relation:v.relation??'imports',direction:v.direction??'outgoing'})):[]
+      // v0.6: follow resolved semantic relations from the targets. When the slice grounds
+      // any neighbor, it replaces the lexical related-evidence heuristics below.
+      const sliceOn=depth>0&&!profile.architectureOverview&&semanticSliceEnabled(options)
+      const slice=sliceOn?semanticSlice(db,{intent,targets,terms:qTokens,weights}):{edges:[],ground:[],more:false}
       const evidenceLimit=depth>0?Math.min(EVIDENCE_LIMITS[intent]??1,Math.max(0,limit-targets.length)):0
       const evidenceCandidates=[]
       if(evidenceLimit>0) for(const primaryValue of primaryRanked.filter(v=>!calleeIds.has(v.file.file_id))) {
@@ -683,7 +688,15 @@ export async function contextForTask(projectPath, task, options = {}) {
         // lines), then split the byte budget fairly instead of first-come-first-served.
         const requests=[]
         for(const [index,target] of targets.entries()) requests.push({entry:target,range:target.lines,cap:maxLines,weight:index===0?1.5:1.2,minLines:1})
-        for(const candidate of uniqueEvidence) {
+        for(const item of slice.ground) {
+          // `relation` keeps the v0.5 vocabulary for compatibility; `semantic` names the resolved relation.
+          const sameFile=targets.some(t=>t.path===item.path)
+          const relation=sameFile?'same-file-symbol':item.direction==='incoming'?'imported-by':'imported-symbol'
+          requests.push({entry:{path:item.path,symbol:item.symbol,lines:item.lines,relation,direction:item.direction,semantic:{relation:item.relation,confidence:item.confidence},reason:item.reason},range:item.lines,cap:80,weight:1,minLines:3,evidence:true,semantic:true})
+        }
+        // Lexical evidence fills in only what the semantic slice did not already ground.
+        const semanticKeys=new Set(slice.ground.map(item=>`${item.path}#${item.symbol}`))
+        for(const candidate of uniqueEvidence.filter(candidate=>!semanticKeys.has(`${candidate.path}#${candidate.symbol}`))) {
           const start=Math.max(1,candidate.start-3)
           const end=Math.min(candidate.lineCount,candidate.end+5)
           requests.push({entry:{path:candidate.path,symbol:candidate.symbol,lines:[start,end],relation:candidate.relation,direction:candidate.direction,reason:candidate.reason},range:[start,end],cap:80,weight:1,minLines:3,evidence:true})
@@ -696,7 +709,7 @@ export async function contextForTask(projectPath, task, options = {}) {
           const start=Math.max(1,request.range?.[0]??1)
           let range=[start,Math.min(lines.length,Math.max(start,request.range?.[1]??start),start+request.cap-1)]
           if(range[1]<range[0])continue
-          if(request.evidence)range=focusRange(range,lines,{terms:qTokens,weights})
+          if(request.evidence&&!request.semantic)range=focusRange(range,lines,{terms:qTokens,weights})
           range=subtractTaken(range,taken.get(request.entry.path))
           if(!range)continue
           taken.set(request.entry.path,[...(taken.get(request.entry.path)??[]),range])
@@ -721,7 +734,8 @@ export async function contextForTask(projectPath, task, options = {}) {
       }
       const groundedPaths=new Set(groundedFiles)
       const finalRelatedHints=relatedHints.filter(item=>!groundedPaths.has(item.path))
-      return {targets,relatedEvidence,relatedHints:finalRelatedHints,groundedFiles,intent,intentDetail:{confidence:intentDetail.confidence,signals:intentDetail.signals},depth,more:values.length>primary.length+finalRelatedHints.length+relatedEvidence.length||uniqueEvidence.length>relatedEvidence.length,...(options.withSource?{sourceOfTruth:'targets[].source and relatedEvidence[].source are repository source read live from the working tree'}:{})}
+      const semanticFields=sliceOn?{semanticEvidence:slice.edges,semanticCapability:capabilityFor([...new Set([...targets.map(t=>t.path),...slice.edges.flatMap(e=>[e.from.path,e.to.path])].map(p=>enriched.find(v=>v.file.path===p)?.file.language))])}:{}
+      return {targets,relatedEvidence,relatedHints:finalRelatedHints,groundedFiles,...semanticFields,intent,intentDetail:{confidence:intentDetail.confidence,signals:intentDetail.signals},depth,more:values.length>primary.length+finalRelatedHints.length+relatedEvidence.length||uniqueEvidence.length>relatedEvidence.length||slice.more,...(options.withSource?{sourceOfTruth:'targets[].source and relatedEvidence[].source are repository source read live from the working tree'}:{})}
     }
     return {
       query: task,

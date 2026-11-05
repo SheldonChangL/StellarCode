@@ -197,7 +197,7 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
       // Which file the agent's own context call returned first (delivery stratification).
       const text=flattenStrings(output).join('\n')
       for(const candidate of [text,...jsonObjectsFromText(text).reverse()]) {
-        try { const parsed=JSON.parse(candidate); if(parsed?.targets){interaction.topTarget=parsed.targets[0]?.path??null;break} } catch {}
+        try { const parsed=JSON.parse(candidate); if(parsed?.targets){interaction.topTarget=parsed.targets[0]?.path??null;interaction.semanticEdges=Array.isArray(parsed.semanticEvidence)?parsed.semanticEvidence.length:null;break} } catch {}
       }
     }
     interactions.push(interaction)
