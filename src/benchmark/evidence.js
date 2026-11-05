@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { shellCommandFiles } from './shell-reads.js'
 
 export function strings(value, out=[]) {
   if(typeof value==='string') out.push(value)
@@ -10,11 +11,14 @@ export function strings(value, out=[]) {
 
 // `roots` may list several spellings of the same directory (for example macOS
 // /var/... and its realpath /private/var/...); agents may report either.
+const SOURCE_FILE=/\.(?:[cm]?[jt]sx?|py|go|rs|java|kt|kts|swift|rb|php|cs|c|cc|cpp|h|hpp|vue|svelte)$/
+
 export function sourcePaths(value, roots) {
   const result=new Set()
   const bases=Array.isArray(roots)?roots:[roots]
   for(const text of strings(value)) {
     for(let token of text.match(/(?:[A-Za-z]:)?[^\s'"`|<>]+\.(?:[cm]?[jt]sx?|py|go|rs|java|kt|kts|swift|rb|php|cs|c|cc|cpp|h|hpp|vue|svelte)\b/g)??[]) {
+      if(/[*?[\]{}]/.test(token))continue
       for(const base of bases) {
         const rel=path.relative(base,path.resolve(bases[0],token)).replaceAll('\\','/')
         if(rel && rel!=='..' && !rel.startsWith('../') && !path.isAbsolute(rel)){result.add(rel);break}
@@ -61,13 +65,15 @@ function outputStrings(value) {
   return out
 }
 
-function observedSourceLine(line, rel) {
+function observedSourceLine(line, spellings) {
   const normalized=String(line).replaceAll('\\','/')
-  const at=normalized.indexOf(rel)
-  if(at>=0) {
-    const suffix=normalized.slice(at+rel.length)
-    const withPath=suffix.match(/^[:\-](\d+)[:\-]\s?(.*)$/)
-    if(withPath)return {text:withPath[2],line:Number(withPath[1])}
+  for(const spelled of spellings) {
+    const at=normalized.indexOf(spelled)
+    if(at<0)continue
+    const suffix=normalized.slice(at+spelled.length)
+    // grep -n prints `path:12:text` with no separator; some tools add one space.
+    const withPath=suffix.match(/^[:\-](\d+)[:\-](.*)$/)
+    if(withPath)return {text:withPath[2],alt:withPath[2].startsWith(' ')?withPath[2].slice(1):null,line:Number(withPath[1])}
   }
   const numbered=normalized.match(/^\s*(\d+)(?:(?::|-)\s?|\t|\s{2,})(.*)$/)
   return numbered?{text:numbered[2],line:Number(numbered[1])}:{text:line,line:null}
@@ -80,16 +86,38 @@ export async function completedEvidence({input,output,cwd,ok,atMs,via}) {
   let roots=[cwd]
   try {const real=await fs.realpath(cwd); if(real!==cwd)roots.push(real)} catch {}
   const discovered=sourcePaths([input,output],roots)
+  const discoveredExtra=new Set()
   const text=strings(input).join(' ')
   // `stellar context --with-source` returns live source excerpts; those count as reads
   // only where the returned lines match repository source verbatim (checked below).
   const contextWithSource=/\bstellar\s+context\b.*--with-source|stellar_context/.test(text)
   const navigation=/\bstellar\s+(context|search|find|file|symbol|related|impact|architecture)\b|stellar_(context|search|find|file|symbol|related|impact|architecture)/.test(text)
   if(navigation && !contextWithSource)return {discovered,reads:[]}
-  const candidates=sourcePaths(contextWithSource?output:[input,output],roots)
+  const candidates=new Map()
+  const addCandidate=(rel,spelled)=>{const set=candidates.get(rel)??new Set([rel]);if(spelled)set.add(spelled.replaceAll('\\','/'));candidates.set(rel,set)}
+  for(const rel of sourcePaths(contextWithSource?output:[input,output],roots))addCandidate(rel)
+  if(!contextWithSource) {
+    // Shell commands may read through `cd`, globs, braces or quoted paths; resolve
+    // them against the snapshot, then require the same verbatim match as any read.
+    let realRoot=cwd
+    try{realRoot=await fs.realpath(cwd)}catch{}
+    const inside=async file=>{try{const real=await fs.realpath(file);if(!(await fs.stat(real)).isFile())return null;const rel=path.relative(realRoot,real);return rel&&!rel.startsWith('..')&&!path.isAbsolute(rel)?rel.replaceAll('\\','/'):null}catch{return null}}
+    for(const script of strings(input)) {
+      if(!/\s/.test(script.trim()))continue
+      const {files,cwds}=await shellCommandFiles(script,cwd)
+      for(const entry of files){const rel=await inside(entry.file);if(rel){addCandidate(rel,entry.spelled);discoveredExtra.add(rel)}}
+      // Paths printed by commands run inside a `cd` directory are relative to it.
+      for(const dir of cwds) {
+        for(const rel of sourcePaths(output,[dir])) {
+          const resolved=await inside(path.join(dir,rel))
+          if(resolved){addCandidate(resolved,rel);addCandidate(resolved,'./'+rel);discoveredExtra.add(resolved)}
+        }
+      }
+    }
+  }
   const outputs=outputStrings(output)
   const reads=[]
-  for(const rel of candidates) {
+  for(const [rel,spellings] of candidates) {
     const absolute=path.resolve(cwd,rel)
     let source
     try {
@@ -101,14 +129,14 @@ export async function completedEvidence({input,output,cwd,ok,atMs,via}) {
     if(lines.at(-1)==='')lines.pop()
     const observed=new Set()
     for(const output of outputs) {
-      const returned=output.split(/\r?\n/).map(line=>observedSourceLine(line,rel))
+      const returned=output.split(/\r?\n/).map(line=>observedSourceLine(line,[...spellings]))
       for(let i=0;i<returned.length;i++) {
         if(!returned[i].text.trim())continue
         let bestStart=-1,bestCount=0
         for(let start=0;start<lines.length;start++) {
           if(returned[i].line!==null && returned[i].line!==start+1)continue
           let count=0
-          while(start+count<lines.length && i+count<returned.length && lines[start+count]===returned[i+count].text && (returned[i+count].line===null || returned[i+count].line===start+count+1))count++
+          while(start+count<lines.length && i+count<returned.length && (lines[start+count]===returned[i+count].text||lines[start+count]===returned[i+count].alt) && (returned[i+count].line===null || returned[i+count].line===start+count+1))count++
           if(count>bestCount){bestStart=start;bestCount=count}
         }
         const meaningful=lines.slice(bestStart,bestStart+bestCount).filter(line=>line.trim().length>3)
@@ -126,6 +154,7 @@ export async function completedEvidence({input,output,cwd,ok,atMs,via}) {
       i++
     }
   }
+  for(const rel of discoveredExtra)if(SOURCE_FILE.test(rel)&&!discovered.includes(rel))discovered.push(rel)
   return {discovered,reads}
 }
 
