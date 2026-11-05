@@ -1,0 +1,792 @@
+{
+  "schemaVersion": 1,
+  "methodology": "Paired by task and repetition within one campaign per repository; reduction = 1 - sum(a)/sum(b); repo median across repositories is primary.",
+  "repositories": [
+    "audit-orders",
+    "jetbook",
+    "redmine-ai-agent"
+  ],
+  "repoMedian": {
+    "semanticVsLexical": {
+      "postContextExplorationTurns": 4.39,
+      "inputTokens": 0.5,
+      "searchCalls": 3.75,
+      "toolCalls": 2.99,
+      "sourceBytesRead": -7.3,
+      "modelTurns": 2.69
+    },
+    "semanticVsBaseline": {
+      "postContextExplorationTurns": 0,
+      "inputTokens": 2.87,
+      "searchCalls": 34.62,
+      "toolCalls": 14.08,
+      "sourceBytesRead": 18.94,
+      "modelTurns": 0
+    },
+    "lexicalVsBaseline": {
+      "postContextExplorationTurns": 0,
+      "inputTokens": 2.76,
+      "searchCalls": 28.85,
+      "toolCalls": 12.21,
+      "sourceBytesRead": 8.51,
+      "modelTurns": 0
+    }
+  },
+  "byRepository": {
+    "audit-orders": {
+      "runtimeCommit": "53f7974c8dae660cb6cff55a0a4904ea7d65b798",
+      "runtimeDirty": false,
+      "changedDuringCampaign": false,
+      "taskHash": "1d0b98c3b246a57d4164f51bf4bc5e22fad512e05e5d7f01b66129cb0e547cd0",
+      "repoCommit": "e47d84c13e91f4df5776cad5acb061e420ba43ce",
+      "conditions": {
+        "baseline": {
+          "runs": 36,
+          "answerSuccess": 100,
+          "groundedSuccess": 100,
+          "inputTokens": {
+            "median": 226763.5,
+            "total": 8083247
+          },
+          "modelTurns": {
+            "median": null,
+            "total": 0
+          },
+          "postContextExplorationTurns": {
+            "median": null,
+            "mean": null,
+            "total": 0,
+            "measured": 0
+          },
+          "searchCalls": {
+            "median": 3,
+            "total": 106
+          },
+          "toolCalls": {
+            "median": 8,
+            "total": 276
+          },
+          "sourceBytesRead": {
+            "median": 7209,
+            "total": 372742
+          },
+          "contextSourceBytes": {
+            "median": null
+          },
+          "semanticEdgesReturned": {
+            "median": null
+          }
+        },
+        "stellar-lexical": {
+          "runs": 36,
+          "answerSuccess": 100,
+          "groundedSuccess": 100,
+          "inputTokens": {
+            "median": 228289,
+            "total": 8087548
+          },
+          "modelTurns": {
+            "median": 6,
+            "total": 210
+          },
+          "postContextExplorationTurns": {
+            "median": 4,
+            "mean": 3.83,
+            "total": 138,
+            "measured": 36
+          },
+          "searchCalls": {
+            "median": 3,
+            "total": 96
+          },
+          "toolCalls": {
+            "median": 7,
+            "total": 256
+          },
+          "sourceBytesRead": {
+            "median": 7463,
+            "total": 346628
+          },
+          "contextSourceBytes": {
+            "median": 1405.5
+          },
+          "semanticEdgesReturned": {
+            "median": 0
+          }
+        },
+        "stellar": {
+          "runs": 36,
+          "answerSuccess": 100,
+          "groundedSuccess": 100,
+          "inputTokens": {
+            "median": 220388.5,
+            "total": 8047327
+          },
+          "modelTurns": {
+            "median": 6,
+            "total": 209
+          },
+          "postContextExplorationTurns": {
+            "median": 4,
+            "mean": 3.81,
+            "total": 137,
+            "measured": 36
+          },
+          "searchCalls": {
+            "median": 3,
+            "total": 93
+          },
+          "toolCalls": {
+            "median": 7,
+            "total": 247
+          },
+          "sourceBytesRead": {
+            "median": 6191.5,
+            "total": 302152
+          },
+          "contextSourceBytes": {
+            "median": 1405.5
+          },
+          "semanticEdgesReturned": {
+            "median": 0
+          }
+        }
+      },
+      "semanticVsLexical": {
+        "postContextExplorationTurns": {
+          "pairs": 36,
+          "a": 137,
+          "b": 138,
+          "reductionPct": 0.72
+        },
+        "inputTokens": {
+          "pairs": 36,
+          "a": 8047327,
+          "b": 8087548,
+          "reductionPct": 0.5
+        },
+        "searchCalls": {
+          "pairs": 36,
+          "a": 93,
+          "b": 96,
+          "reductionPct": 3.13
+        },
+        "toolCalls": {
+          "pairs": 36,
+          "a": 247,
+          "b": 256,
+          "reductionPct": 3.52
+        },
+        "sourceBytesRead": {
+          "pairs": 36,
+          "a": 302152,
+          "b": 346628,
+          "reductionPct": 12.83
+        },
+        "modelTurns": {
+          "pairs": 36,
+          "a": 209,
+          "b": 210,
+          "reductionPct": 0.48
+        }
+      },
+      "semanticVsBaseline": {
+        "postContextExplorationTurns": {
+          "pairs": 0,
+          "a": 0,
+          "b": 0,
+          "reductionPct": null
+        },
+        "inputTokens": {
+          "pairs": 36,
+          "a": 8047327,
+          "b": 8083247,
+          "reductionPct": 0.44
+        },
+        "searchCalls": {
+          "pairs": 36,
+          "a": 93,
+          "b": 106,
+          "reductionPct": 12.26
+        },
+        "toolCalls": {
+          "pairs": 36,
+          "a": 247,
+          "b": 276,
+          "reductionPct": 10.51
+        },
+        "sourceBytesRead": {
+          "pairs": 36,
+          "a": 302152,
+          "b": 372742,
+          "reductionPct": 18.94
+        },
+        "modelTurns": {
+          "pairs": 0,
+          "a": 0,
+          "b": 0,
+          "reductionPct": null
+        }
+      },
+      "lexicalVsBaseline": {
+        "postContextExplorationTurns": {
+          "pairs": 0,
+          "a": 0,
+          "b": 0,
+          "reductionPct": null
+        },
+        "inputTokens": {
+          "pairs": 36,
+          "a": 8087548,
+          "b": 8083247,
+          "reductionPct": -0.05
+        },
+        "searchCalls": {
+          "pairs": 36,
+          "a": 96,
+          "b": 106,
+          "reductionPct": 9.43
+        },
+        "toolCalls": {
+          "pairs": 36,
+          "a": 256,
+          "b": 276,
+          "reductionPct": 7.25
+        },
+        "sourceBytesRead": {
+          "pairs": 36,
+          "a": 346628,
+          "b": 372742,
+          "reductionPct": 7.01
+        },
+        "modelTurns": {
+          "pairs": 0,
+          "a": 0,
+          "b": 0,
+          "reductionPct": null
+        }
+      },
+      "correctnessGate": {
+        "answer": true,
+        "grounded": true
+      },
+      "catastrophes": [
+        {
+          "taskId": "nav-incoming-file-disk-name",
+          "category": "navigation",
+          "reasons": [
+            "input +37.27%"
+          ]
+        },
+        {
+          "taskId": "flow-invalid-token-rejected",
+          "category": "flow",
+          "reasons": [
+            "input +30.88%"
+          ]
+        }
+      ]
+    },
+    "jetbook": {
+      "runtimeCommit": "53f7974c8dae660cb6cff55a0a4904ea7d65b798",
+      "runtimeDirty": false,
+      "changedDuringCampaign": false,
+      "taskHash": "bdde5bbf91d9f95356208b55f90e00fcf4508a851dc26ca1879180fb2240c27e",
+      "repoCommit": "371b82ec72e3573f9f9afb256a820b7979450267",
+      "conditions": {
+        "baseline": {
+          "runs": 36,
+          "answerSuccess": 100,
+          "groundedSuccess": 66.67,
+          "inputTokens": {
+            "median": 196095,
+            "total": 7807696
+          },
+          "modelTurns": {
+            "median": null,
+            "total": 0
+          },
+          "postContextExplorationTurns": {
+            "median": null,
+            "mean": null,
+            "total": 0,
+            "measured": 0
+          },
+          "searchCalls": {
+            "median": 4,
+            "total": 135
+          },
+          "toolCalls": {
+            "median": 7,
+            "total": 241
+          },
+          "sourceBytesRead": {
+            "median": 8166,
+            "total": 405723
+          },
+          "contextSourceBytes": {
+            "median": null
+          },
+          "semanticEdgesReturned": {
+            "median": null
+          }
+        },
+        "stellar-lexical": {
+          "runs": 36,
+          "answerSuccess": 100,
+          "groundedSuccess": 66.67,
+          "inputTokens": {
+            "median": 201960.5,
+            "total": 7592569
+          },
+          "modelTurns": {
+            "median": 5,
+            "total": 186
+          },
+          "postContextExplorationTurns": {
+            "median": 3,
+            "mean": 3.17,
+            "total": 114,
+            "measured": 36
+          },
+          "searchCalls": {
+            "median": 2,
+            "total": 80
+          },
+          "toolCalls": {
+            "median": 5,
+            "total": 201
+          },
+          "sourceBytesRead": {
+            "median": 9354.5,
+            "total": 371200
+          },
+          "contextSourceBytes": {
+            "median": 4306
+          },
+          "semanticEdgesReturned": {
+            "median": 0
+          }
+        },
+        "stellar": {
+          "runs": 36,
+          "answerSuccess": 100,
+          "groundedSuccess": 69.44,
+          "inputTokens": {
+            "median": 211258.5,
+            "total": 7583574
+          },
+          "modelTurns": {
+            "median": 5,
+            "total": 180
+          },
+          "postContextExplorationTurns": {
+            "median": 3,
+            "mean": 3,
+            "total": 108,
+            "measured": 36
+          },
+          "searchCalls": {
+            "median": 2,
+            "total": 77
+          },
+          "toolCalls": {
+            "median": 5,
+            "total": 195
+          },
+          "sourceBytesRead": {
+            "median": 11459,
+            "total": 398316
+          },
+          "contextSourceBytes": {
+            "median": 5194.5
+          },
+          "semanticEdgesReturned": {
+            "median": 3
+          }
+        }
+      },
+      "semanticVsLexical": {
+        "postContextExplorationTurns": {
+          "pairs": 36,
+          "a": 108,
+          "b": 114,
+          "reductionPct": 5.26
+        },
+        "inputTokens": {
+          "pairs": 36,
+          "a": 7583574,
+          "b": 7592569,
+          "reductionPct": 0.12
+        },
+        "searchCalls": {
+          "pairs": 36,
+          "a": 77,
+          "b": 80,
+          "reductionPct": 3.75
+        },
+        "toolCalls": {
+          "pairs": 36,
+          "a": 195,
+          "b": 201,
+          "reductionPct": 2.99
+        },
+        "sourceBytesRead": {
+          "pairs": 36,
+          "a": 398316,
+          "b": 371200,
+          "reductionPct": -7.3
+        },
+        "modelTurns": {
+          "pairs": 36,
+          "a": 180,
+          "b": 186,
+          "reductionPct": 3.23
+        }
+      },
+      "semanticVsBaseline": {
+        "postContextExplorationTurns": {
+          "pairs": 0,
+          "a": 0,
+          "b": 0,
+          "reductionPct": null
+        },
+        "inputTokens": {
+          "pairs": 36,
+          "a": 7583574,
+          "b": 7807696,
+          "reductionPct": 2.87
+        },
+        "searchCalls": {
+          "pairs": 36,
+          "a": 77,
+          "b": 135,
+          "reductionPct": 42.96
+        },
+        "toolCalls": {
+          "pairs": 36,
+          "a": 195,
+          "b": 241,
+          "reductionPct": 19.09
+        },
+        "sourceBytesRead": {
+          "pairs": 36,
+          "a": 398316,
+          "b": 405723,
+          "reductionPct": 1.83
+        },
+        "modelTurns": {
+          "pairs": 0,
+          "a": 0,
+          "b": 0,
+          "reductionPct": null
+        }
+      },
+      "lexicalVsBaseline": {
+        "postContextExplorationTurns": {
+          "pairs": 0,
+          "a": 0,
+          "b": 0,
+          "reductionPct": null
+        },
+        "inputTokens": {
+          "pairs": 36,
+          "a": 7592569,
+          "b": 7807696,
+          "reductionPct": 2.76
+        },
+        "searchCalls": {
+          "pairs": 36,
+          "a": 80,
+          "b": 135,
+          "reductionPct": 40.74
+        },
+        "toolCalls": {
+          "pairs": 36,
+          "a": 201,
+          "b": 241,
+          "reductionPct": 16.6
+        },
+        "sourceBytesRead": {
+          "pairs": 36,
+          "a": 371200,
+          "b": 405723,
+          "reductionPct": 8.51
+        },
+        "modelTurns": {
+          "pairs": 0,
+          "a": 0,
+          "b": 0,
+          "reductionPct": null
+        }
+      },
+      "correctnessGate": {
+        "answer": true,
+        "grounded": true
+      },
+      "catastrophes": [
+        {
+          "taskId": "nav-login-lockout-duration",
+          "category": "navigation",
+          "reasons": [
+            "input +45.55%"
+          ]
+        },
+        {
+          "taskId": "nav-editor-autosave-delay",
+          "category": "navigation",
+          "reasons": [
+            "input +63.78%"
+          ]
+        }
+      ]
+    },
+    "redmine-ai-agent": {
+      "runtimeCommit": "53f7974c8dae660cb6cff55a0a4904ea7d65b798",
+      "runtimeDirty": false,
+      "changedDuringCampaign": false,
+      "taskHash": "4ed1ae56b677329c5fc7e8a55fcf85acc38fc11a5ae3ba301bedbf9efc6d1d55",
+      "repoCommit": "5189f6bc861944f91abaa4682feec2c398a026bc",
+      "conditions": {
+        "baseline": {
+          "runs": 36,
+          "answerSuccess": 100,
+          "groundedSuccess": 100,
+          "inputTokens": {
+            "median": 197796,
+            "total": 7475952
+          },
+          "modelTurns": {
+            "median": null,
+            "total": 0
+          },
+          "postContextExplorationTurns": {
+            "median": null,
+            "mean": null,
+            "total": 0,
+            "measured": 0
+          },
+          "searchCalls": {
+            "median": 3,
+            "total": 104
+          },
+          "toolCalls": {
+            "median": 6,
+            "total": 213
+          },
+          "sourceBytesRead": {
+            "median": 15430,
+            "total": 571400
+          },
+          "contextSourceBytes": {
+            "median": null
+          },
+          "semanticEdgesReturned": {
+            "median": null
+          }
+        },
+        "stellar-lexical": {
+          "runs": 36,
+          "answerSuccess": 100,
+          "groundedSuccess": 100,
+          "inputTokens": {
+            "median": 191438.5,
+            "total": 7267221
+          },
+          "modelTurns": {
+            "median": 5,
+            "total": 186
+          },
+          "postContextExplorationTurns": {
+            "median": 3,
+            "mean": 3.17,
+            "total": 114,
+            "measured": 36
+          },
+          "searchCalls": {
+            "median": 2,
+            "total": 74
+          },
+          "toolCalls": {
+            "median": 5,
+            "total": 187
+          },
+          "sourceBytesRead": {
+            "median": 8107.5,
+            "total": 422227
+          },
+          "contextSourceBytes": {
+            "median": 2903
+          },
+          "semanticEdgesReturned": {
+            "median": 0
+          }
+        },
+        "stellar": {
+          "runs": 36,
+          "answerSuccess": 100,
+          "groundedSuccess": 100,
+          "inputTokens": {
+            "median": 194065.5,
+            "total": 7211983
+          },
+          "modelTurns": {
+            "median": 5,
+            "total": 181
+          },
+          "postContextExplorationTurns": {
+            "median": 3,
+            "mean": 3.03,
+            "total": 109,
+            "measured": 36
+          },
+          "searchCalls": {
+            "median": 1.5,
+            "total": 68
+          },
+          "toolCalls": {
+            "median": 5,
+            "total": 183
+          },
+          "sourceBytesRead": {
+            "median": 8918.5,
+            "total": 454943
+          },
+          "contextSourceBytes": {
+            "median": 3372
+          },
+          "semanticEdgesReturned": {
+            "median": 2
+          }
+        }
+      },
+      "semanticVsLexical": {
+        "postContextExplorationTurns": {
+          "pairs": 36,
+          "a": 109,
+          "b": 114,
+          "reductionPct": 4.39
+        },
+        "inputTokens": {
+          "pairs": 36,
+          "a": 7211983,
+          "b": 7267221,
+          "reductionPct": 0.76
+        },
+        "searchCalls": {
+          "pairs": 36,
+          "a": 68,
+          "b": 74,
+          "reductionPct": 8.11
+        },
+        "toolCalls": {
+          "pairs": 36,
+          "a": 183,
+          "b": 187,
+          "reductionPct": 2.14
+        },
+        "sourceBytesRead": {
+          "pairs": 36,
+          "a": 454943,
+          "b": 422227,
+          "reductionPct": -7.75
+        },
+        "modelTurns": {
+          "pairs": 36,
+          "a": 181,
+          "b": 186,
+          "reductionPct": 2.69
+        }
+      },
+      "semanticVsBaseline": {
+        "postContextExplorationTurns": {
+          "pairs": 0,
+          "a": 0,
+          "b": 0,
+          "reductionPct": null
+        },
+        "inputTokens": {
+          "pairs": 36,
+          "a": 7211983,
+          "b": 7475952,
+          "reductionPct": 3.53
+        },
+        "searchCalls": {
+          "pairs": 36,
+          "a": 68,
+          "b": 104,
+          "reductionPct": 34.62
+        },
+        "toolCalls": {
+          "pairs": 36,
+          "a": 183,
+          "b": 213,
+          "reductionPct": 14.08
+        },
+        "sourceBytesRead": {
+          "pairs": 36,
+          "a": 454943,
+          "b": 571400,
+          "reductionPct": 20.38
+        },
+        "modelTurns": {
+          "pairs": 0,
+          "a": 0,
+          "b": 0,
+          "reductionPct": null
+        }
+      },
+      "lexicalVsBaseline": {
+        "postContextExplorationTurns": {
+          "pairs": 0,
+          "a": 0,
+          "b": 0,
+          "reductionPct": null
+        },
+        "inputTokens": {
+          "pairs": 36,
+          "a": 7267221,
+          "b": 7475952,
+          "reductionPct": 2.79
+        },
+        "searchCalls": {
+          "pairs": 36,
+          "a": 74,
+          "b": 104,
+          "reductionPct": 28.85
+        },
+        "toolCalls": {
+          "pairs": 36,
+          "a": 187,
+          "b": 213,
+          "reductionPct": 12.21
+        },
+        "sourceBytesRead": {
+          "pairs": 36,
+          "a": 422227,
+          "b": 571400,
+          "reductionPct": 26.11
+        },
+        "modelTurns": {
+          "pairs": 0,
+          "a": 0,
+          "b": 0,
+          "reductionPct": null
+        }
+      },
+      "correctnessGate": {
+        "answer": true,
+        "grounded": true
+      },
+      "catastrophes": [
+        {
+          "taskId": "nav-free-text-to-issue-filters",
+          "category": "navigation",
+          "reasons": [
+            "input +40.89%"
+          ]
+        }
+      ]
+    }
+  }
+}

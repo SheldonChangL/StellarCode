@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 3,
+  "createdAt": "2026-11-05T08:54:19.231Z",
+  "startedAt": "2026-11-05T08:05:19.683Z",
+  "completedAt": "2026-11-05T08:54:19.231Z",
+  "repository": "jetbook",
+  "repositoryIdentity": {
+    "rootCommits": [
+      "1001a779873e5a2c53afc52e9cedcf927e59aa6f"
+    ],
+    "remote": null
+  },
+  "agent": "claude",
+  "agentVersion": "2.1.317 (Claude Code)",
+  "model": null,
+  "projectRoot": "/Users/sheldon.chang/Projects/Private/stellar-holdout-v06/jetbook",
+  "projectCommit": "371b82ec72e3573f9f9afb256a820b7979450267",
+  "projectDirtyCount": 0,
+  "tasksFile": "/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete/validation/v0.6/tasksets/jetbook/tasks.json",
+  "taskHash": "bdde5bbf91d9f95356208b55f90e00fcf4508a851dc26ca1879180fb2240c27e",
+  "taskCount": 12,
+  "repeat": 3,
+  "modes": [
+    "baseline",
+    "stellar-lexical",
+    "stellar"
+  ],
+  "files": {
+    "baseline": "/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete/validation/v0.6/holdout/jetbook/claude-20261105-160517/baseline.jsonl",
+    "stellar-lexical": "/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete/validation/v0.6/holdout/jetbook/claude-20261105-160517/stellar-lexical.jsonl",
+    "stellar": "/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete/validation/v0.6/holdout/jetbook/claude-20261105-160517/stellar.jsonl"
+  },
+  "runtime": {
+    "commit": "53f7974c8dae660cb6cff55a0a4904ea7d65b798",
+    "packageVersion": "0.5.6",
+    "dirty": false,
+    "dirtyFiles": [],
+    "contentHash": "421e36a06812b797f8665a5de8525a9f13e39fb4ddf803e55fa834644013cd37",
+    "files": 51,
+    "frozenTrees": {
+      "src/query": "b610d1b47e7edae11c175166251640e275fdb1cf",
+      "src/indexer": "92c72bb1c67ea9c5b87f82bfd92fba17e43e89e8",
+      "src/mcp": "b1e4e83c5285302163b42741be7cd1d7c7aa1feb",
+      "src/core": "61ef616a3e16d8f591f16e0dc8bc3fd138cf23fa",
+      "src/storage": "f52395df25821629d0523ded91f9d7914938ef8a",
+      "src/platform": "aa15ff53fbaee33367cd08d60971c29b72fbd447",
+      "src/web": "4bb79d1f7d8b675619b748fda12940e9934466b3"
+    },
+    "changedDuringCampaign": false
+  },
+  "environment": {
+    "os": "Darwin 25.6.0 arm64",
+    "platform": "darwin",
+    "node": "v22.17.0"
+  },
+  "isolation": {
+    "freshAgentSession": true,
+    "detachedWorktree": true,
+    "stellarRulesRemovedFromWorktree": true,
+    "stellarContractInjectedViaPrompt": true,
+    "stableProjectIdentity": true,
+    "readOnlyIndexSnapshot": true,
+    "userMcpConfigIgnored": true,
+    "stellarIndexPreparedBeforeTimedRun": true,
+    "sourceGroundingRequired": true,
+    "rawAgentTelemetryPersisted": true
+  }
+}
