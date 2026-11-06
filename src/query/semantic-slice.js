@@ -26,7 +26,9 @@ export const SLICE_PLANS = {
     steps: [
       { direction: 'outgoing', relations: ['CALLS', 'REGISTERS'], depth: 2 },
       { direction: 'incoming', relations: ['REGISTERS'], depth: 1 },
-      { direction: 'incoming', relations: ['CALLS'], depth: 1, onlyUnique: true }
+      // v0.6.1: a seed is often the step that does the work (a service method); the
+      // entry side of the flow is its caller's caller (route -> controller -> service).
+      { direction: 'incoming', relations: ['CALLS', 'REGISTERS'], depth: 2, onlyUnique: true }
     ]
   },
   impact: {
@@ -41,6 +43,27 @@ export const SLICE_PLANS = {
       { direction: 'both', relations: ['IMPLEMENTS'], depth: 1 }
     ]
   }
+}
+
+// v0.6.1 route variant. Every seed shares one edge budget, so more seeds never means
+// more edges. Navigation keeps its incoming-only plan (callees stay hints, v0.5.4 rule);
+// the seed role only decides which symbol the slice starts from.
+export const ROUTE_PLANS = {
+  // No decisive intent evidence: a small mixed-direction slice instead of guessing a
+  // single direction (it is not "every direction": depth 1, 4 edges).
+  mixed: {
+    maxEdges: 4,
+    steps: [
+      { direction: 'outgoing', relations: ['CALLS', 'REGISTERS'], depth: 1 },
+      { direction: 'incoming', relations: ['CALLS', 'REGISTERS'], depth: 1 }
+    ]
+  }
+}
+
+export function slicePlanFor(intent, { seedRole = null, intentConfidence = null } = {}) {
+  if (intentConfidence === 'low') return { name: 'mixed', ...ROUTE_PLANS.mixed }
+  const name = SLICE_PLANS[intent] ? intent : 'navigation'
+  return { name, ...SLICE_PLANS[name] }
 }
 
 export const SEMANTIC_CAPABILITY = { TypeScript: 'semantic', JavaScript: 'semantic', Python: 'semantic-partial' }
@@ -104,8 +127,9 @@ function endpoint(db, id) {
 }
 
 // Returns { edges, ground } where ground lists neighbor ranges to attach as source.
-export function semanticSlice(db, { intent, targets, terms = [], weights = new Map() }) {
-  const plan = SLICE_PLANS[intent] ?? SLICE_PLANS.navigation
+// `targets` are the semantic seeds (v0.6.1: chosen by semantic-seed.js, not the lexical top).
+export function semanticSlice(db, { intent, targets, terms = [], weights = new Map(), trace = false, seedRole = null, intentConfidence = null }) {
+  const plan = slicePlanFor(intent, { seedRole, intentConfidence })
   if (!plan.maxEdges || !targets.length) return { edges: [], ground: [], seeds: 0, more: false }
   const seeds = seedSymbols(db, targets, intent)
   const seedIds = [...seeds.keys()]
@@ -192,7 +216,8 @@ export function semanticSlice(db, { intent, targets, terms = [], weights = new M
   const ground = []
   const grounded = new Set()
   for (const { candidate, neighbor } of chosen) {
-    if (seedSet.has(candidate.neighborId) && targets.some(t => t.path === neighbor.path)) continue
+    // A seed is grounded by the caller (as a target or as the slice's starting range).
+    if (seedSet.has(candidate.neighborId)) continue
     const evidenceLine = Number(candidate.metadata.line ?? 0)
     let lines
     if (candidate.direction === 'incoming' && evidenceLine) {
@@ -216,7 +241,17 @@ export function semanticSlice(db, { intent, targets, terms = [], weights = new M
         : `${chosenLabel(candidate, 'from', db)} uses ${chosenLabel(candidate, 'to', db)} (${candidate.edge_type})`
     })
   }
-  return { edges, ground, seeds: seedIds.length, more: scored.length > chosen.length }
+  const result = { edges, ground, seeds: seedIds.length, plan: plan.name, more: scored.length > chosen.length }
+  // Diagnostic only (benchmark funnel): the expanded seed set and every edge the
+  // traversal admitted before the edge budget. Never part of the agent payload.
+  if (trace) {
+    const label = id => { const p = endpoint(db, id); return p ? (p.symbol ? `${p.path}#${p.symbol}` : p.path) : id }
+    result.trace = {
+      seeds: seedIds.map(label),
+      admitted: scored.map(({ candidate }) => `${label(candidate.source_id)}|${candidate.edge_type}|${label(candidate.target_id)}`)
+    }
+  }
+  return result
 }
 
 function chosenLabel(candidate, side, db) {

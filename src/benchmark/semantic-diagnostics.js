@@ -39,12 +39,63 @@ export async function indexedSemanticEdges(projectRoot, options = {}) {
   } finally { db.close() }
 }
 
+// Undirected adjacency over the indexed semantic graph (diagnostics only).
+export function semanticAdjacency(indexed) {
+  const adj = new Map()
+  const link = (a, b) => { if (!adj.has(a)) adj.set(a, new Set()); adj.get(a).add(b) }
+  for (const edge of indexed) { const [from, , to] = edge.split('|'); link(from, to); link(to, from) }
+  return adj
+}
+
+// A required edge is reachable from the chosen seeds when one of its endpoints lies within
+// `depth - 1` hops of a seed (the slice traverses at most `depth` = 2 edges from a seed).
+export function seedReachable(requiredKey, seeds, adj, depth = 2) {
+  const [from, , to] = requiredKey.split('|')
+  const near = new Set(seeds)
+  let frontier = [...seeds]
+  for (let hop = 1; hop < depth; hop++) {
+    const next = []
+    for (const node of frontier) for (const n of adj.get(node) ?? []) if (!near.has(n)) { near.add(n); next.push(n) }
+    frontier = next
+  }
+  return near.has(from) || near.has(to)
+}
+
+const ratio = (part, whole) => whole ? Number((part / whole).toFixed(4)) : null
+
+// Required -> indexed -> reachable from seed -> admitted by traversal -> returned.
+export function funnelSummary(rows) {
+  const sum = field => rows.reduce((total, r) => total + (r[field] ?? 0), 0)
+  const f = {
+    requiredEdgeCount: sum('requiredEdges'),
+    indexedRequiredEdgeCount: sum('requiredEdgesIndexed'),
+    candidatePoolRequiredEdgeCount: sum('requiredEdgesInCandidatePool'),
+    candidatePoolFileRequiredEdgeCount: sum('requiredEdgesFileInCandidatePool'),
+    seedReachableRequiredEdgeCount: sum('requiredEdgesSeedReachable'),
+    admittedRequiredEdgeCount: sum('requiredEdgesAdmitted'),
+    returnedRequiredEdgeCount: sum('requiredEdgesReturned')
+  }
+  return {
+    ...f,
+    indexRecall: ratio(f.indexedRequiredEdgeCount, f.requiredEdgeCount),
+    candidatePoolRecall: ratio(f.candidatePoolRequiredEdgeCount, f.indexedRequiredEdgeCount),
+    seedReachabilityRecall: ratio(f.seedReachableRequiredEdgeCount, f.indexedRequiredEdgeCount),
+    admissionRecall: ratio(f.admittedRequiredEdgeCount, f.seedReachableRequiredEdgeCount),
+    routingRecall: ratio(f.returnedRequiredEdgeCount, f.indexedRequiredEdgeCount),
+    contextRecall: ratio(f.returnedRequiredEdgeCount, f.requiredEdgeCount)
+  }
+}
+
 export async function semanticDiagnostics(projectRoot, tasksFile, options = {}) {
   const { tasks } = await loadBenchmarkTasks(tasksFile)
   const indexed = await indexedSemanticEdges(projectRoot, options)
+  const adj = semanticAdjacency(indexed)
   const rows = []
   for (const task of tasks) {
-    const ctx = await contextForTask(projectRoot, task.prompt, { ...options, ...DIAGNOSTIC_CONTEXT })
+    // Only the prompt reaches the runtime; the answer key is compared afterwards.
+    const ctx = await contextForTask(projectRoot, task.prompt, { ...options, ...DIAGNOSTIC_CONTEXT, semanticTrace: true })
+    const trace = ctx.semanticTrace ?? { seeds: [], admitted: [] }
+    const admitted = new Set(trace.admitted)
     const edges = ctx.semanticEvidence ?? []
     const returned = new Set(edges.map(e => `${key(e.from.path, e.from.symbol)}|${e.relation}|${key(e.to.path, e.to.symbol)}`))
     const grounded = [...ctx.targets, ...ctx.relatedEvidence].filter(e => e.source)
@@ -67,6 +118,20 @@ export async function semanticDiagnostics(projectRoot, tasksFile, options = {}) 
       requiredEdges: required.length,
       requiredEdgesReturned: requiredKeys.filter(k => returned.has(k)).length,
       requiredEdgesIndexed: requiredKeys.filter(k => indexed.has(k)).length,
+      // Ceiling of seed selection: a required edge whose endpoint symbol (or file) is not
+      // among the lexical seed candidates cannot be reached by any seed choice.
+      requiredEdgesInCandidatePool: requiredKeys.filter(k => indexed.has(k) && k.split('|').filter((_, i) => i !== 1).some(end => (trace.candidateKeys ?? []).includes(end))).length,
+      requiredEdgesFileInCandidatePool: requiredKeys.filter(k => indexed.has(k) && k.split('|').filter((_, i) => i !== 1).some(end => (trace.candidatePaths ?? []).includes(end.split('#')[0]))).length,
+      requiredEdgesSeedReachable: requiredKeys.filter(k => indexed.has(k) && seedReachable(k, trace.seeds, adj)).length,
+      requiredEdgesAdmitted: requiredKeys.filter(k => indexed.has(k) && admitted.has(k)).length,
+      lexicalTopPath: ctx.targets[0]?.path ?? null,
+      semanticSeedPaths: [...new Set((ctx.semanticRoute?.seeds ?? []).map(s => s.path))],
+      semanticSeedKinds: (ctx.semanticRoute?.seeds ?? []).map(s => s.kind),
+      seedCount: ctx.semanticRoute?.seeds?.length ?? 0,
+      seedRole: ctx.semanticRoute?.seedRole ?? null,
+      intentConfidence: ctx.semanticRoute?.intentConfidence ?? null,
+      seedContainsExpectedFile: (ctx.semanticRoute?.seeds ?? []).some(s => task.expectedFiles.includes(s.path)),
+      intentMatchesCategory: ctx.intent === task.category,
       missingRequiredEdges: requiredKeys.filter(k => !returned.has(k))
     })
   }
@@ -80,6 +145,10 @@ export async function semanticDiagnostics(projectRoot, tasksFile, options = {}) 
     requiredEdgeRecallContext: sum(annotated, 'requiredEdges') ? sum(annotated, 'requiredEdgesReturned') / sum(annotated, 'requiredEdges') : null,
     requiredEdgeRecallIndex: sum(annotated, 'requiredEdges') ? sum(annotated, 'requiredEdgesIndexed') / sum(annotated, 'requiredEdges') : null,
     expectedFileGroundingRate: sum(rows, 'expectedFiles') ? sum(rows, 'expectedFilesGrounded') / sum(rows, 'expectedFiles') : null,
+    funnel: funnelSummary(annotated),
+    intentAgreement: rows.length ? `${rows.filter(r => r.intentMatchesCategory).length}/${rows.length}` : null,
+    topTargetCorrect: `${rows.filter(r => r.topTargetExpected).length}/${rows.length}`,
+    seedContainsExpectedFile: `${rows.filter(r => r.seedContainsExpectedFile).length}/${rows.length}`,
     medianSourceBytes: [...rows.map(r => r.sourceBytes)].sort((a, b) => a - b)[Math.floor(rows.length / 2)] ?? null
   }
   return { schemaVersion: 1, contextFlags: STELLAR_CONTEXT_FLAGS, summary, tasks: rows }
