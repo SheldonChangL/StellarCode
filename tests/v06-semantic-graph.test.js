@@ -7,6 +7,7 @@ import { readProjectMetadata } from '../src/core/project.js'
 import { openProjectStore } from '../src/storage/project-store.js'
 import { syncProject } from '../src/indexer/sync.js'
 import { semanticRepo, semanticEdges } from './helpers-v06.js'
+import { INDEXER_VERSION } from '../src/core/constants.js'
 
 const has = (edges, type, from, to, confidence) => edges.some(e => e.type === type && e.from === from && e.to === to && (!confidence || e.confidence === confidence))
 const describe = edges => edges.map(e => `${e.type} ${e.from} -> ${e.to} (${e.confidence})`).sort().join('\n')
@@ -166,7 +167,7 @@ test('v0.6 Python: untyped self field without assignment evidence produces no co
 test('v0.6 index records the indexer version and rebuilds semantic facts on a version change', async () => {
   const w = await semanticRepo({ 'src/a.ts': `export function a() {\n  return b()\n}\nexport function b() {\n  return 1\n}\n` })
   try {
-    assert.equal(w.sync.indexerVersion, 3)
+    assert.equal(w.sync.indexerVersion, INDEXER_VERSION)
     assert.ok(w.sync.semanticEdges.CALLS >= 1)
     const { db } = await openProjectStore(w.repo, await readProjectMetadata(w.repo), { dirs: w.dirs })
     db.prepare('UPDATE project_meta SET indexer_version=2').run()
