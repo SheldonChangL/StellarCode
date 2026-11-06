@@ -6,7 +6,9 @@ import path from 'node:path'
 import { readJsonl } from './report.js'
 
 export const SEMANTIC_CONDITIONS = ['baseline', 'stellar-lexical', 'stellar']
-const finite = values => values.map(Number).filter(Number.isFinite)
+// Missing / not-applicable values stay out of aggregates: Number(null) is 0, so null,
+// undefined and '' must be dropped before coercion or an unavailable metric reads as 0.
+const finite = values => values.filter(v => v != null && v !== '').map(Number).filter(Number.isFinite)
 export function median(values) {
   const sorted = finite(values).sort((a, b) => a - b)
   if (!sorted.length) return null
@@ -124,8 +126,22 @@ export async function semanticReport(specs) {
   }
 }
 
-export async function writeSemanticReport(specs, { jsonFile } = {}) {
+// Human-readable view: unavailable values (null internally) print as n/a, never 0.
+export const formatValue = (value, suffix = '') => value == null || !Number.isFinite(Number(value)) ? 'n/a' : `${value}${suffix}`
+
+export function formatSemanticReportMarkdown(report) {
+  const lines = ['# Semantic report', '', '## Repo median reductions', '', `| Metric | ${['semanticVsLexical', 'semanticVsBaseline', 'lexicalVsBaseline'].join(' | ')} |`, '|---|---|---|---|']
+  for (const metric of METRICS) lines.push(`| ${metric} | ${['semanticVsLexical', 'semanticVsBaseline', 'lexicalVsBaseline'].map(c => formatValue(report.repoMedian[c][metric], '%')).join(' | ')} |`)
+  for (const [repo, data] of Object.entries(report.byRepository)) {
+    lines.push('', `## ${repo}`, '', '| Metric | semantic vs lexical | semantic vs baseline | lexical vs baseline |', '|---|---|---|---|')
+    for (const metric of METRICS) lines.push(`| ${metric} | ${['semanticVsLexical', 'semanticVsBaseline', 'lexicalVsBaseline'].map(c => `${formatValue(data[c][metric].reductionPct, '%')} (${data[c][metric].pairs} pairs)`).join(' | ')} |`)
+  }
+  return lines.join('\n') + '\n'
+}
+
+export async function writeSemanticReport(specs, { jsonFile, markdownFile } = {}) {
   const report = await semanticReport(specs)
   if (jsonFile) await fs.writeFile(jsonFile, JSON.stringify(report, null, 2) + '\n')
+  if (markdownFile) await fs.writeFile(markdownFile, formatSemanticReportMarkdown(report))
   return report
 }

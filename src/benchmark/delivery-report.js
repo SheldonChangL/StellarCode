@@ -5,7 +5,7 @@ import path from 'node:path'
 import { readJsonl } from './report.js'
 import { DELIVERY_MODES } from './delivery.js'
 
-const finite = values => values.map(Number).filter(Number.isFinite)
+const finite = values => values.filter(v => v != null && v !== '').map(Number).filter(Number.isFinite)
 function median(values) {
   const sorted = finite(values).sort((a, b) => a - b)
   if (!sorted.length) return null
