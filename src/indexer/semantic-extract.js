@@ -7,6 +7,8 @@
 // later, over the whole index, by semantic-resolve.js. A shape that is not recognized
 // produces no fact; nothing here guesses.
 
+import { matchBracket, functionBodyOpen } from './js-ranges.js'
+
 const JS_IDENT = '[A-Za-z_$][\\w$]*'
 const PY_IDENT = '[A-Za-z_]\\w*'
 const JS_KEYWORDS = new Set(['if','for','while','switch','catch','function','return','typeof','instanceof','new','delete','void','await','yield','import','require','super','in','of','do','else','try','with','case','throw','constructor','get','set','static','async','class','extends','export','default','const','let','var'])
@@ -23,20 +25,7 @@ function lineIndex(text) {
   }
 }
 
-// Index of the bracket that closes the one at `open` ((), {} or []), or -1.
-export function matchBracket(masked, open) {
-  const pairs = { '(': ')', '{': '}', '[': ']' }
-  const stack = []
-  for (let i = open; i < masked.length; i++) {
-    const c = masked[i]
-    if (pairs[c]) stack.push(pairs[c])
-    else if (c === ')' || c === '}' || c === ']') {
-      if (stack.pop() !== c) return -1
-      if (!stack.length) return i
-    }
-  }
-  return -1
-}
+export { matchBracket }
 
 function splitTopLevel(text, separator = ',') {
   const parts = []
@@ -261,9 +250,9 @@ function jsExtraSymbols(masked, text, symbols, lineStart, lineOf, file) {
         // Class method whose parameter list the v0.5 scanner cannot read (object types, defaults).
         const parenOpen = i + m[0].length - 1
         const parenClose = matchBracket(masked, parenOpen)
-        const tail = parenClose > 0 ? masked.slice(parenClose + 1, parenClose + 300).match(/^\s*(?::\s*[^{;=]+)?\{/) : null
-        if (tail) {
-          const brace = parenClose + tail[0].length
+        // Structural body lookup: a return type may itself contain `{` (`Promise<{ id }>`).
+        const brace = parenClose > 0 ? functionBodyOpen(masked, parenOpen) : -1
+        if (brace >= 0 && brace - parenClose < 300) {
           const end = matchBracket(masked, brace)
           if (end > 0) { add(`${owner}.${m[1]}`, m[1], i, end, exported); i = end; continue }
         }
@@ -642,6 +631,9 @@ function extractPython({ text, symbols }) {
       addLocal(facts.locals, scopes.scopeOf(symbol.startLine, symbol.name), symbol.name)
       // Call-form decorators directly above a def register that function.
       for (let n = symbol.startLine - 1; n >= 1; n--) {
+        // A multi-line decorator `@router.post(\n  "/x",\n)`: continuation lines start
+        // inside its brackets; walk up to the line that opens it.
+        if (depthAtLine[n] > 0) continue
         const d = (lines[n - 1] ?? '').match(/^\s*@([\w.]+)\s*(\()?/)
         if (!d) break
         if (d[2]) facts.decorators.push({ target: symbol.qualifiedName, expression: d[1], line: n })
