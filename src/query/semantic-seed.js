@@ -9,6 +9,20 @@
 // never degree), so a hub symbol cannot win on edge count.
 
 import { CONFIDENCE_VALUE } from '../indexer/semantic-resolve.js'
+import { termCoverage } from './precision.js'
+// Code evidence only: string literals, comments and JSX/HTML text describe the UI, not
+// the behavior (a page component's labels restate every domain word of a query).
+export function codeOnly(text) {
+  return String(text)
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/(^|[^:])\/\/[^\n]*/g, '$1 ')
+    .replace(/(^|\s)#[^\n]*/g, '$1 ')
+    .replace(/("""|''')[\s\S]*?\1/g, ' ')
+    .replace(/`(?:\\.|[^`\\])*`/g, ' ')
+    .replace(/"(?:\\.|[^"\\\n])*"/g, ' ')
+    .replace(/'(?:\\.|[^'\\\n])*'/g, ' ')
+    .replace(/>[^<>{}]*</g, '><')
+}
 
 const EXECUTABLE_KINDS = new Set(['function', 'method'])
 const DECLARATION_KINDS = new Set(['interface', 'type', 'enum'])
@@ -19,6 +33,8 @@ const SIMILAR_SEED_RATIO = 0.85
 const EDGE_TIE_BREAK = 1.1
 // Lexical candidates considered: the context targets plus the top lexical files.
 export const SEED_POOL_FILES = 20
+// Bodies longer than this are discounted by sqrt(SEED_SPAN_LINES / span), at most 2x.
+const SEED_SPAN_LINES = 80
 
 // Executable = has a body that runs: functions, methods (not interface member
 // signatures), and function-valued constants. Declaration-only = types, interfaces,
@@ -64,7 +80,7 @@ function symbolIdFor(db, path, symbol) {
 
 // candidates: [{ path, fileScore, ranked: [{ symbol, score }], ownSymbols }] in lexical
 // file order (fileScore is informational). Returns { seeds, considered } where each seed carries its reason.
-export function selectSemanticSeeds(db, { role, candidates }) {
+export function selectSemanticSeeds(db, { role, candidates, terms = [], weights = new Map() }) {
   const limit = SEED_LIMITS[role] ?? 2
   const pool = []
   for (const candidate of candidates) {
@@ -80,8 +96,23 @@ export function selectSemanticSeeds(db, { role, candidates }) {
       // Existing lexical relevance of the symbol (rankFileSymbols: name, body terms, used
       // bindings, kind). File rank already admitted the file to the pool; multiplying by
       // it again would hand the seed back to the lexical top file.
-      const lexical = Math.max(0, entry.score)
-      pool.push({ path: candidate.path, symbol, symbolId: row.symbol_id, nature, suitability, lexical })
+      // Seed relevance: weighted coverage of *distinct* query terms in the symbol's name
+      // and code (strings, comments and UI text excluded), name terms counted twice. A
+      // short helper whose name repeats one query word no longer outranks the function
+      // that does the described behavior. The in-file lexical score still gates
+      // eligibility (it must be > 0); long bodies are discounted gently.
+      let lexical = 0
+      if (entry.score > 0) {
+        const name = termCoverage(String(symbol.name ?? ''), terms, weights)
+        const body = candidate.lines ? candidate.lines.slice(Number(symbol.start_line) - 1, Number(symbol.end_line)).join('\n') : ''
+        const code = body ? termCoverage(codeOnly(body), terms, weights).matched : (entry.bodyTerms ?? [])
+        let covered = 0
+        for (const term of new Set([...name.matched, ...code])) covered += weights.get(term) ?? 1
+        const span = Math.max(1, Number(symbol.end_line) - Number(symbol.start_line) + 1)
+        const spanFactor = span > SEED_SPAN_LINES ? Math.max(0.5, Math.sqrt(SEED_SPAN_LINES / span)) : 1
+        lexical = (covered + name.covered) * spanFactor
+      }
+      pool.push({ path: candidate.path, symbol, symbolId: row.symbol_id, nature, suitability, lexical, nameScore: entry.nameScore ?? 0, bodyTerms: entry.bodyTerms ?? [], span: entry.span ?? null })
     }
   }
   const eligible = pool.filter(p => p.suitability > 0 && p.lexical > 0)
@@ -104,7 +135,8 @@ export function selectSemanticSeeds(db, { role, candidates }) {
     considered: pool.length,
     candidateKeys: pool.map(p => `${p.path}#${p.symbol.qualified_name}`),
     candidatePaths: [...new Set(candidates.map(c => c.path))],
-    ranking: eligible.slice(0, 8).map(p => ({ key: `${p.path}#${p.symbol.qualified_name}`, score: Number(p.score.toFixed(2)), lexical: Number(p.lexical.toFixed(2)), evidence: p.semanticEvidence })),
+    ranking: eligible.map(p => ({ key: `${p.path}#${p.symbol.qualified_name}`, score: Number(p.score.toFixed(2)), name: Number(p.nameScore.toFixed(2)), body: p.bodyTerms, span: p.span, evidence: p.semanticEvidence })),
+    ineligible: pool.filter(p => p.suitability === 0).map(p => `${p.path}#${p.symbol.qualified_name}:${p.nature}`),
     excludedDeclarations: pool.filter(p => p.suitability === 0).length
   }
 }

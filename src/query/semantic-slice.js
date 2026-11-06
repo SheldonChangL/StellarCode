@@ -28,7 +28,9 @@ export const SLICE_PLANS = {
       { direction: 'incoming', relations: ['REGISTERS'], depth: 1 },
       // v0.6.1: a seed is often the step that does the work (a service method); the
       // entry side of the flow is its caller's caller (route -> controller -> service).
-      { direction: 'incoming', relations: ['CALLS', 'REGISTERS'], depth: 2, onlyUnique: true }
+      // A shared step has many callers; keep the two most query-relevant per node instead of
+      // dropping every caller of a node with more than one (the v0.6 `onlyUnique` rule).
+      { direction: 'incoming', relations: ['CALLS', 'REGISTERS'], depth: 2, maxFanIn: 2 }
     ]
   },
   impact: {
@@ -45,10 +47,18 @@ export const SLICE_PLANS = {
   }
 }
 
-// v0.6.1 route variant. Every seed shares one edge budget, so more seeds never means
-// more edges. Navigation keeps its incoming-only plan (callees stay hints, v0.5.4 rule);
-// the seed role only decides which symbol the slice starts from.
+// v0.6.1 route variants. Every seed shares one edge budget, so more seeds never means
+// more edges.
 export const ROUTE_PLANS = {
+  // "Where is X computed?": callers are grounded as before; the owner's callees are
+  // reported as relations only (no source), so they stay hints (v0.5.4 rule). Same budget.
+  'navigation-behavior': {
+    maxEdges: 3,
+    steps: [
+      { direction: 'incoming', relations: ['CALLS', 'REGISTERS'], depth: 1 },
+      { direction: 'outgoing', relations: ['CALLS'], depth: 1, ground: false }
+    ]
+  },
   // No decisive intent evidence: a small mixed-direction slice instead of guessing a
   // single direction (it is not "every direction": depth 1, 4 edges).
   mixed: {
@@ -62,6 +72,7 @@ export const ROUTE_PLANS = {
 
 export function slicePlanFor(intent, { seedRole = null, intentConfidence = null } = {}) {
   if (intentConfidence === 'low') return { name: 'mixed', ...ROUTE_PLANS.mixed }
+  if (intent === 'navigation' && seedRole === 'behavior') return { name: 'navigation-behavior', ...ROUTE_PLANS['navigation-behavior'] }
   const name = SLICE_PLANS[intent] ? intent : 'navigation'
   return { name, ...SLICE_PLANS[name] }
 }
@@ -149,14 +160,28 @@ export function semanticSlice(db, { intent, targets, terms = [], weights = new M
           for (const row of rows) byTarget.set(row.target_id, (byTarget.get(row.target_id) ?? 0) + 1)
           rows = rows.filter(row => byTarget.get(row.target_id) === 1)
         }
+        if (step.maxFanIn && direction === 'incoming') {
+          const byTarget = new Map()
+          for (const row of rows) { if (!byTarget.has(row.target_id)) byTarget.set(row.target_id, []); byTarget.get(row.target_id).push(row) }
+          rows = []
+          for (const group of byTarget.values()) {
+            const ranked = group.map(row => {
+              const caller = endpoint(db, row.source_id)
+              return { row, test: Boolean(caller?.isTest), relevance: caller ? weightedScore(`${caller.symbol ?? ''} ${caller.path}`, terms, weights) : 0, key: caller ? `${caller.path}#${caller.symbol ?? ''}` : row.source_id }
+            }).filter(c => !c.test).sort((a, b) => b.relevance - a.relevance || a.key.localeCompare(b.key))
+            rows.push(...ranked.slice(0, step.maxFanIn).map(c => c.row))
+          }
+        }
         for (const row of rows) {
           const neighborId = direction === 'outgoing' ? row.target_id : row.source_id
           // An edge inside one seed container (a class method calling its sibling) adds
           // nothing; an edge between two different targets is the chain itself and stays.
           const anchorId = direction === 'outgoing' ? row.source_id : row.target_id
-          if (seedSet.has(neighborId) && seedSet.has(anchorId) && seeds.get(neighborId)?.path === seeds.get(anchorId)?.path) continue
+          // Two distinct explicit seeds (different origins) linked by an edge are the chain
+          // itself and stay, even in one file.
+          if (seedSet.has(neighborId) && seedSet.has(anchorId) && seeds.get(neighborId)?.path === seeds.get(anchorId)?.path && seeds.get(neighborId)?.origin === seeds.get(anchorId)?.origin) continue
           const origin = originOf.get(anchorId) ?? 0
-          candidates.push({ ...row, depth, neighborId, origin })
+          candidates.push({ ...row, depth, neighborId, origin, ground: step.ground !== false })
           if (!visited.has(neighborId)) { visited.add(neighborId); originOf.set(neighborId, origin); next.push(neighborId) }
         }
       }
@@ -164,12 +189,12 @@ export function semanticSlice(db, { intent, targets, terms = [], weights = new M
     }
   }
 
-  // Fan-in of a callee: a helper called from everywhere (error builders, loggers)
+  // Fan-in of a callee or consumed symbol: a helper used from everywhere (error builders, loggers, db)
   // says little about this behavior. Continuation: a neighbor that itself leads
   // further along the returned chain is worth more than a leaf.
   const fanIn = new Map()
   const fanInOf = id => {
-    if (!fanIn.has(id)) fanIn.set(id, db.prepare(`SELECT COUNT(DISTINCT source_id) c FROM edges WHERE target_id=? AND edge_type='CALLS'`).get(id).c)
+    if (!fanIn.has(id)) fanIn.set(id, db.prepare(`SELECT COUNT(DISTINCT source_id) c FROM edges WHERE target_id=? AND edge_type IN ('CALLS','CONSUMES')`).get(id).c)
     return fanIn.get(id)
   }
   const continues = new Set(candidates.filter(c => c.direction === 'outgoing' && c.depth > 1).map(c => c.source_id))
@@ -186,13 +211,18 @@ export function semanticSlice(db, { intent, targets, terms = [], weights = new M
     const anchor = candidate.direction === 'outgoing' ? from : to
     if (neighbor.isTest) continue
     const crossFile = neighbor.path !== anchor.path
-    const neighborIsSeed = seedSet.has(candidate.neighborId)
+    // A neighbor that is a member of the same seed (container expansion) is already
+    // grounded; a link to a different seed connects two starting points and is not penalized.
+    const anchorId = candidate.direction === 'outgoing' ? candidate.source_id : candidate.target_id
+    const neighborIsSeed = seedSet.has(candidate.neighborId) && (!seedSet.has(anchorId) || seeds.get(candidate.neighborId)?.origin === seeds.get(anchorId)?.origin)
     const relevance = weightedScore(`${neighbor.symbol ?? ''} ${neighbor.path}`, terms, weights)
     // Structure decides the order: confidence, depth, cross-file; lexical relevance only breaks ties.
     // Impact asks who must change with the target: callers and consumers first,
     // implementations of a contract after them.
     const relationWeight = intent === 'impact' && candidate.edge_type === 'IMPLEMENTS' ? -12 : 0
-    const utility = candidate.direction === 'outgoing' && candidate.edge_type === 'CALLS' ? Math.min(24, Math.max(0, Math.log2(fanInOf(candidate.target_id)) - 1) * 6) : 0
+    // Shared infrastructure (a db handle, a schema table) consumed everywhere is the
+    // CONSUMES counterpart of a helper called everywhere: same fan-in discount.
+    const utility = candidate.direction === 'outgoing' && (candidate.edge_type === 'CALLS' || candidate.edge_type === 'CONSUMES') ? Math.min(24, Math.max(0, Math.log2(fanInOf(candidate.target_id)) - 1) * 6) : 0
     const continuation = candidate.direction === 'outgoing' && continues.has(candidate.target_id) ? 12 : 0
     const depthCost = intent === 'flow' ? 10 : 20
     // The first target is the behavior owner; later targets are alternatives.
@@ -216,8 +246,13 @@ export function semanticSlice(db, { intent, targets, terms = [], weights = new M
   const ground = []
   const grounded = new Set()
   for (const { candidate, neighbor } of chosen) {
-    // A seed is grounded by the caller (as a target or as the slice's starting range).
-    if (seedSet.has(candidate.neighborId)) continue
+    // A seed is grounded by the caller (as a target or as the slice's starting range),
+    // unless this edge links it from a different seed: then the edge grounds it, so the
+    // relation ("X used in Y") travels with the source.
+    const linkAnchor = candidate.direction === 'outgoing' ? candidate.source_id : candidate.target_id
+    if (seedSet.has(candidate.neighborId) && seeds.get(candidate.neighborId)?.origin === seeds.get(linkAnchor)?.origin) continue
+    // Relation-only steps (navigation callees) never attach source.
+    if (!candidate.ground) continue
     const evidenceLine = Number(candidate.metadata.line ?? 0)
     let lines
     if (candidate.direction === 'incoming' && evidenceLine) {

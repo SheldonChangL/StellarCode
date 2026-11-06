@@ -605,8 +605,8 @@ export async function contextForTask(projectPath, task, options = {}) {
         for(const target of targets)addPool(rankedById.get(target.path)??values.find(v=>v.file.path===target.path))
         for(const v of lexicalPool.slice(0,SEED_POOL_FILES))addPool(v)
         const candidates=[]
-        for(const v of pool) candidates.push({path:v.file.path,fileScore:Number(v.score??0),ranked:(await chooseSymbols(v)).ranked,ownSymbols:v.ownSymbols})
-        const selection=selectSemanticSeeds(db,{role:intentDetail.seedRole,candidates})
+        for(const v of pool) {const choice=await chooseSymbols(v);candidates.push({path:v.file.path,fileScore:Number(v.score??0),ranked:choice.ranked,lines:choice.lines,ownSymbols:v.ownSymbols})}
+        const selection=selectSemanticSeeds(db,{role:intentDetail.seedRole,candidates,terms:qTokens,weights})
         seeds=selection.seeds
         if(options.semanticTrace)seedTrace={pool:candidates.map(c=>`${c.path} ${c.fileScore.toFixed(1)}`),candidateKeys:selection.candidateKeys,candidatePaths:selection.candidatePaths,ranking:selection.ranking}
         // Fallback when no candidate passes the role filter: lexical targets that the role
@@ -723,6 +723,7 @@ export async function contextForTask(projectPath, task, options = {}) {
         // A seed that is not already a target range is grounded as the slice's start.
         for(const seed of seeds) {
           if(targets.some(t=>t.path===seed.path&&t.lines&&t.lines[0]<=seed.lines[1]&&seed.lines[0]<=t.lines[1]))continue
+          if(slice.ground.some(item=>item.path===seed.path&&item.symbol===seed.symbol))continue
           requests.push({entry:{path:seed.path,symbol:seed.symbol,lines:seed.lines,relation:'semantic-seed',direction:'seed',semantic:{relation:'SEED',role:intentDetail.seedRole},reason:`semantic slice starts at ${seed.symbol} (${intentDetail.seedRole})`},range:seed.lines,cap:80,weight:1.2,minLines:3,evidence:true,semantic:true})
         }
         for(const item of slice.ground) {

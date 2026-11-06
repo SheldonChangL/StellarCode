@@ -159,8 +159,11 @@ test('v0.6.1 ambiguous intent uses a small mixed slice, never every direction', 
   assert.ok(plan.steps.every(step => step.depth === 1))
   assert.equal(classifyIntent('What uses Config?').intentConfidence, 'high')
   assert.equal(slicePlanFor('impact', classifyIntent('What uses Config?')).name, 'impact')
-  // Navigation keeps its incoming-only budget (callees stay hints).
-  assert.deepEqual(slicePlanFor('navigation', classifyIntent('Where is Config validation performed?')).steps.map(s => s.direction), ['incoming'])
+  // Navigation keeps its 3-edge budget; behavior callees are relations only, never grounded.
+  const nav = slicePlanFor('navigation', classifyIntent('Where is Config validation performed?'))
+  assert.equal(nav.maxEdges, SLICE_PLANS.navigation.maxEdges)
+  assert.ok(nav.steps.filter(s => s.direction === 'outgoing').every(s => s.ground === false))
+  assert.deepEqual(slicePlanFor('navigation', classifyIntent('Where is Config defined?')).steps.map(s => s.direction), ['incoming'])
 })
 
 // ------------------------------------------------------------------ funnel + leakage
