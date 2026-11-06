@@ -1,0 +1,2067 @@
+{
+ "parser": {
+  "audit-orders": {
+   "summary": {
+    "tasks": 12,
+    "tasksWithSemanticEdges": 2,
+    "annotatedTasks": 8,
+    "requiredEdges": 16,
+    "requiredEdgeRecallContext": 0,
+    "requiredEdgeRecallIndex": 1,
+    "expectedFileGroundingRate": 0.03333333333333333,
+    "funnel": {
+     "requiredEdgeCount": 16,
+     "indexedRequiredEdgeCount": 16,
+     "seedReachableRequiredEdgeCount": 1,
+     "admittedRequiredEdgeCount": 0,
+     "returnedRequiredEdgeCount": 0,
+     "indexRecall": 1,
+     "seedReachabilityRecall": 0.0625,
+     "admissionRecall": 0,
+     "routingRecall": 0,
+     "contextRecall": 0
+    },
+    "intentAgreement": "9/12",
+    "topTargetCorrect": "0/12",
+    "seedContainsExpectedFile": "0/12",
+    "medianSourceBytes": 1643
+   },
+   "tasks": [
+    {
+     "taskId": "nav-meter-rollover-energy",
+     "category": "navigation",
+     "intent": "navigation",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/models/interfaces/IPoint.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 1,
+     "requiredEdgesIndexed": 1,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 0,
+     "sourceBytes": 1578,
+     "missingRequiredEdges": [
+      "src/services/audit.service.ts#AuditService._calculateEnergyUsage|CALLS|src/services/audit.service.ts#AuditService._findClosestPowersOfTwo"
+     ]
+    },
+    {
+     "taskId": "nav-bearer-token-identity",
+     "category": "navigation",
+     "intent": "navigation",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/models/interfaces/Common.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 1,
+     "requiredEdgesIndexed": 1,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 2,
+     "sourceBytes": 2677,
+     "missingRequiredEdges": [
+      "src/middlewares/deserializeUser.ts#deserializeUser|CALLS|src/utils/jwt.ts#verifyJwt"
+     ]
+    },
+    {
+     "taskId": "nav-incoming-file-disk-name",
+     "category": "navigation",
+     "intent": "navigation",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/models/interfaces/IEmailVerify.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 0,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 0,
+     "sourceBytes": 967,
+     "missingRequiredEdges": []
+    },
+    {
+     "taskId": "flow-reconcile-to-history-record",
+     "category": "flow",
+     "intent": "flow",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/models/interfaces/IInvoiceRecord.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 3,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 0,
+     "sourceBytes": 1989,
+     "missingRequiredEdges": [
+      "src/routes/audit.route.ts#AuditRoute.setRoutes|CALLS|src/controllers/audit.controller.ts#AuditController.audit",
+      "src/controllers/audit.controller.ts#AuditController.audit|CALLS|src/services/audit.service.ts#AuditService.audit",
+      "src/services/audit.service.ts#AuditService.audit|CALLS|src/services/audit.service.ts#AuditService._createAuditRecord"
+     ]
+    },
+    {
+     "taskId": "flow-invalid-token-rejected",
+     "category": "flow",
+     "intent": "flow",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/models/interfaces/IInvoice.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 2,
+     "requiredEdgesIndexed": 2,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 1,
+     "sourceBytes": 1352,
+     "missingRequiredEdges": [
+      "src/middlewares/deserializeUser.ts#deserializeUser|CALLS|src/utils/jwt.ts#verifyJwt",
+      "src/routes/audit.route.ts#AuditRoute.setRoutes|REGISTERS|src/middlewares/requireUser.ts#requireUser"
+     ]
+    },
+    {
+     "taskId": "flow-monthly-report-email",
+     "category": "flow",
+     "intent": "flow",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/models/interfaces/IPoint.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 3,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 0,
+     "sourceBytes": 2227,
+     "missingRequiredEdges": [
+      "src/routes/audit.route.ts#AuditRoute.setRoutes|CALLS|src/controllers/audit.controller.ts#AuditController.monthAudit",
+      "src/controllers/audit.controller.ts#AuditController.monthAudit|CALLS|src/services/audit.service.ts#AuditService.monthAudit",
+      "src/services/audit.service.ts#AuditService.monthAudit|CALLS|src/services/audit.service.ts#AuditService.sendEmail"
+     ]
+    },
+    {
+     "taskId": "impact-token-verify-throws",
+     "category": "impact",
+     "intent": "impact",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/models/interfaces/ICustomer.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 1,
+     "requiredEdgesIndexed": 1,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 0,
+     "sourceBytes": 1504,
+     "missingRequiredEdges": [
+      "src/middlewares/deserializeUser.ts#deserializeUser|CALLS|src/utils/jwt.ts#verifyJwt"
+     ]
+    },
+    {
+     "taskId": "impact-schema-check-decorator",
+     "category": "impact",
+     "intent": "impact",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/models/interfaces/IOrder.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 3,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 0,
+     "sourceBytes": 1754,
+     "missingRequiredEdges": [
+      "src/controllers/audit.controller.ts#AuditController.audit|CALLS|src/services/audit.service.ts#AuditService.audit",
+      "src/controllers/audit.controller.ts#AuditController.monthAudit|CALLS|src/services/audit.service.ts#AuditService.monthAudit",
+      "src/controllers/audit.controller.ts#AuditController.list|CALLS|src/services/audit.service.ts#AuditService.list"
+     ]
+    },
+    {
+     "taskId": "impact-history-record-columns",
+     "category": "impact",
+     "intent": "navigation",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/models/interfaces/IPointModel.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 0,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 0,
+     "sourceBytes": 1092,
+     "missingRequiredEdges": []
+    },
+    {
+     "taskId": "edit-history-list-date-filter",
+     "category": "editing-prep",
+     "intent": "navigation",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/models/interfaces/Common.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 0,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 0,
+     "sourceBytes": 1573,
+     "missingRequiredEdges": []
+    },
+    {
+     "taskId": "edit-storage-dir-configurable",
+     "category": "editing-prep",
+     "intent": "navigation",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/index.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 0,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 0,
+     "sourceBytes": 2297,
+     "missingRequiredEdges": []
+    },
+    {
+     "taskId": "edit-owner-only-history-delete",
+     "category": "editing-prep",
+     "intent": "editing-prep",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/models/interfaces/IUser.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 2,
+     "requiredEdgesIndexed": 2,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 1,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 0,
+     "sourceBytes": 1643,
+     "missingRequiredEdges": [
+      "src/routes/audit.route.ts#AuditRoute.setRoutes|CALLS|src/controllers/audit.controller.ts#AuditController.delete",
+      "src/controllers/audit.controller.ts#AuditController.delete|CALLS|src/services/audit.service.ts#AuditService.delete"
+     ]
+    }
+   ]
+  },
+  "jetbook": {
+   "summary": {
+    "tasks": 12,
+    "tasksWithSemanticEdges": 12,
+    "annotatedTasks": 9,
+    "requiredEdges": 26,
+    "requiredEdgeRecallContext": 0.07692307692307693,
+    "requiredEdgeRecallIndex": 0.8846153846153846,
+    "expectedFileGroundingRate": 0.4411764705882353,
+    "funnel": {
+     "requiredEdgeCount": 26,
+     "indexedRequiredEdgeCount": 23,
+     "seedReachableRequiredEdgeCount": 12,
+     "admittedRequiredEdgeCount": 4,
+     "returnedRequiredEdgeCount": 2,
+     "indexRecall": 0.8846,
+     "seedReachabilityRecall": 0.5217,
+     "admissionRecall": 0.3333,
+     "routingRecall": 0.087,
+     "contextRecall": 0.0769
+    },
+    "intentAgreement": "5/12",
+    "topTargetCorrect": "5/12",
+    "seedContainsExpectedFile": "0/12",
+    "medianSourceBytes": 9476
+   },
+   "tasks": [
+    {
+     "taskId": "nav-login-lockout-duration",
+     "category": "navigation",
+     "intent": "navigation",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/lib/auth/password.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 1,
+     "requiredEdgesIndexed": 1,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 1,
+     "sourceBytes": 3464,
+     "missingRequiredEdges": [
+      "src/lib/auth/throttle.ts#recordLoginFailure|CALLS|src/lib/auth/throttle.ts#lockDurationMs"
+     ]
+    },
+    {
+     "taskId": "nav-image-import-blocked-addresses",
+     "category": "navigation",
+     "intent": "navigation",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/actions/page.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 0,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 3,
+     "sourceBytes": 7329,
+     "missingRequiredEdges": []
+    },
+    {
+     "taskId": "nav-editor-autosave-delay",
+     "category": "navigation",
+     "intent": "editing-prep",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/actions/lock.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 0,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 6,
+     "sourceBytes": 5650,
+     "missingRequiredEdges": []
+    },
+    {
+     "taskId": "flow-comment-reply-email",
+     "category": "flow",
+     "intent": "flow",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/app/(app)/s/[spaceSlug]/[pageSlug]/comments-panel.tsx",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 4,
+     "requiredEdgesIndexed": 4,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 6,
+     "sourceBytes": 10008,
+     "missingRequiredEdges": [
+      "src/actions/comment.ts#replyComment|CALLS|src/lib/notifications.ts#notifyCommentReply",
+      "src/lib/notifications.ts#notifyCommentReply|CALLS|src/lib/notifications.ts#notify",
+      "src/lib/notifications.ts#notify|CALLS|src/lib/notifications-email.ts#mirrorNotificationEmail",
+      "src/lib/notifications-email.ts#mirrorNotificationEmail|CALLS|src/lib/jobs/queue.ts#enqueueNotificationEmail"
+     ]
+    },
+    {
+     "taskId": "flow-api-update-archived-space-refused",
+     "category": "flow",
+     "intent": "flow",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/actions/space.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 3,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 6,
+     "sourceBytes": 9567,
+     "missingRequiredEdges": [
+      "src/app/api/v1/pages/[id]/route.ts#PATCH|CALLS|src/lib/api/page-write.ts#apiUpdatePage",
+      "src/lib/api/page-write.ts#apiUpdatePage|CALLS|src/lib/authz/permission.ts#can",
+      "src/lib/authz/permission.ts#can|CALLS|src/lib/authz/policy.ts#actionAllowedWhenArchived"
+     ]
+    },
+    {
+     "taskId": "flow-autosave-version-conflict",
+     "category": "flow",
+     "intent": "flow",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/lib/pages/errors.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 2,
+     "requiredEdgesIndexed": 2,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 2,
+     "requiredEdgesAdmitted": 1,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 6,
+     "sourceBytes": 9685,
+     "missingRequiredEdges": [
+      "src/components/editor/page-editor.tsx#PageEditor|CALLS|src/actions/page.ts#savePage",
+      "src/actions/page.ts#savePage|CALLS|src/lib/pages/content-write.ts#writePageContentTx"
+     ]
+    },
+    {
+     "taskId": "impact-content-write-pipeline-signature",
+     "category": "impact",
+     "intent": "editing-prep",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/actions/page.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 5,
+     "requiredEdgesIndexed": 4,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 4,
+     "requiredEdgesAdmitted": 1,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 6,
+     "sourceBytes": 9487,
+     "missingRequiredEdges": [
+      "src/actions/page.ts#savePage|CALLS|src/lib/pages/content-write.ts#writePageContentTx",
+      "src/lib/api/page-write.ts#apiUpdatePage|CALLS|src/lib/pages/content-write.ts#writePageContentTx",
+      "src/lib/api/page-write.ts#apiCreatePage|CALLS|src/lib/pages/content-write.ts#writePageContentTx",
+      "src/lib/pages/cross-space.ts#copyPageSubtreeToSpace|CALLS|src/lib/pages/content-write.ts#writePageContentTx",
+      "src/lib/jobs/import-zip.ts#runImportZip|CALLS|src/lib/pages/content-write.ts#writePageContentTx"
+     ]
+    },
+    {
+     "taskId": "impact-verified-token-id-field",
+     "category": "impact",
+     "intent": "editing-prep",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/lib/api-tokens/bearer.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 4,
+     "requiredEdgesIndexed": 3,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 3,
+     "requiredEdgesAdmitted": 2,
+     "requiredEdgesReturned": 2,
+     "semanticEdges": 3,
+     "sourceBytes": 5631,
+     "missingRequiredEdges": [
+      "src/lib/api-tokens/bearer.ts#requireApiAuth|CALLS|src/lib/api-tokens/index.ts#verifyApiToken",
+      "src/lib/api-tokens/bearer.ts#ApiAuthResult|CONSUMES|src/lib/api-tokens/index.ts#VerifiedApiToken"
+     ]
+    },
+    {
+     "taskId": "impact-save-action-return-shape",
+     "category": "impact",
+     "intent": "navigation",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/actions/page.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 2,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 2,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 2,
+     "sourceBytes": 5558,
+     "missingRequiredEdges": [
+      "src/components/editor/page-editor.tsx#PageEditor|CALLS|src/actions/page.ts#savePage",
+      "src/actions/page.ts#restorePageVersion|CALLS|src/actions/page.ts#savePage",
+      "src/app/(app)/s/[spaceSlug]/[pageSlug]/history/restore-version-button.tsx#RestoreVersionButton|CALLS|src/actions/page.ts#restorePageVersion"
+     ]
+    },
+    {
+     "taskId": "edit-api-update-page-icon",
+     "category": "editing-prep",
+     "intent": "navigation",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/actions/page.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 1,
+     "requiredEdgesIndexed": 1,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 3,
+     "sourceBytes": 6276,
+     "missingRequiredEdges": [
+      "src/app/api/v1/pages/[id]/route.ts#PATCH|CALLS|src/lib/api/page-write.ts#apiUpdatePage"
+     ]
+    },
+    {
+     "taskId": "edit-moderators-edit-comments",
+     "category": "editing-prep",
+     "intent": "navigation",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/app/(app)/s/[spaceSlug]/[pageSlug]/history/version-sidebar.tsx",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 0,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 3,
+     "sourceBytes": 9688,
+     "missingRequiredEdges": []
+    },
+    {
+     "taskId": "edit-separate-move-permission",
+     "category": "editing-prep",
+     "intent": "navigation",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "src/actions/page.ts",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 3,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 1,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 3,
+     "sourceBytes": 9476,
+     "missingRequiredEdges": [
+      "src/lib/api/page-write.ts#apiMovePage|CALLS|src/lib/authz/permission.ts#can",
+      "src/actions/page.ts#movePageToSpace|CALLS|src/lib/authz/permission.ts#assertCan",
+      "src/lib/authz/permission.ts#can|CALLS|src/lib/authz/policy.ts#actionAllowedForRole"
+     ]
+    }
+   ]
+  },
+  "redmine-ai-agent": {
+   "summary": {
+    "tasks": 12,
+    "tasksWithSemanticEdges": 11,
+    "annotatedTasks": 11,
+    "requiredEdges": 32,
+    "requiredEdgeRecallContext": 0.125,
+    "requiredEdgeRecallIndex": 0.59375,
+    "expectedFileGroundingRate": 0.37037037037037035,
+    "funnel": {
+     "requiredEdgeCount": 32,
+     "indexedRequiredEdgeCount": 19,
+     "seedReachableRequiredEdgeCount": 7,
+     "admittedRequiredEdgeCount": 4,
+     "returnedRequiredEdgeCount": 4,
+     "indexRecall": 0.5938,
+     "seedReachabilityRecall": 0.3684,
+     "admissionRecall": 0.5714,
+     "routingRecall": 0.2105,
+     "contextRecall": 0.125
+    },
+    "intentAgreement": "9/12",
+    "topTargetCorrect": "5/12",
+    "seedContainsExpectedFile": "0/12",
+    "medianSourceBytes": 4888
+   },
+   "tasks": [
+    {
+     "taskId": "nav-per-user-redmine-throttle",
+     "category": "navigation",
+     "intent": "navigation",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "backend/app/redmine_client.py",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 2,
+     "requiredEdgesIndexed": 2,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 1,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 3,
+     "sourceBytes": 4888,
+     "missingRequiredEdges": [
+      "backend/app/redmine_client.py#RedmineClient._request|CALLS|backend/app/redmine_client.py#RedmineClient._bucket",
+      "backend/app/redmine_client.py#TokenBucket.acquire|CALLS|backend/app/redmine_client.py#TokenBucket._refill"
+     ]
+    },
+    {
+     "taskId": "nav-nda-ticket-llm-guard",
+     "category": "navigation",
+     "intent": "navigation",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "backend/primitives/write_update_issue.py",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 3,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 2,
+     "sourceBytes": 3252,
+     "missingRequiredEdges": [
+      "backend/primitives/confidential.py#is_bypassed|CALLS|backend/primitives/confidential.py#is_confidential",
+      "backend/primitives/confidential.py#is_bypassed|CALLS|backend/primitives/confidential.py#is_llm_primitive",
+      "backend/primitives/confidential.py#enforce|CALLS|backend/primitives/confidential.py#is_bypassed"
+     ]
+    },
+    {
+     "taskId": "nav-free-text-to-issue-filters",
+     "category": "navigation",
+     "intent": "navigation",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "backend/primitives/write_update_issue.py",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 2,
+     "requiredEdgesIndexed": 2,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 0,
+     "sourceBytes": 2873,
+     "missingRequiredEdges": [
+      "backend/orch/nl_query.py#nl_to_redmine_query|CALLS|backend/orch/nl_query.py#build_prompt",
+      "backend/orch/nl_query.py#nl_to_redmine_query|CALLS|backend/orch/nl_query.py#_parse"
+     ]
+    },
+    {
+     "taskId": "flow-approve-staged-batch-update",
+     "category": "flow",
+     "intent": "flow",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "backend/app/prb_checklist_export.py",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 4,
+     "requiredEdgesIndexed": 1,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 6,
+     "sourceBytes": 8804,
+     "missingRequiredEdges": [
+      "backend/app/confirm.py#confirm|CALLS|backend/previews/store.py#load_preview",
+      "backend/app/confirm.py#confirm|CALLS|backend/app/confirm.py#_execute_item",
+      "backend/app/confirm.py#_execute_item|CALLS|backend/primitives/write_update_issue.py#write_update_issue",
+      "backend/app/confirm.py#confirm|CALLS|backend/rollback/store.py#save_rollback_plan"
+     ]
+    },
+    {
+     "taskId": "flow-recurring-watch-notification",
+     "category": "flow",
+     "intent": "flow",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "backend/app/notifier.py",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 4,
+     "requiredEdgesIndexed": 3,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 1,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 4,
+     "sourceBytes": 8229,
+     "missingRequiredEdges": [
+      "backend/app/inspection_runner.py#InspectionScheduler.load_jobs|REGISTERS|backend/app/inspection_runner.py#run_inspection",
+      "backend/app/inspection_runner.py#run_inspection|CALLS|backend/app/inspection_runner.py#_query_redmine",
+      "backend/app/notifier.py#dispatch_notifications|CALLS|backend/app/notifier.py#_dispatch_one",
+      "backend/app/notifier.py#_dispatch_one|CALLS|backend/app/audit.py#audit_scope"
+     ]
+    },
+    {
+     "taskId": "flow-side-panel-message-intent",
+     "category": "flow",
+     "intent": "flow",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "extension/src/sidepanel/App.tsx",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 4,
+     "requiredEdgesIndexed": 2,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 1,
+     "sourceBytes": 3505,
+     "missingRequiredEdges": [
+      "backend/app/chat.py#chat|CALLS|backend/app/chat.py#_claim_run",
+      "backend/app/chat.py#_default_graph_factory|CALLS|backend/orch/graph.py#compile_graph",
+      "backend/orch/graph.py#build_graph|REGISTERS|backend/orch/graph.py#_classify_intent",
+      "backend/orch/graph.py#_classify_intent|CALLS|backend/orch/intent.py#classify_intent"
+     ]
+    },
+    {
+     "taskId": "impact-chat-run-slot-and-sse-helpers",
+     "category": "impact",
+     "intent": "editing-prep",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "backend/app/chat.py",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 2,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 5,
+     "sourceBytes": 4928,
+     "missingRequiredEdges": [
+      "backend/app/macros.py#run_macro|CALLS|backend/app/chat.py#_claim_run",
+      "backend/app/macros.py#run_macro|CALLS|backend/app/chat.py#_stream_events"
+     ]
+    },
+    {
+     "taskId": "impact-published-rule-loader-contract",
+     "category": "impact",
+     "intent": "navigation",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "backend/rules/engine.py",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 1,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 1,
+     "requiredEdgesAdmitted": 1,
+     "requiredEdgesReturned": 1,
+     "semanticEdges": 2,
+     "sourceBytes": 4209,
+     "missingRequiredEdges": [
+      "backend/orch/nodes/validate_before_transition.py#validate_before_transition|CALLS|backend/rules/engine.py#validate_required_fields",
+      "backend/orch/nodes/explain_ticket.py#explain_ticket|CONSUMES|backend/rules/engine.py#load_published_rules"
+     ]
+    },
+    {
+     "taskId": "impact-ticket-update-diff-helpers",
+     "category": "impact",
+     "intent": "editing-prep",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "backend/primitives/write_update_issue.py",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 3,
+     "sourceBytes": 7601,
+     "missingRequiredEdges": [
+      "backend/previews/builder.py#build_update_preview|CALLS|backend/primitives/write_update_issue.py#_build_updates",
+      "backend/previews/builder.py#build_update_preview|CALLS|backend/primitives/write_update_issue.py#_compute_diff",
+      "backend/previews/builder.py#_read_before|CALLS|backend/primitives/write_update_issue.py#_get_before"
+     ]
+    },
+    {
+     "taskId": "edit-redmine-api-key-secret-naming",
+     "category": "editing-prep",
+     "intent": "editing-prep",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "backend/secretstore/store.py",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 3,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 3,
+     "requiredEdgesAdmitted": 3,
+     "requiredEdgesReturned": 3,
+     "semanticEdges": 3,
+     "sourceBytes": 4231,
+     "missingRequiredEdges": []
+    },
+    {
+     "taskId": "edit-inference-reply-redis-key",
+     "category": "editing-prep",
+     "intent": "editing-prep",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "extension/src/sidepanel/PreviewCard.tsx",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 2,
+     "requiredEdgesIndexed": 2,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 1,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 3,
+     "sourceBytes": 3367,
+     "missingRequiredEdges": [
+      "backend/inference/client.py#infer|CALLS|backend/inference/client.py#result_key",
+      "backend/inference/worker.py#InferenceWorker._persist_result|CALLS|backend/inference/worker.py#result_key"
+     ]
+    },
+    {
+     "taskId": "edit-add-watch-delivery-channel",
+     "category": "editing-prep",
+     "intent": "editing-prep",
+     "seedRole": null,
+     "intentConfidence": null,
+     "lexicalTopPath": "backend/app/chat.py",
+     "semanticSeedPaths": [],
+     "semanticSeedKinds": [],
+     "seedCount": 0,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 0,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": null,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 5,
+     "sourceBytes": 8299,
+     "missingRequiredEdges": []
+    }
+   ]
+  }
+ },
+ "final": {
+  "audit-orders": {
+   "summary": {
+    "tasks": 12,
+    "tasksWithSemanticEdges": 11,
+    "annotatedTasks": 8,
+    "requiredEdges": 16,
+    "requiredEdgeRecallContext": 0.3125,
+    "requiredEdgeRecallIndex": 1,
+    "expectedFileGroundingRate": 0.5333333333333333,
+    "funnel": {
+     "requiredEdgeCount": 16,
+     "indexedRequiredEdgeCount": 16,
+     "candidatePoolRequiredEdgeCount": 12,
+     "candidatePoolFileRequiredEdgeCount": 12,
+     "seedReachableRequiredEdgeCount": 12,
+     "admittedRequiredEdgeCount": 8,
+     "returnedRequiredEdgeCount": 5,
+     "indexRecall": 1,
+     "candidatePoolRecall": 0.75,
+     "seedReachabilityRecall": 0.75,
+     "admissionRecall": 0.6667,
+     "routingRecall": 0.3125,
+     "contextRecall": 0.3125
+    },
+    "intentAgreement": "12/12",
+    "topTargetCorrect": "0/12",
+    "seedContainsExpectedFile": "9/12",
+    "medianSourceBytes": 4135
+   },
+   "tasks": [
+    {
+     "taskId": "nav-meter-rollover-energy",
+     "category": "navigation",
+     "intent": "navigation",
+     "seedRole": "behavior",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/models/interfaces/IPoint.ts",
+     "semanticSeedPaths": [
+      "src/services/audit.service.ts"
+     ],
+     "semanticSeedKinds": [
+      "method"
+     ],
+     "seedCount": 1,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 1,
+     "requiredEdgesIndexed": 1,
+     "requiredEdgesInCandidatePool": 1,
+     "requiredEdgesSeedReachable": 1,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 2,
+     "sourceBytes": 3491,
+     "missingRequiredEdges": [
+      "src/services/audit.service.ts#AuditService._calculateEnergyUsage|CALLS|src/services/audit.service.ts#AuditService._findClosestPowersOfTwo"
+     ]
+    },
+    {
+     "taskId": "nav-bearer-token-identity",
+     "category": "navigation",
+     "intent": "navigation",
+     "seedRole": "behavior",
+     "intentConfidence": "low",
+     "lexicalTopPath": "src/models/interfaces/Common.ts",
+     "semanticSeedPaths": [
+      "src/middlewares/jetResponse.ts"
+     ],
+     "semanticSeedKinds": [
+      "constant"
+     ],
+     "seedCount": 1,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 1,
+     "requiredEdgesIndexed": 1,
+     "requiredEdgesInCandidatePool": 1,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 1,
+     "sourceBytes": 2578,
+     "missingRequiredEdges": [
+      "src/middlewares/deserializeUser.ts#deserializeUser|CALLS|src/utils/jwt.ts#verifyJwt"
+     ]
+    },
+    {
+     "taskId": "nav-incoming-file-disk-name",
+     "category": "navigation",
+     "intent": "navigation",
+     "seedRole": "behavior",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/models/interfaces/IEmailVerify.ts",
+     "semanticSeedPaths": [
+      "src/services/audit.service.ts"
+     ],
+     "semanticSeedKinds": [
+      "method",
+      "method"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 0,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": 0,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 2,
+     "sourceBytes": 4655,
+     "missingRequiredEdges": []
+    },
+    {
+     "taskId": "flow-reconcile-to-history-record",
+     "category": "flow",
+     "intent": "flow",
+     "seedRole": "flow",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/models/interfaces/IInvoiceRecord.ts",
+     "semanticSeedPaths": [
+      "src/services/audit.service.ts"
+     ],
+     "semanticSeedKinds": [
+      "method"
+     ],
+     "seedCount": 1,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 3,
+     "requiredEdgesInCandidatePool": 2,
+     "requiredEdgesSeedReachable": 2,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 0,
+     "sourceBytes": 4135,
+     "missingRequiredEdges": [
+      "src/routes/audit.route.ts#AuditRoute.setRoutes|CALLS|src/controllers/audit.controller.ts#AuditController.audit",
+      "src/controllers/audit.controller.ts#AuditController.audit|CALLS|src/services/audit.service.ts#AuditService.audit",
+      "src/services/audit.service.ts#AuditService.audit|CALLS|src/services/audit.service.ts#AuditService._createAuditRecord"
+     ]
+    },
+    {
+     "taskId": "flow-invalid-token-rejected",
+     "category": "flow",
+     "intent": "flow",
+     "seedRole": "flow",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/models/interfaces/IInvoice.ts",
+     "semanticSeedPaths": [
+      "src/middlewares/jetResponse.ts",
+      "src/controllers/audit.controller.ts"
+     ],
+     "semanticSeedKinds": [
+      "constant",
+      "method"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 2,
+     "requiredEdgesIndexed": 2,
+     "requiredEdgesInCandidatePool": 0,
+     "requiredEdgesSeedReachable": 1,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 6,
+     "sourceBytes": 8704,
+     "missingRequiredEdges": [
+      "src/middlewares/deserializeUser.ts#deserializeUser|CALLS|src/utils/jwt.ts#verifyJwt",
+      "src/routes/audit.route.ts#AuditRoute.setRoutes|REGISTERS|src/middlewares/requireUser.ts#requireUser"
+     ]
+    },
+    {
+     "taskId": "flow-monthly-report-email",
+     "category": "flow",
+     "intent": "flow",
+     "seedRole": "flow",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/models/interfaces/IPoint.ts",
+     "semanticSeedPaths": [
+      "src/services/audit.service.ts"
+     ],
+     "semanticSeedKinds": [
+      "method"
+     ],
+     "seedCount": 1,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 3,
+     "requiredEdgesInCandidatePool": 2,
+     "requiredEdgesSeedReachable": 2,
+     "requiredEdgesAdmitted": 2,
+     "requiredEdgesReturned": 2,
+     "semanticEdges": 2,
+     "sourceBytes": 4961,
+     "missingRequiredEdges": [
+      "src/routes/audit.route.ts#AuditRoute.setRoutes|CALLS|src/controllers/audit.controller.ts#AuditController.monthAudit"
+     ]
+    },
+    {
+     "taskId": "impact-token-verify-throws",
+     "category": "impact",
+     "intent": "impact",
+     "seedRole": "consumer",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/models/interfaces/ICustomer.ts",
+     "semanticSeedPaths": [
+      "src/utils/jwt.ts"
+     ],
+     "semanticSeedKinds": [
+      "function"
+     ],
+     "seedCount": 1,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 1,
+     "requiredEdgesIndexed": 1,
+     "requiredEdgesInCandidatePool": 1,
+     "requiredEdgesSeedReachable": 1,
+     "requiredEdgesAdmitted": 1,
+     "requiredEdgesReturned": 1,
+     "semanticEdges": 1,
+     "sourceBytes": 2168,
+     "missingRequiredEdges": []
+    },
+    {
+     "taskId": "impact-schema-check-decorator",
+     "category": "impact",
+     "intent": "impact",
+     "seedRole": "consumer",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/models/interfaces/IOrder.ts",
+     "semanticSeedPaths": [
+      "src/logger/api.logger.ts",
+      "src/services/audit.service.ts"
+     ],
+     "semanticSeedKinds": [
+      "method",
+      "method"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 3,
+     "requiredEdgesInCandidatePool": 3,
+     "requiredEdgesSeedReachable": 3,
+     "requiredEdgesAdmitted": 3,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 8,
+     "sourceBytes": 6289,
+     "missingRequiredEdges": [
+      "src/controllers/audit.controller.ts#AuditController.audit|CALLS|src/services/audit.service.ts#AuditService.audit",
+      "src/controllers/audit.controller.ts#AuditController.monthAudit|CALLS|src/services/audit.service.ts#AuditService.monthAudit",
+      "src/controllers/audit.controller.ts#AuditController.list|CALLS|src/services/audit.service.ts#AuditService.list"
+     ]
+    },
+    {
+     "taskId": "impact-history-record-columns",
+     "category": "impact",
+     "intent": "impact",
+     "seedRole": "consumer",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/models/interfaces/IPointModel.ts",
+     "semanticSeedPaths": [
+      "src/services/audit.service.ts"
+     ],
+     "semanticSeedKinds": [
+      "method"
+     ],
+     "seedCount": 1,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 0,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": 0,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 6,
+     "sourceBytes": 4874,
+     "missingRequiredEdges": []
+    },
+    {
+     "taskId": "edit-history-list-date-filter",
+     "category": "editing-prep",
+     "intent": "editing-prep",
+     "seedRole": "behavior",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/models/interfaces/Common.ts",
+     "semanticSeedPaths": [
+      "src/services/audit.service.ts",
+      "src/decorator/validate-input.ts"
+     ],
+     "semanticSeedKinds": [
+      "method",
+      "function"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 0,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": 0,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 1,
+     "sourceBytes": 3220,
+     "missingRequiredEdges": []
+    },
+    {
+     "taskId": "edit-storage-dir-configurable",
+     "category": "editing-prep",
+     "intent": "editing-prep",
+     "seedRole": "behavior",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/models/interfaces/IPoint.ts",
+     "semanticSeedPaths": [
+      "src/controllers/audit.controller.ts"
+     ],
+     "semanticSeedKinds": [
+      "method"
+     ],
+     "seedCount": 1,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 0,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": 0,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 2,
+     "sourceBytes": 3865,
+     "missingRequiredEdges": []
+    },
+    {
+     "taskId": "edit-owner-only-history-delete",
+     "category": "editing-prep",
+     "intent": "editing-prep",
+     "seedRole": "behavior",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/models/interfaces/IUser.ts",
+     "semanticSeedPaths": [
+      "src/services/audit.service.ts",
+      "src/controllers/audit.controller.ts"
+     ],
+     "semanticSeedKinds": [
+      "method",
+      "method"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 2,
+     "requiredEdgesIndexed": 2,
+     "requiredEdgesInCandidatePool": 2,
+     "requiredEdgesSeedReachable": 2,
+     "requiredEdgesAdmitted": 2,
+     "requiredEdgesReturned": 2,
+     "semanticEdges": 2,
+     "sourceBytes": 2546,
+     "missingRequiredEdges": []
+    }
+   ]
+  },
+  "jetbook": {
+   "summary": {
+    "tasks": 12,
+    "tasksWithSemanticEdges": 12,
+    "annotatedTasks": 9,
+    "requiredEdges": 26,
+    "requiredEdgeRecallContext": 0.38461538461538464,
+    "requiredEdgeRecallIndex": 0.8846153846153846,
+    "expectedFileGroundingRate": 0.5882352941176471,
+    "funnel": {
+     "requiredEdgeCount": 26,
+     "indexedRequiredEdgeCount": 23,
+     "candidatePoolRequiredEdgeCount": 20,
+     "candidatePoolFileRequiredEdgeCount": 20,
+     "seedReachableRequiredEdgeCount": 15,
+     "admittedRequiredEdgeCount": 11,
+     "returnedRequiredEdgeCount": 10,
+     "indexRecall": 0.8846,
+     "candidatePoolRecall": 0.8696,
+     "seedReachabilityRecall": 0.6522,
+     "admissionRecall": 0.7333,
+     "routingRecall": 0.4348,
+     "contextRecall": 0.3846
+    },
+    "intentAgreement": "12/12",
+    "topTargetCorrect": "5/12",
+    "seedContainsExpectedFile": "5/12",
+    "medianSourceBytes": 9873
+   },
+   "tasks": [
+    {
+     "taskId": "nav-login-lockout-duration",
+     "category": "navigation",
+     "intent": "navigation",
+     "seedRole": "behavior",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/lib/auth/password.ts",
+     "semanticSeedPaths": [
+      "src/lib/auth/account.ts",
+      "src/lib/content/import-zip.ts"
+     ],
+     "semanticSeedKinds": [
+      "function",
+      "function"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 1,
+     "requiredEdgesIndexed": 1,
+     "requiredEdgesInCandidatePool": 1,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 3,
+     "sourceBytes": 4465,
+     "missingRequiredEdges": [
+      "src/lib/auth/throttle.ts#recordLoginFailure|CALLS|src/lib/auth/throttle.ts#lockDurationMs"
+     ]
+    },
+    {
+     "taskId": "nav-image-import-blocked-addresses",
+     "category": "navigation",
+     "intent": "navigation",
+     "seedRole": "behavior",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/actions/page.ts",
+     "semanticSeedPaths": [
+      "src/lib/storage/import-url.ts"
+     ],
+     "semanticSeedKinds": [
+      "function",
+      "function"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 0,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": 0,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 1,
+     "sourceBytes": 9649,
+     "missingRequiredEdges": []
+    },
+    {
+     "taskId": "nav-editor-autosave-delay",
+     "category": "navigation",
+     "intent": "navigation",
+     "seedRole": "behavior",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/actions/lock.ts",
+     "semanticSeedPaths": [
+      "docs/design/mockups-v2/mockups.js"
+     ],
+     "semanticSeedKinds": [
+      "function",
+      "function"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 0,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": 0,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 1,
+     "sourceBytes": 11866,
+     "missingRequiredEdges": []
+    },
+    {
+     "taskId": "flow-comment-reply-email",
+     "category": "flow",
+     "intent": "flow",
+     "seedRole": "flow",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/app/(app)/s/[spaceSlug]/[pageSlug]/comments-panel.tsx",
+     "semanticSeedPaths": [
+      "src/app/(app)/s/[spaceSlug]/[pageSlug]/comments-panel.tsx",
+      "src/components/trash/trash-list.tsx"
+     ],
+     "semanticSeedKinds": [
+      "function",
+      "function",
+      "function"
+     ],
+     "seedCount": 3,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 4,
+     "requiredEdgesIndexed": 4,
+     "requiredEdgesInCandidatePool": 4,
+     "requiredEdgesSeedReachable": 1,
+     "requiredEdgesAdmitted": 1,
+     "requiredEdgesReturned": 1,
+     "semanticEdges": 6,
+     "sourceBytes": 9873,
+     "missingRequiredEdges": [
+      "src/lib/notifications.ts#notifyCommentReply|CALLS|src/lib/notifications.ts#notify",
+      "src/lib/notifications.ts#notify|CALLS|src/lib/notifications-email.ts#mirrorNotificationEmail",
+      "src/lib/notifications-email.ts#mirrorNotificationEmail|CALLS|src/lib/jobs/queue.ts#enqueueNotificationEmail"
+     ]
+    },
+    {
+     "taskId": "flow-api-update-archived-space-refused",
+     "category": "flow",
+     "intent": "flow",
+     "seedRole": "flow",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/actions/space.ts",
+     "semanticSeedPaths": [
+      "src/app/not-found.tsx",
+      "src/lib/authz/spaces.ts",
+      "src/actions/page.ts"
+     ],
+     "semanticSeedKinds": [
+      "function",
+      "function",
+      "function"
+     ],
+     "seedCount": 3,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 3,
+     "requiredEdgesInCandidatePool": 2,
+     "requiredEdgesSeedReachable": 2,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 6,
+     "sourceBytes": 11830,
+     "missingRequiredEdges": [
+      "src/app/api/v1/pages/[id]/route.ts#PATCH|CALLS|src/lib/api/page-write.ts#apiUpdatePage",
+      "src/lib/api/page-write.ts#apiUpdatePage|CALLS|src/lib/authz/permission.ts#can",
+      "src/lib/authz/permission.ts#can|CALLS|src/lib/authz/policy.ts#actionAllowedWhenArchived"
+     ]
+    },
+    {
+     "taskId": "flow-autosave-version-conflict",
+     "category": "flow",
+     "intent": "flow",
+     "seedRole": "flow",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/lib/pages/errors.ts",
+     "semanticSeedPaths": [
+      "src/actions/page.ts",
+      "src/lib/api/page-write.ts"
+     ],
+     "semanticSeedKinds": [
+      "function",
+      "function",
+      "function"
+     ],
+     "seedCount": 3,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 2,
+     "requiredEdgesIndexed": 2,
+     "requiredEdgesInCandidatePool": 2,
+     "requiredEdgesSeedReachable": 2,
+     "requiredEdgesAdmitted": 1,
+     "requiredEdgesReturned": 1,
+     "semanticEdges": 6,
+     "sourceBytes": 11929,
+     "missingRequiredEdges": [
+      "src/components/editor/page-editor.tsx#PageEditor|CALLS|src/actions/page.ts#savePage"
+     ]
+    },
+    {
+     "taskId": "impact-content-write-pipeline-signature",
+     "category": "impact",
+     "intent": "impact",
+     "seedRole": "consumer",
+     "intentConfidence": "medium",
+     "lexicalTopPath": "src/actions/page.ts",
+     "semanticSeedPaths": [
+      "src/lib/pages/content-write.ts",
+      "src/lib/api/page-write.ts"
+     ],
+     "semanticSeedKinds": [
+      "function",
+      "function"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 5,
+     "requiredEdgesIndexed": 4,
+     "requiredEdgesInCandidatePool": 4,
+     "requiredEdgesSeedReachable": 4,
+     "requiredEdgesAdmitted": 4,
+     "requiredEdgesReturned": 4,
+     "semanticEdges": 7,
+     "sourceBytes": 11899,
+     "missingRequiredEdges": [
+      "src/lib/jobs/import-zip.ts#runImportZip|CALLS|src/lib/pages/content-write.ts#writePageContentTx"
+     ]
+    },
+    {
+     "taskId": "impact-verified-token-id-field",
+     "category": "impact",
+     "intent": "impact",
+     "seedRole": "consumer",
+     "intentConfidence": "medium",
+     "lexicalTopPath": "src/lib/api-tokens/bearer.ts",
+     "semanticSeedPaths": [
+      "src/lib/api-tokens/bearer.ts",
+      "src/lib/api-tokens/index.ts"
+     ],
+     "semanticSeedKinds": [
+      "function",
+      "function"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 4,
+     "requiredEdgesIndexed": 3,
+     "requiredEdgesInCandidatePool": 3,
+     "requiredEdgesSeedReachable": 3,
+     "requiredEdgesAdmitted": 3,
+     "requiredEdgesReturned": 3,
+     "semanticEdges": 4,
+     "sourceBytes": 7795,
+     "missingRequiredEdges": [
+      "src/lib/api-tokens/bearer.ts#ApiAuthResult|CONSUMES|src/lib/api-tokens/index.ts#VerifiedApiToken"
+     ]
+    },
+    {
+     "taskId": "impact-save-action-return-shape",
+     "category": "impact",
+     "intent": "impact",
+     "seedRole": "consumer",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/actions/page.ts",
+     "semanticSeedPaths": [
+      "src/actions/page.ts"
+     ],
+     "semanticSeedKinds": [
+      "function",
+      "function"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 2,
+     "requiredEdgesInCandidatePool": 2,
+     "requiredEdgesSeedReachable": 2,
+     "requiredEdgesAdmitted": 1,
+     "requiredEdgesReturned": 1,
+     "semanticEdges": 4,
+     "sourceBytes": 9860,
+     "missingRequiredEdges": [
+      "src/actions/page.ts#restorePageVersion|CALLS|src/actions/page.ts#savePage",
+      "src/app/(app)/s/[spaceSlug]/[pageSlug]/history/restore-version-button.tsx#RestoreVersionButton|CALLS|src/actions/page.ts#restorePageVersion"
+     ]
+    },
+    {
+     "taskId": "edit-api-update-page-icon",
+     "category": "editing-prep",
+     "intent": "editing-prep",
+     "seedRole": "behavior",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/actions/page.ts",
+     "semanticSeedPaths": [
+      "src/actions/page.ts"
+     ],
+     "semanticSeedKinds": [
+      "function",
+      "function"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 1,
+     "requiredEdgesIndexed": 1,
+     "requiredEdgesInCandidatePool": 1,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 6,
+     "sourceBytes": 6219,
+     "missingRequiredEdges": [
+      "src/app/api/v1/pages/[id]/route.ts#PATCH|CALLS|src/lib/api/page-write.ts#apiUpdatePage"
+     ]
+    },
+    {
+     "taskId": "edit-moderators-edit-comments",
+     "category": "editing-prep",
+     "intent": "editing-prep",
+     "seedRole": "behavior",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/lib/authz/permission.ts",
+     "semanticSeedPaths": [
+      "docs/design/mockups-v2/mockups.js",
+      "src/app/admin/spaces/page.tsx"
+     ],
+     "semanticSeedKinds": [
+      "function",
+      "function"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 0,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": 0,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 6,
+     "sourceBytes": 11877,
+     "missingRequiredEdges": []
+    },
+    {
+     "taskId": "edit-separate-move-permission",
+     "category": "editing-prep",
+     "intent": "editing-prep",
+     "seedRole": "behavior",
+     "intentConfidence": "high",
+     "lexicalTopPath": "src/actions/page.ts",
+     "semanticSeedPaths": [
+      "src/actions/page.ts"
+     ],
+     "semanticSeedKinds": [
+      "function"
+     ],
+     "seedCount": 1,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 3,
+     "requiredEdgesInCandidatePool": 1,
+     "requiredEdgesSeedReachable": 1,
+     "requiredEdgesAdmitted": 1,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 6,
+     "sourceBytes": 9855,
+     "missingRequiredEdges": [
+      "src/lib/api/page-write.ts#apiMovePage|CALLS|src/lib/authz/permission.ts#can",
+      "src/actions/page.ts#movePageToSpace|CALLS|src/lib/authz/permission.ts#assertCan",
+      "src/lib/authz/permission.ts#can|CALLS|src/lib/authz/policy.ts#actionAllowedForRole"
+     ]
+    }
+   ]
+  },
+  "redmine-ai-agent": {
+   "summary": {
+    "tasks": 12,
+    "tasksWithSemanticEdges": 10,
+    "annotatedTasks": 11,
+    "requiredEdges": 32,
+    "requiredEdgeRecallContext": 0.15625,
+    "requiredEdgeRecallIndex": 0.59375,
+    "expectedFileGroundingRate": 0.4074074074074074,
+    "funnel": {
+     "requiredEdgeCount": 32,
+     "indexedRequiredEdgeCount": 19,
+     "candidatePoolRequiredEdgeCount": 14,
+     "candidatePoolFileRequiredEdgeCount": 14,
+     "seedReachableRequiredEdgeCount": 6,
+     "admittedRequiredEdgeCount": 5,
+     "returnedRequiredEdgeCount": 5,
+     "indexRecall": 0.5938,
+     "candidatePoolRecall": 0.7368,
+     "seedReachabilityRecall": 0.3158,
+     "admissionRecall": 0.8333,
+     "routingRecall": 0.2632,
+     "contextRecall": 0.1563
+    },
+    "intentAgreement": "12/12",
+    "topTargetCorrect": "5/12",
+    "seedContainsExpectedFile": "6/12",
+    "medianSourceBytes": 5705
+   },
+   "tasks": [
+    {
+     "taskId": "nav-per-user-redmine-throttle",
+     "category": "navigation",
+     "intent": "navigation",
+     "seedRole": "behavior",
+     "intentConfidence": "high",
+     "lexicalTopPath": "backend/app/redmine_client.py",
+     "semanticSeedPaths": [
+      "backend/app/redmine_client.py"
+     ],
+     "semanticSeedKinds": [
+      "method"
+     ],
+     "seedCount": 1,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 2,
+     "requiredEdgesIndexed": 2,
+     "requiredEdgesInCandidatePool": 2,
+     "requiredEdgesSeedReachable": 1,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 3,
+     "sourceBytes": 4888,
+     "missingRequiredEdges": [
+      "backend/app/redmine_client.py#RedmineClient._request|CALLS|backend/app/redmine_client.py#RedmineClient._bucket",
+      "backend/app/redmine_client.py#TokenBucket.acquire|CALLS|backend/app/redmine_client.py#TokenBucket._refill"
+     ]
+    },
+    {
+     "taskId": "nav-nda-ticket-llm-guard",
+     "category": "navigation",
+     "intent": "navigation",
+     "seedRole": "behavior",
+     "intentConfidence": "high",
+     "lexicalTopPath": "backend/primitives/write_update_issue.py",
+     "semanticSeedPaths": [
+      "backend/secretstore/store.py"
+     ],
+     "semanticSeedKinds": [
+      "method"
+     ],
+     "seedCount": 1,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 3,
+     "requiredEdgesInCandidatePool": 0,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 0,
+     "sourceBytes": 2659,
+     "missingRequiredEdges": [
+      "backend/primitives/confidential.py#is_bypassed|CALLS|backend/primitives/confidential.py#is_confidential",
+      "backend/primitives/confidential.py#is_bypassed|CALLS|backend/primitives/confidential.py#is_llm_primitive",
+      "backend/primitives/confidential.py#enforce|CALLS|backend/primitives/confidential.py#is_bypassed"
+     ]
+    },
+    {
+     "taskId": "nav-free-text-to-issue-filters",
+     "category": "navigation",
+     "intent": "navigation",
+     "seedRole": "behavior",
+     "intentConfidence": "low",
+     "lexicalTopPath": "backend/primitives/write_update_issue.py",
+     "semanticSeedPaths": [
+      "backend/rag/query.py",
+      "backend/orch/nl_query.py"
+     ],
+     "semanticSeedKinds": [
+      "method",
+      "function"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 2,
+     "requiredEdgesIndexed": 2,
+     "requiredEdgesInCandidatePool": 2,
+     "requiredEdgesSeedReachable": 2,
+     "requiredEdgesAdmitted": 2,
+     "requiredEdgesReturned": 2,
+     "semanticEdges": 4,
+     "sourceBytes": 5705,
+     "missingRequiredEdges": []
+    },
+    {
+     "taskId": "flow-approve-staged-batch-update",
+     "category": "flow",
+     "intent": "flow",
+     "seedRole": "flow",
+     "intentConfidence": "medium",
+     "lexicalTopPath": "backend/app/prb_checklist_export.py",
+     "semanticSeedPaths": [
+      "backend/app/redmine_client.py",
+      "backend/orch/nodes/interactive_checklist.py"
+     ],
+     "semanticSeedKinds": [
+      "method",
+      "function"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 4,
+     "requiredEdgesIndexed": 1,
+     "requiredEdgesInCandidatePool": 0,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 6,
+     "sourceBytes": 10883,
+     "missingRequiredEdges": [
+      "backend/app/confirm.py#confirm|CALLS|backend/previews/store.py#load_preview",
+      "backend/app/confirm.py#confirm|CALLS|backend/app/confirm.py#_execute_item",
+      "backend/app/confirm.py#_execute_item|CALLS|backend/primitives/write_update_issue.py#write_update_issue",
+      "backend/app/confirm.py#confirm|CALLS|backend/rollback/store.py#save_rollback_plan"
+     ]
+    },
+    {
+     "taskId": "flow-recurring-watch-notification",
+     "category": "flow",
+     "intent": "flow",
+     "seedRole": "flow",
+     "intentConfidence": "high",
+     "lexicalTopPath": "backend/app/notifier.py",
+     "semanticSeedPaths": [
+      "backend/app/notifier.py",
+      "backend/app/inspections.py"
+     ],
+     "semanticSeedKinds": [
+      "function",
+      "function"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 4,
+     "requiredEdgesIndexed": 3,
+     "requiredEdgesInCandidatePool": 3,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 4,
+     "sourceBytes": 9140,
+     "missingRequiredEdges": [
+      "backend/app/inspection_runner.py#InspectionScheduler.load_jobs|REGISTERS|backend/app/inspection_runner.py#run_inspection",
+      "backend/app/inspection_runner.py#run_inspection|CALLS|backend/app/inspection_runner.py#_query_redmine",
+      "backend/app/notifier.py#dispatch_notifications|CALLS|backend/app/notifier.py#_dispatch_one",
+      "backend/app/notifier.py#_dispatch_one|CALLS|backend/app/audit.py#audit_scope"
+     ]
+    },
+    {
+     "taskId": "flow-side-panel-message-intent",
+     "category": "flow",
+     "intent": "flow",
+     "seedRole": "flow",
+     "intentConfidence": "high",
+     "lexicalTopPath": "extension/src/sidepanel/App.tsx",
+     "semanticSeedPaths": [
+      "backend/orch/nodes/interactive_checklist.py",
+      "backend/app/inspection_runner.py"
+     ],
+     "semanticSeedKinds": [
+      "function",
+      "method",
+      "method"
+     ],
+     "seedCount": 3,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 4,
+     "requiredEdgesIndexed": 2,
+     "requiredEdgesInCandidatePool": 1,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 5,
+     "sourceBytes": 6070,
+     "missingRequiredEdges": [
+      "backend/app/chat.py#chat|CALLS|backend/app/chat.py#_claim_run",
+      "backend/app/chat.py#_default_graph_factory|CALLS|backend/orch/graph.py#compile_graph",
+      "backend/orch/graph.py#build_graph|REGISTERS|backend/orch/graph.py#_classify_intent",
+      "backend/orch/graph.py#_classify_intent|CALLS|backend/orch/intent.py#classify_intent"
+     ]
+    },
+    {
+     "taskId": "impact-chat-run-slot-and-sse-helpers",
+     "category": "impact",
+     "intent": "impact",
+     "seedRole": "consumer",
+     "intentConfidence": "medium",
+     "lexicalTopPath": "backend/app/chat.py",
+     "semanticSeedPaths": [
+      "backend/orch/nodes/interactive_checklist.py"
+     ],
+     "semanticSeedKinds": [
+      "function",
+      "method"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 2,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": 0,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 0,
+     "sourceBytes": 3260,
+     "missingRequiredEdges": [
+      "backend/app/macros.py#run_macro|CALLS|backend/app/chat.py#_claim_run",
+      "backend/app/macros.py#run_macro|CALLS|backend/app/chat.py#_stream_events"
+     ]
+    },
+    {
+     "taskId": "impact-published-rule-loader-contract",
+     "category": "impact",
+     "intent": "impact",
+     "seedRole": "consumer",
+     "intentConfidence": "high",
+     "lexicalTopPath": "backend/rules/engine.py",
+     "semanticSeedPaths": [
+      "backend/rules/engine.py"
+     ],
+     "semanticSeedKinds": [
+      "function"
+     ],
+     "seedCount": 1,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 1,
+     "requiredEdgesInCandidatePool": 1,
+     "requiredEdgesSeedReachable": 1,
+     "requiredEdgesAdmitted": 1,
+     "requiredEdgesReturned": 1,
+     "semanticEdges": 1,
+     "sourceBytes": 4998,
+     "missingRequiredEdges": [
+      "backend/orch/nodes/validate_before_transition.py#validate_before_transition|CALLS|backend/rules/engine.py#validate_required_fields",
+      "backend/orch/nodes/explain_ticket.py#explain_ticket|CONSUMES|backend/rules/engine.py#load_published_rules"
+     ]
+    },
+    {
+     "taskId": "impact-ticket-update-diff-helpers",
+     "category": "impact",
+     "intent": "impact",
+     "seedRole": "consumer",
+     "intentConfidence": "medium",
+     "lexicalTopPath": "backend/primitives/write_update_issue.py",
+     "semanticSeedPaths": [
+      "extension/content.js",
+      "backend/primitives/write_update_issue.py"
+     ],
+     "semanticSeedKinds": [
+      "function",
+      "function"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": 0,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 2,
+     "sourceBytes": 7215,
+     "missingRequiredEdges": [
+      "backend/previews/builder.py#build_update_preview|CALLS|backend/primitives/write_update_issue.py#_build_updates",
+      "backend/previews/builder.py#build_update_preview|CALLS|backend/primitives/write_update_issue.py#_compute_diff",
+      "backend/previews/builder.py#_read_before|CALLS|backend/primitives/write_update_issue.py#_get_before"
+     ]
+    },
+    {
+     "taskId": "edit-redmine-api-key-secret-naming",
+     "category": "editing-prep",
+     "intent": "editing-prep",
+     "seedRole": "behavior",
+     "intentConfidence": "high",
+     "lexicalTopPath": "backend/secretstore/store.py",
+     "semanticSeedPaths": [
+      "backend/secretstore/store.py",
+      "backend/app/redmine_token.py"
+     ],
+     "semanticSeedKinds": [
+      "function",
+      "function"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": true,
+     "requiredEdges": 3,
+     "requiredEdgesIndexed": 3,
+     "requiredEdgesInCandidatePool": 3,
+     "requiredEdgesSeedReachable": 2,
+     "requiredEdgesAdmitted": 2,
+     "requiredEdgesReturned": 2,
+     "semanticEdges": 2,
+     "sourceBytes": 3791,
+     "missingRequiredEdges": [
+      "backend/app/redmine_client.py#RedmineClient._load_token|CALLS|backend/app/redmine_client.py#_secret_key"
+     ]
+    },
+    {
+     "taskId": "edit-inference-reply-redis-key",
+     "category": "editing-prep",
+     "intent": "editing-prep",
+     "seedRole": "behavior",
+     "intentConfidence": "high",
+     "lexicalTopPath": "extension/src/sidepanel/PreviewCard.tsx",
+     "semanticSeedPaths": [
+      "backend/cache/redis_client.py"
+     ],
+     "semanticSeedKinds": [
+      "function",
+      "method"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 2,
+     "requiredEdgesIndexed": 2,
+     "requiredEdgesInCandidatePool": 2,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 1,
+     "sourceBytes": 2879,
+     "missingRequiredEdges": [
+      "backend/inference/client.py#infer|CALLS|backend/inference/client.py#result_key",
+      "backend/inference/worker.py#InferenceWorker._persist_result|CALLS|backend/inference/worker.py#result_key"
+     ]
+    },
+    {
+     "taskId": "edit-add-watch-delivery-channel",
+     "category": "editing-prep",
+     "intent": "editing-prep",
+     "seedRole": "behavior",
+     "intentConfidence": "high",
+     "lexicalTopPath": "backend/app/chat.py",
+     "semanticSeedPaths": [
+      "backend/previews/schema.py",
+      "backend/rollback/schema.py"
+     ],
+     "semanticSeedKinds": [
+      "method",
+      "method"
+     ],
+     "seedCount": 2,
+     "seedContainsExpectedFile": false,
+     "requiredEdges": 0,
+     "requiredEdgesIndexed": 0,
+     "requiredEdgesInCandidatePool": 0,
+     "requiredEdgesSeedReachable": 0,
+     "requiredEdgesAdmitted": 0,
+     "requiredEdgesReturned": 0,
+     "semanticEdges": 4,
+     "sourceBytes": 7956,
+     "missingRequiredEdges": []
+    }
+   ]
+  }
+ }
+}
