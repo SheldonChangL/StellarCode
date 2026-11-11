@@ -7,6 +7,9 @@ import { semanticSlice, semanticSliceEnabled, capabilityFor } from './semantic-s
 import { selectSemanticSeeds, symbolNature, SEED_POOL_FILES } from './semantic-seed.js'
 import { stemTerm, termMatch, termWeights, weightedScore, termCoverage, rankFileSymbols, focusRange, overlapLines, subtractTaken, allocateBudget, densestWindow, identifierPattern } from './precision.js'
 
+// Lines a window inside a symbol too long to return whole may gain from unused budget.
+const GROW_MARGIN_LINES = 40
+
 const QUERY_CONCEPTS = [
   { patterns: ['登入', '登錄', '登录', '登入流程', '登入功能', '登入頁'], terms: ['login', 'signin', 'sign-in', 'auth', 'authentication'] },
   { patterns: ['登出', '注销', '登出流程'], terms: ['logout', 'signout', 'sign-out', 'auth'] },
@@ -715,29 +718,31 @@ export async function contextForTask(projectPath, task, options = {}) {
 
       const relatedEvidence=[]
       const groundedFiles=[]
+      const emitted=[]
+      let spare=maxBytes
       if(options.withSource) {
         // Collect every requested range first, drop duplicates (same path, overlapping
         // lines), then split the byte budget fairly instead of first-come-first-served.
         const requests=[]
-        for(const [index,target] of targets.entries()) requests.push({entry:target,range:target.lines,cap:maxLines,weight:index===0?1.5:1.2,minLines:1})
+        for(const [index,target] of targets.entries()) requests.push({entry:target,range:target.lines,full:kept.find(v=>v.path===target.path)?.lines,cap:maxLines,weight:index===0?1.5:1.2,minLines:1})
         // A seed that is not already a target range is grounded as the slice's start.
         for(const seed of seeds) {
           if(targets.some(t=>t.path===seed.path&&t.lines&&t.lines[0]<=seed.lines[1]&&seed.lines[0]<=t.lines[1]))continue
           if(slice.ground.some(item=>item.path===seed.path&&item.symbol===seed.symbol))continue
-          requests.push({entry:{path:seed.path,symbol:seed.symbol,lines:seed.lines,relation:'semantic-seed',direction:'seed',semantic:{relation:'SEED',role:intentDetail.seedRole},reason:`semantic slice starts at ${seed.symbol} (${intentDetail.seedRole})`},range:seed.lines,cap:80,weight:1.2,minLines:3,evidence:true,semantic:true})
+          requests.push({entry:{path:seed.path,symbol:seed.symbol,lines:seed.lines,relation:'semantic-seed',direction:'seed',semantic:{relation:'SEED',role:intentDetail.seedRole},reason:`semantic slice starts at ${seed.symbol} (${intentDetail.seedRole})`},range:seed.lines,full:seed.lines,cap:80,weight:1.2,minLines:3,evidence:true,semantic:true})
         }
         for(const item of slice.ground) {
           // `relation` keeps the v0.5 vocabulary for compatibility; `semantic` names the resolved relation.
           const sameFile=targets.some(t=>t.path===item.path)
           const relation=sameFile?'same-file-symbol':item.direction==='incoming'?'imported-by':'imported-symbol'
-          requests.push({entry:{path:item.path,symbol:item.symbol,lines:item.lines,relation,direction:item.direction,semantic:{relation:item.relation,confidence:item.confidence},reason:item.reason},range:item.lines,cap:80,weight:1,minLines:3,evidence:true,semantic:true})
+          requests.push({entry:{path:item.path,symbol:item.symbol,lines:item.lines,relation,direction:item.direction,semantic:{relation:item.relation,confidence:item.confidence},reason:item.reason},range:item.lines,full:item.lines,cap:80,weight:1,minLines:3,evidence:true,semantic:true})
         }
         // Lexical evidence fills in only what the semantic slice did not already ground.
         const semanticKeys=new Set(slice.ground.map(item=>`${item.path}#${item.symbol}`))
         for(const candidate of uniqueEvidence.filter(candidate=>!semanticKeys.has(`${candidate.path}#${candidate.symbol}`))) {
           const start=Math.max(1,candidate.start-3)
           const end=Math.min(candidate.lineCount,candidate.end+5)
-          requests.push({entry:{path:candidate.path,symbol:candidate.symbol,lines:[start,end],relation:candidate.relation,direction:candidate.direction,reason:candidate.reason},range:[start,end],cap:80,weight:1,minLines:3,evidence:true})
+          requests.push({entry:{path:candidate.path,symbol:candidate.symbol,lines:[start,end],relation:candidate.relation,direction:candidate.direction,reason:candidate.reason},range:[start,end],full:[candidate.start,candidate.end],cap:80,weight:1,minLines:3,evidence:true})
         }
         const taken=new Map()
         const prepared=[]
@@ -756,7 +761,7 @@ export async function contextForTask(projectPath, task, options = {}) {
           const costs=rendered.map(line=>Buffer.byteLength(line)+1)
           const lineScores=[]
           for(let n=range[0];n<=range[1];n++)lineScores.push(termCoverage(lines[n-1]??'',qTokens,weights).covered)
-          prepared.push({...request,range,rendered,costs,lineScores,desired:costs.reduce((a,b)=>a+b,0)})
+          prepared.push({...request,range,lines,rendered,costs,lineScores,desired:costs.reduce((a,b)=>a+b,0)})
         }
         const allotted=allocateBudget(prepared,maxBytes)
         for(const [index,request] of prepared.entries()) {
@@ -766,9 +771,40 @@ export async function contextForTask(projectPath, task, options = {}) {
           if(count<Math.min(request.minLines,request.costs.length))continue
           request.entry.lines=[request.range[0]+from,request.range[0]+to-1]
           request.entry.source=request.rendered.slice(from,to).join('\n')
+          for(let n=from;n<to;n++)spare-=request.costs[n]
+          emitted.push(request)
           if(request.evidence)relatedEvidence.push(request.entry)
           if(!groundedFiles.includes(request.entry.path))groundedFiles.push(request.entry.path)
         }
+      }
+      // v0.6.2: a range narrowed by a focus window, a line cap or its fair share ends in the
+      // middle of its symbol, and the agent spends a whole turn reading the few missing
+      // lines. Bytes the allocation left unused grow each range back toward its symbol's
+      // bounds, in rank order, without crossing another returned range of the same file.
+      // A symbol too long to return whole only gains a margin around its window.
+      const symbolBounds=db.prepare('SELECT start_line,end_line FROM symbols WHERE file_id=? AND qualified_name=? LIMIT 1')
+      for(const request of emitted) {
+        if(spare<=0)break
+        const row=request.entry.symbol?symbolBounds.get(request.entry.path,request.entry.symbol):null
+        const full=row?[Number(row.start_line),Number(row.end_line)]:request.full
+        if(!full)continue
+        const others=emitted.filter(other=>other!==request&&other.entry.path===request.entry.path).map(other=>other.entry.lines)
+        const free=n=>!others.some(range=>range[0]<=n&&n<=range[1])
+        const cost=n=>Buffer.byteLength(`${n}: ${request.lines[n-1]}`)+1
+        const low=Math.max(1,full[0])
+        const high=Math.min(request.lines.length,full[1])
+        let [from,to]=request.entry.lines
+        const limit=high-low+1<=maxLines?maxLines:Math.min(maxLines,to-from+1+GROW_MARGIN_LINES)
+        for(let grew=true;grew&&to-from+1<limit;) {
+          grew=false
+          if(from>low&&free(from-1)&&cost(from-1)<=spare){from--;spare-=cost(from);grew=true}
+          if(to<high&&to-from+1<limit&&free(to+1)&&cost(to+1)<=spare){to++;spare-=cost(to);grew=true}
+        }
+        if(from===request.entry.lines[0]&&to===request.entry.lines[1])continue
+        request.entry.lines=[from,to]
+        const rendered=[]
+        for(let n=from;n<=to;n++)rendered.push(`${n}: ${request.lines[n-1]}`)
+        request.entry.source=rendered.join('\n')
       }
       const groundedPaths=new Set(groundedFiles)
       const finalRelatedHints=relatedHints.filter(item=>!groundedPaths.has(item.path))
