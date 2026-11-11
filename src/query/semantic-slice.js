@@ -194,7 +194,7 @@ export function semanticSlice(db, { intent, targets, terms = [], weights = new M
   // further along the returned chain is worth more than a leaf.
   const fanIn = new Map()
   const fanInOf = id => {
-    if (!fanIn.has(id)) fanIn.set(id, db.prepare(`SELECT COUNT(DISTINCT source_id) c FROM edges WHERE target_id=? AND edge_type IN ('CALLS','CONSUMES')`).get(id).c)
+    if (!fanIn.has(id)) fanIn.set(id, db.prepare(`SELECT COUNT(DISTINCT source_id) c FROM edges WHERE target_id=? AND edge_type IN ('CALLS','CONSUMES','REGISTERS')`).get(id).c)
     return fanIn.get(id)
   }
   const continues = new Set(candidates.filter(c => c.direction === 'outgoing' && c.depth > 1).map(c => c.source_id))
@@ -222,7 +222,7 @@ export function semanticSlice(db, { intent, targets, terms = [], weights = new M
     const relationWeight = intent === 'impact' && candidate.edge_type === 'IMPLEMENTS' ? -12 : 0
     // Shared infrastructure (a db handle, a schema table) consumed everywhere is the
     // CONSUMES counterpart of a helper called everywhere: same fan-in discount.
-    const utility = candidate.direction === 'outgoing' && (candidate.edge_type === 'CALLS' || candidate.edge_type === 'CONSUMES') ? Math.min(24, Math.max(0, Math.log2(fanInOf(candidate.target_id)) - 1) * 6) : 0
+    const utility = candidate.direction === 'outgoing' && (candidate.edge_type === 'CALLS' || candidate.edge_type === 'CONSUMES' || candidate.edge_type === 'REGISTERS') ? Math.min(24, Math.max(0, Math.log2(fanInOf(candidate.target_id)) - 1) * 6) : 0
     const continuation = candidate.direction === 'outgoing' && continues.has(candidate.target_id) ? 12 : 0
     const depthCost = intent === 'flow' ? 10 : 20
     // The first target is the behavior owner; later targets are alternatives.

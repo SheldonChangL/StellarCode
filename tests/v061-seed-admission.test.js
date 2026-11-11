@@ -116,3 +116,21 @@ test('v0.6.1 widely consumed infrastructure ranks below the specific callee with
     assert.ok(infra < 0 || infra > callee, keys.join('\n'))
   } finally { await w.cleanup() }
 })
+
+test('v0.6.1 a guard registered everywhere ranks below the specific callee within the budget', async () => {
+  const files = {
+    'src/auth/session.ts': `export function requireSession(req: unknown) {\n  return req\n}\n`,
+    'src/orders/price.ts': `export function priceOrder(order: string) {\n  return order\n}\n`,
+    'src/orders/create.ts': `import { requireSession } from '../auth/session'\nimport { priceOrder } from './price'\n\nexport function createOrder(app: { use(fn: unknown): void }, order: string) {\n  app.use(requireSession)\n  return priceOrder(order)\n}\n`
+  }
+  for (let i = 0; i < 8; i++) files[`src/other/route${i}.ts`] = `import { requireSession } from '../auth/session'\n\nexport function route${i}(app: { use(fn: unknown): void }) {\n  app.use(requireSession)\n}\n`
+  const w = await semanticRepo(files)
+  try {
+    const ctx = await contextForTask(w.repo, 'Trace the flow of createOrder from the request to the result.', { dirs: w.dirs, ...BENCH })
+    const keys = edgeKeys(ctx)
+    const callee = keys.indexOf('src/orders/create.ts#createOrder|CALLS|src/orders/price.ts#priceOrder')
+    const guard = keys.indexOf('src/orders/create.ts#createOrder|REGISTERS|src/auth/session.ts#requireSession')
+    assert.ok(callee >= 0, keys.join('\n'))
+    assert.ok(guard < 0 || guard > callee, keys.join('\n'))
+  } finally { await w.cleanup() }
+})
