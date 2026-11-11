@@ -3,6 +3,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { initializeProject } from './core/project.js'
+import { DEFAULT_CONTEXT_BYTES } from './core/constants.js'
 import { openProjectStore, projectMeta } from './storage/project-store.js'
 import { syncProject } from './indexer/sync.js'
 import { resolveProject } from './core/runtime.js'
@@ -148,7 +149,7 @@ async function main() {
   if (command === 'context') {
     const pos=positional(args); if(!pos[0])throw new StellarError('context requires a task string','USAGE',2)
     const root=await queryRoot(args,pos[1]??process.cwd())
-    return print(await contextForTask(root,pos[0],{compact:hasFlag(args,'--compact'),depth:Number(flagValue(args,'--depth',0)),maxFiles:Number(flagValue(args,'--max-files',3)),maxLines:Number(flagValue(args,'--max-lines',300)),maxBytes:Number(flagValue(args,'--max-bytes',12000)),withSource:hasFlag(args,'--with-source')}),hasFlag(args,'--json'))
+    return print(await contextForTask(root,pos[0],{compact:hasFlag(args,'--compact'),depth:Number(flagValue(args,'--depth',0)),maxFiles:Number(flagValue(args,'--max-files',3)),maxLines:Number(flagValue(args,'--max-lines',300)),maxBytes:Number(flagValue(args,'--max-bytes',DEFAULT_CONTEXT_BYTES)),withSource:hasFlag(args,'--with-source')}),hasFlag(args,'--json'))
   }
   if (command === 'source') {
     const pos=positional(args); if(!pos[0])throw new StellarError('source requires a project-relative path','USAGE',2)

@@ -1,6 +1,7 @@
 import readline from 'node:readline'
 import { searchProject, fileDetail, symbolLookup, related, impact, contextForTask, architectureOverview, sourceExcerpt } from '../query/query-service.js'
 import { projectSummaries } from '../storage/registry.js'
+import { DEFAULT_CONTEXT_BYTES } from '../core/constants.js'
 import { resolveAnyProject } from '../core/global-runtime.js'
 import { VERSION } from '../core/version.js'
 
@@ -37,7 +38,7 @@ async function invoke(name, args = {}, defaultProject = null, queryOptions = {})
   if (name === 'stellar_symbol') return symbolLookup(project, args.query, { ...queryOptions, limit: args.limit ?? 10 })
   if (name === 'stellar_related') return related(project, args.target, { ...queryOptions, limit: args.limit ?? 30 })
   if (name === 'stellar_impact') return impact(project, args.target, { ...queryOptions, depth: args.depth ?? 3, limit: args.limit ?? 50 })
-  if (name === 'stellar_context') return contextForTask(project,args.task,{...queryOptions,compact:true,depth:args.depth??(args.withSource===true?1:0),maxFiles:6,maxLines:160,maxBytes:12000,withSource:args.withSource===true})
+  if (name === 'stellar_context') return contextForTask(project,args.task,{...queryOptions,compact:true,depth:args.depth??(args.withSource===true?1:0),maxFiles:6,maxLines:160,maxBytes:DEFAULT_CONTEXT_BYTES,withSource:args.withSource===true})
   if (name === 'stellar_source') return sourceExcerpt(project, args.path, { ...queryOptions, lines: args.lines })
   if (name === 'stellar_architecture') return architectureOverview(project, queryOptions)
   throw new Error(`Unknown tool: ${name}`)

@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { withFreshProjectDb } from '../core/runtime.js'
+import { DEFAULT_CONTEXT_BYTES } from '../core/constants.js'
 import { loadArchitectureHints, classifyArchitecture, architectureRank, hierarchyForPath, summarizeHierarchy } from './architecture.js'
 import { classifyIntent } from './intent.js'
 import { semanticSlice, semanticSliceEnabled, capabilityFor } from './semantic-slice.js'
@@ -304,7 +305,7 @@ export async function contextForTask(projectPath, task, options = {}) {
   const depth=Math.max(0,Math.min(2,Number(options.depth??0)))
   const limit=Math.min(Math.max(Number(options.maxFiles??options.limit??(compact?3:8)),1),12)
   const maxLines=Math.min(Math.max(Number(options.maxLines??300),20),1000)
-  const maxBytes=Math.min(Math.max(Number(options.maxBytes??12_000),512),100_000)
+  const maxBytes=Math.min(Math.max(Number(options.maxBytes??DEFAULT_CONTEXT_BYTES),512),100_000)
   return withFreshProjectDb(projectPath, async ({ db, root }) => {
     const profile = queryProfile(task)
     const qTokens = profile.terms

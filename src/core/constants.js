@@ -19,3 +19,6 @@ export const DEFAULT_IGNORES = new Set([
   '.git', '.stellar', 'node_modules', 'vendor', 'dist', 'build', 'out', 'coverage',
   '.next', '.nuxt', '.cache', '.venv', 'venv', '__pycache__', 'target', '.idea', '.vscode'
 ])
+// Source bytes one context response may carry. A model turn costs far more input than a few
+// more kilobytes of source, so the budget favors whole symbols over a smaller payload.
+export const DEFAULT_CONTEXT_BYTES = 20_000

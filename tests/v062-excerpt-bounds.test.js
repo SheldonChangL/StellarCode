@@ -69,3 +69,12 @@ test('v0.6.2 a symbol too long to return whole only gains a margin', async () =>
   assert.ok(length<=CONTEXT.maxLines,`at most maxLines, got ${length}`)
   assert.ok(length<400)
 })
+
+test('v0.6.2 the default context budget is 20,000 bytes everywhere it is used', async () => {
+  const { DEFAULT_CONTEXT_BYTES } = await import('../src/core/constants.js')
+  const { STELLAR_CONTEXT_FLAGS } = await import('../src/benchmark/agents.js')
+  const { DIAGNOSTIC_CONTEXT } = await import('../src/benchmark/semantic-diagnostics.js')
+  assert.equal(DEFAULT_CONTEXT_BYTES,20000)
+  assert.equal(STELLAR_CONTEXT_FLAGS[STELLAR_CONTEXT_FLAGS.indexOf('--max-bytes')+1],'20000')
+  assert.equal(DIAGNOSTIC_CONTEXT.maxBytes,20000)
+})
