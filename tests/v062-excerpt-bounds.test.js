@@ -78,3 +78,60 @@ test('v0.6.2 the default context budget is 20,000 bytes everywhere it is used', 
   assert.equal(STELLAR_CONTEXT_FLAGS[STELLAR_CONTEXT_FLAGS.indexOf('--max-bytes')+1],'20000')
   assert.equal(DIAGNOSTIC_CONTEXT.maxBytes,20000)
 })
+
+const THROTTLE=`import { db } from './db'
+
+/**
+ * Lock grows with the failure count, up to fifteen minutes.
+ */
+const FREE_ATTEMPTS = 5
+const MAX_LOCK_MS = 15 * 60 * 1000
+const UNRELATED_TABLE = [
+  'alpha',
+  'beta'
+]
+
+function lockDurationMs(failedCount) {
+  if (failedCount < FREE_ATTEMPTS) return 0
+  return Math.min(30000 * 2 ** (failedCount - FREE_ATTEMPTS), MAX_LOCK_MS)
+}
+
+export function unrelatedHelper(value) {
+  return value + 1
+}
+
+export async function recordLoginFailure(email) {
+  const row = await db.find(email)
+  const failedCount = (row?.failedCount ?? 0) + 1
+  const lockedUntil = new Date(Date.now() + lockDurationMs(failedCount))
+  await db.save(email, failedCount, lockedUntil)
+}
+`
+
+test('v0.6.2 same-file declarations a returned range names are attached, two hops deep', async () => {
+  const w=await fixture({'src/auth/throttle.ts':THROTTLE,'src/auth/db.ts':'export const db = { find(email) { return null }, save() {} }\n'})
+  const ctx=await contextForTask(w.repo,'Find where a login failure is recorded and how long the account stays locked.',{...CONTEXT,dirs:w.dirs})
+  const declared=ctx.relatedEvidence.filter(item=>item.relation==='same-file-declaration'&&item.path==='src/auth/throttle.ts')
+  const names=declared.flatMap(item=>item.symbol.split(', '))
+  assert.ok(names.includes('lockDurationMs'),'the helper the function calls')
+  assert.ok(names.includes('FREE_ATTEMPTS')&&names.includes('MAX_LOCK_MS'),'the constants that helper reads (second hop)')
+  assert.ok(!names.includes('UNRELATED_TABLE')&&!names.includes('unrelatedHelper'),'unreferenced declarations stay out')
+  const text=declared.map(item=>item.source).join('\n')
+  assert.match(text,/\d+: const MAX_LOCK_MS = 15 \* 60 \* 1000/)
+  assert.match(text,/Lock grows with the failure count/,'the comment directly above comes along')
+  for(const item of declared) {
+    assert.equal(item.direction,'internal')
+    for(const other of grounded(ctx).filter(other=>other!==item&&other.path===item.path))assert.ok(item.lines[1]<other.lines[0]||other.lines[1]<item.lines[0],'disjoint from other ranges')
+  }
+  assert.ok(sourceBytes(ctx)<=CONTEXT.maxBytes)
+})
+
+test('v0.6.2 Python module-level bindings are attached and a tight budget attaches none', async () => {
+  const files={'python/client.py':`import os\n\n_DEFAULT_RETRIES: Final[int] = 3\n_DEFAULT_TIMEOUT_S = 10.0\n_UNUSED = 1\n\n\ndef other_one():\n    return 1\n\n\ndef other_two():\n    return 2\n\n\ndef other_three():\n    return 3\n\n\ndef fetch_issue(issue_id):\n    for attempt in range(_DEFAULT_RETRIES):\n        result = request_issue(issue_id, timeout=_DEFAULT_TIMEOUT_S)\n        if result:\n            return result\n    return None\n`}
+  const w=await fixture(files)
+  const ctx=await contextForTask(w.repo,'Find where an issue is fetched with retries.',{...CONTEXT,dirs:w.dirs})
+  const names=ctx.relatedEvidence.filter(item=>item.relation==='same-file-declaration').flatMap(item=>item.symbol.split(', '))
+  assert.deepEqual(names.sort(),['_DEFAULT_RETRIES','_DEFAULT_TIMEOUT_S'])
+  const tight=await contextForTask(w.repo,'Find where an issue is fetched with retries.',{...CONTEXT,maxBytes:512,dirs:w.dirs})
+  assert.ok(sourceBytes(tight)<=512)
+})

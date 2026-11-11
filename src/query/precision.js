@@ -266,3 +266,46 @@ export function densestWindow(costs, rawScores, budget) {
   }
   return best
 }
+
+// Module-level declarations of one file that a returned range can refer to by name: small
+// indexed functions and constants, plus plain module-level bindings the index does not
+// record (`const LIMIT = 5`, `_DEFAULT_RETRIES: Final[int] = 3`). Read from live source, so
+// nothing is stored. Each declaration is at most `maxLines` long and takes the comment
+// lines directly above it.
+const JS_BINDING = /^(?:export\s+)?(?:declare\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)/
+const PY_BINDING = /^([A-Za-z_]\w*)\s*(?::[^=]*)?=(?!=)/
+const COMMENT_LINE = /^\s*(?:\/\/|\/\*|\*|#)/
+export function moduleDeclarations(filePath, lines, symbols, { maxLines = 20, commentLines = 5 } = {}) {
+  const python = /\.pyi?$/.test(filePath)
+  if (!python && !/\.(?:[cm]?[jt]sx?)$/.test(filePath)) return []
+  const inSymbol = n => symbols.some(symbol => Number(symbol.start_line) <= n && n <= Number(symbol.end_line))
+  const found = []
+  for (const symbol of symbols) {
+    if (!['function', 'constant'].includes(symbol.kind) || String(symbol.qualified_name ?? symbol.name).includes('.')) continue
+    const start = Number(symbol.start_line), end = Number(symbol.end_line)
+    if (end - start + 1 <= maxLines) found.push({ name: symbol.name, start, end })
+  }
+  for (let n = 1; n <= lines.length; n++) {
+    if (inSymbol(n)) continue
+    const match = (python ? PY_BINDING : JS_BINDING).exec(lines[n - 1] ?? '')
+    if (!match) continue
+    let depth = 0
+    let end = null
+    for (let m = n; m <= Math.min(lines.length, n + maxLines - 1); m++) {
+      for (const char of lines[m - 1]) {
+        if (char === '(' || char === '[' || char === '{') depth++
+        else if (char === ')' || char === ']' || char === '}') depth--
+      }
+      if (depth <= 0) { end = m; break }
+    }
+    if (end === null) continue
+    found.push({ name: match[1], start: n, end })
+    n = end
+  }
+  for (const item of found) {
+    let start = item.start
+    while (start > 1 && item.start - start < commentLines && COMMENT_LINE.test(lines[start - 2] ?? '') && !inSymbol(start - 1)) start--
+    item.start = start
+  }
+  return found.sort((a, b) => a.start - b.start || a.end - b.end)
+}

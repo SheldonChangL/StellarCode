@@ -6,10 +6,13 @@ import { loadArchitectureHints, classifyArchitecture, architectureRank, hierarch
 import { classifyIntent } from './intent.js'
 import { semanticSlice, semanticSliceEnabled, capabilityFor } from './semantic-slice.js'
 import { selectSemanticSeeds, symbolNature, SEED_POOL_FILES } from './semantic-seed.js'
-import { stemTerm, termMatch, termWeights, weightedScore, termCoverage, rankFileSymbols, focusRange, overlapLines, subtractTaken, allocateBudget, densestWindow, identifierPattern } from './precision.js'
+import { stemTerm, termMatch, termWeights, weightedScore, termCoverage, rankFileSymbols, focusRange, overlapLines, subtractTaken, allocateBudget, densestWindow, identifierPattern, moduleDeclarations } from './precision.js'
 
 // Lines a window inside a symbol too long to return whole may gain from unused budget.
 const GROW_MARGIN_LINES = 40
+// Same-file declarations attached to the returned ranges: lines per file and entries per response.
+const DECLARATION_FILE_LINES = 40
+const DECLARATION_ENTRIES = 6
 
 const QUERY_CONCEPTS = [
   { patterns: ['登入', '登錄', '登录', '登入流程', '登入功能', '登入頁'], terms: ['login', 'signin', 'sign-in', 'auth', 'authentication'] },
@@ -807,10 +810,67 @@ export async function contextForTask(projectPath, task, options = {}) {
         for(let n=from;n<=to;n++)rendered.push(`${n}: ${request.lines[n-1]}`)
         request.entry.source=rendered.join('\n')
       }
+      // v0.6.2: a returned function often reads a module-level constant or calls a small
+      // helper defined above it, and the agent then reads the top of the file to see it.
+      // Spare bytes attach the same-file declarations the returned ranges name, and the
+      // declarations those name in turn (two hops), merged when they sit together.
+      const evidenceCount=relatedEvidence.length
+      if(spare>0&&emitted.length) {
+        const fileSymbols=db.prepare('SELECT name,qualified_name,kind,start_line,end_line FROM symbols WHERE file_id=?')
+        const identifiers=text=>new Set(text.match(/[A-Za-z_$][\w$]*/g)??[])
+        let entries=0
+        for(const filePath of [...new Set(emitted.map(request=>request.entry.path))]) {
+          if(spare<=0||entries>=DECLARATION_ENTRIES)break
+          const own=emitted.filter(request=>request.entry.path===filePath)
+          const lines=own[0].lines
+          const covered=n=>own.some(request=>request.entry.lines[0]<=n&&n<=request.entry.lines[1])
+          const text=(from,to)=>lines.slice(from-1,to).join('\n')
+          const declarations=moduleDeclarations(filePath,lines,fileSymbols.all(filePath))
+          if(!declarations.length)continue
+          const picked=[]
+          let names=identifiers(own.map(request=>text(...request.entry.lines)).join('\n'))
+          for(let hop=0;hop<2;hop++) {
+            const next=declarations.filter(item=>!picked.includes(item)&&names.has(item.name))
+            if(!next.length)break
+            picked.push(...next)
+            names=identifiers(next.map(item=>text(item.start,item.end)).join('\n'))
+          }
+          // A declaration already inside a returned range is followed for its names but
+          // not repeated; one that is partly inside contributes only its missing lines.
+          const missing=[]
+          for(const item of picked) {
+            let start=item.start,end=item.end
+            while(start<=end&&covered(start))start++
+            while(end>=start&&covered(end))end--
+            if(start<=end)missing.push({name:item.name,start,end})
+          }
+          missing.sort((a,b)=>a.start-b.start)
+          const groups=[]
+          for(const item of missing) {
+            const last=groups.at(-1)
+            let joined=Boolean(last)&&item.start-last.end<=3
+            if(joined)for(let n=last.end+1;n<item.start;n++)if(covered(n))joined=false
+            if(joined){last.end=Math.max(last.end,item.end);last.names.push(item.name)}
+            else groups.push({start:item.start,end:item.end,names:[item.name]})
+          }
+          let fileLines=0
+          for(const group of groups) {
+            if(entries>=DECLARATION_ENTRIES)break
+            const count=group.end-group.start+1
+            const rendered=[]
+            for(let n=group.start;n<=group.end;n++)rendered.push(`${n}: ${lines[n-1]}`)
+            const source=rendered.join('\n')
+            const cost=Buffer.byteLength(source)+1
+            if(fileLines+count>DECLARATION_FILE_LINES||cost>spare)continue
+            fileLines+=count;spare-=cost;entries++
+            relatedEvidence.push({path:filePath,symbol:group.names.join(', '),lines:[group.start,group.end],relation:'same-file-declaration',direction:'internal',reason:`declared in this file and used by the returned ${own.length>1?'ranges':'range'}`,source})
+          }
+        }
+      }
       const groundedPaths=new Set(groundedFiles)
       const finalRelatedHints=relatedHints.filter(item=>!groundedPaths.has(item.path))
       const semanticFields=sliceOn?{...(slice.trace?{semanticTrace:{...slice.trace,...(seedTrace??{})}}:{}),semanticRoute:{seedRole:intentDetail.seedRole,intentConfidence:intentDetail.intentConfidence,plan:slice.plan??null,seeds:seeds.map(seed=>({path:seed.path,symbol:seed.symbol,kind:seed.kind}))},semanticEvidence:slice.edges,...(slice.hints?.length?{semanticHints:slice.hints}:{}),semanticCapability:capabilityFor([...new Set([...targets.map(t=>t.path),...slice.edges.flatMap(e=>[e.from.path,e.to.path])].map(p=>enriched.find(v=>v.file.path===p)?.file.language))])}:{}
-      return {targets,relatedEvidence,relatedHints:finalRelatedHints,groundedFiles,...semanticFields,intent,intentDetail:{confidence:intentDetail.confidence,intentConfidence:intentDetail.intentConfidence,seedRole:intentDetail.seedRole,signals:intentDetail.signals},depth,more:values.length>primary.length+finalRelatedHints.length+relatedEvidence.length||uniqueEvidence.length>relatedEvidence.length||slice.more,...(options.withSource?{sourceOfTruth:'targets[].source and relatedEvidence[].source are repository source read live from the working tree'}:{})}
+      return {targets,relatedEvidence,relatedHints:finalRelatedHints,groundedFiles,...semanticFields,intent,intentDetail:{confidence:intentDetail.confidence,intentConfidence:intentDetail.intentConfidence,seedRole:intentDetail.seedRole,signals:intentDetail.signals},depth,more:values.length>primary.length+finalRelatedHints.length+evidenceCount||uniqueEvidence.length>evidenceCount||slice.more,...(options.withSource?{sourceOfTruth:'targets[].source and relatedEvidence[].source are repository source read live from the working tree'}:{})}
     }
     return {
       query: task,
