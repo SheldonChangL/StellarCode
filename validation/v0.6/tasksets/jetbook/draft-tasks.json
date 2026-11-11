@@ -1,0 +1,274 @@
+{
+  "version": 1,
+  "notes": "author: explored server (server actions, REST v1, agent tool server, authz, notifications, jobs, storage) and client (page editor, comments panel, version history) with git/rg/sed; every answer traced to production source under src/, no tests used.",
+  "tasks": [
+    {
+      "id": "nav-login-lockout-duration",
+      "category": "navigation",
+      "prompt": "After several wrong passwords for the same account, sign-in is temporarily locked and the lock gets longer with each additional failure up to a cap. Where is that growing lock duration computed?",
+      "expectedFiles": [
+        "src/lib/auth/throttle.ts"
+      ],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        {
+          "from": "src/lib/auth/throttle.ts#recordLoginFailure",
+          "relation": "CALLS",
+          "to": "src/lib/auth/throttle.ts#lockDurationMs"
+        }
+      ]
+    },
+    {
+      "id": "nav-image-import-blocked-addresses",
+      "category": "navigation",
+      "prompt": "When the server downloads an external image by URL to keep it as a permanent attachment, it refuses to connect to loopback, link-local, multicast and other reserved addresses. Where is the list of blocked address ranges and the check against it implemented?",
+      "expectedFiles": [
+        "src/lib/storage/ssrf.ts"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "nav-editor-autosave-delay",
+      "category": "navigation",
+      "prompt": "In the browser page editor, how long does it wait after the last change before it automatically saves, and how often does it renew the editing lock? Where are those intervals defined and used?",
+      "expectedFiles": [
+        "src/components/editor/page-editor.tsx"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "flow-comment-reply-email",
+      "category": "flow",
+      "prompt": "When someone replies in a discussion thread on a page, the thread's original author gets an in-app alert and, unless they opted out, an email. Trace this from the server-side reply handler to the point where the outgoing email is handed to the background worker as a job.",
+      "expectedFiles": [
+        "src/actions/comment.ts",
+        "src/lib/notifications.ts",
+        "src/lib/notifications-email.ts",
+        "src/lib/jobs/queue.ts"
+      ],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        {
+          "from": "src/actions/comment.ts#replyComment",
+          "relation": "CALLS",
+          "to": "src/lib/notifications.ts#notifyCommentReply"
+        },
+        {
+          "from": "src/lib/notifications.ts#notifyCommentReply",
+          "relation": "CALLS",
+          "to": "src/lib/notifications.ts#notify"
+        },
+        {
+          "from": "src/lib/notifications.ts#notify",
+          "relation": "CALLS",
+          "to": "src/lib/notifications-email.ts#mirrorNotificationEmail"
+        },
+        {
+          "from": "src/lib/notifications-email.ts#mirrorNotificationEmail",
+          "relation": "CALLS",
+          "to": "src/lib/jobs/queue.ts#enqueueNotificationEmail"
+        }
+      ]
+    },
+    {
+      "id": "flow-api-update-archived-space-refused",
+      "category": "flow",
+      "prompt": "A client using a personal access token sends a partial update for a page that lives in an archived (read-only) space and gets a not-found response. Trace the request from the REST page-update endpoint to the place where the archived state makes the edit authorization fail.",
+      "expectedFiles": [
+        "src/app/api/v1/pages/[id]/route.ts",
+        "src/lib/api/page-write.ts",
+        "src/lib/authz/permission.ts",
+        "src/lib/authz/policy.ts"
+      ],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        {
+          "from": "src/app/api/v1/pages/[id]/route.ts#PATCH",
+          "relation": "CALLS",
+          "to": "src/lib/api/page-write.ts#apiUpdatePage"
+        },
+        {
+          "from": "src/lib/api/page-write.ts#apiUpdatePage",
+          "relation": "CALLS",
+          "to": "src/lib/authz/permission.ts#can"
+        },
+        {
+          "from": "src/lib/authz/permission.ts#can",
+          "relation": "CALLS",
+          "to": "src/lib/authz/policy.ts#actionAllowedWhenArchived"
+        }
+      ]
+    },
+    {
+      "id": "flow-autosave-version-conflict",
+      "category": "flow",
+      "prompt": "Two people edited the same page and one browser's autosave now shows a 'conflict' status instead of 'saved'. Trace where the stale version is detected on the server, what it throws, and how the editor recognizes it.",
+      "expectedFiles": [
+        "src/components/editor/page-editor.tsx",
+        "src/actions/page.ts",
+        "src/lib/pages/content-write.ts",
+        "src/lib/pages/errors.ts"
+      ],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        {
+          "from": "src/components/editor/page-editor.tsx#PageEditor",
+          "relation": "CALLS",
+          "to": "src/actions/page.ts#savePage"
+        },
+        {
+          "from": "src/actions/page.ts#savePage",
+          "relation": "CALLS",
+          "to": "src/lib/pages/content-write.ts#writePageContentTx"
+        }
+      ]
+    },
+    {
+      "id": "impact-content-write-pipeline-signature",
+      "category": "impact",
+      "prompt": "We want to add a required argument to the single transactional routine that writes a page's document, derived markdown/plain-text columns and version snapshot. Which production code calls it and must be updated?",
+      "expectedFiles": [
+        "src/actions/page.ts",
+        "src/lib/api/page-write.ts",
+        "src/lib/pages/cross-space.ts",
+        "src/lib/jobs/import-zip.ts"
+      ],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        {
+          "from": "src/actions/page.ts#savePage",
+          "relation": "CALLS",
+          "to": "src/lib/pages/content-write.ts#writePageContentTx"
+        },
+        {
+          "from": "src/lib/api/page-write.ts#apiUpdatePage",
+          "relation": "CALLS",
+          "to": "src/lib/pages/content-write.ts#writePageContentTx"
+        },
+        {
+          "from": "src/lib/pages/cross-space.ts#copyPageSubtreeToSpace",
+          "relation": "CALLS",
+          "to": "src/lib/pages/content-write.ts#writePageContentTx"
+        },
+        {
+          "from": "src/lib/jobs/import-zip.ts#runImportZip",
+          "relation": "CALLS",
+          "to": "src/lib/pages/content-write.ts#writePageContentTx"
+        }
+      ]
+    },
+    {
+      "id": "impact-verified-token-id-field",
+      "category": "impact",
+      "prompt": "If we rename the field that carries the token's own id in the result of verifying a personal access token, which production code must be reviewed? That id is used for per-token rate limiting by both the REST endpoints and the AI-agent tool endpoint.",
+      "expectedFiles": [
+        "src/lib/api-tokens/index.ts",
+        "src/lib/api-tokens/bearer.ts",
+        "src/app/api/mcp/route.ts"
+      ],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        {
+          "from": "src/lib/api-tokens/bearer.ts#requireApiAuth",
+          "relation": "CALLS",
+          "to": "src/lib/api-tokens/index.ts#verifyApiToken"
+        },
+        {
+          "from": "src/lib/api-tokens/bearer.ts#requireApiAuth",
+          "relation": "CALLS",
+          "to": "src/lib/api-tokens/bearer.ts#checkApiTokenRate"
+        },
+        {
+          "from": "src/lib/api-tokens/bearer.ts#ApiAuthResult",
+          "relation": "CONSUMES",
+          "to": "src/lib/api-tokens/index.ts#VerifiedApiToken"
+        }
+      ]
+    },
+    {
+      "id": "impact-save-action-return-shape",
+      "category": "impact",
+      "prompt": "If the server action the editor uses to save page content stopped returning the new version number, which production code that relies on that number (directly or through the restore-a-previous-version feature) must be reviewed?",
+      "expectedFiles": [
+        "src/actions/page.ts",
+        "src/components/editor/page-editor.tsx",
+        "src/app/(app)/s/[spaceSlug]/[pageSlug]/history/restore-version-button.tsx"
+      ],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        {
+          "from": "src/components/editor/page-editor.tsx#PageEditor",
+          "relation": "CALLS",
+          "to": "src/actions/page.ts#savePage"
+        },
+        {
+          "from": "src/actions/page.ts#restorePageVersion",
+          "relation": "CALLS",
+          "to": "src/actions/page.ts#savePage"
+        },
+        {
+          "from": "src/app/(app)/s/[spaceSlug]/[pageSlug]/history/restore-version-button.tsx#RestoreVersionButton",
+          "relation": "CALLS",
+          "to": "src/actions/page.ts#restorePageVersion"
+        }
+      ]
+    },
+    {
+      "id": "edit-api-update-page-icon",
+      "category": "editing-prep",
+      "prompt": "Let external clients set a page's emoji icon when partially updating a page, both through the versioned REST page-update endpoint and through the AI-agent tool for updating pages, and document the new field in the published machine-readable REST specification. Which files must be edited?",
+      "expectedFiles": [
+        "src/app/api/v1/pages/[id]/route.ts",
+        "src/app/api/mcp/route.ts",
+        "src/lib/api/page-write.ts",
+        "src/lib/api/openapi.ts"
+      ],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        {
+          "from": "src/app/api/v1/pages/[id]/route.ts#PATCH",
+          "relation": "CALLS",
+          "to": "src/lib/api/page-write.ts#apiUpdatePage"
+        }
+      ]
+    },
+    {
+      "id": "edit-moderators-edit-comments",
+      "category": "editing-prep",
+      "prompt": "Space admins can already delete anyone's remark in a page discussion thread; we also want them to be able to edit anyone's remark text, both in the server-side check and in the discussion sidebar where the Edit control is shown. Which files must be edited?",
+      "expectedFiles": [
+        "src/actions/comment.ts",
+        "src/app/(app)/s/[spaceSlug]/[pageSlug]/comments-panel.tsx"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "edit-separate-move-permission",
+      "category": "editing-prep",
+      "prompt": "Introduce a separate authorization action for moving pages (same-space reparent and cross-space move) that only space admins hold, and enforce it server-side in both the web move actions and the shared move logic used by the REST and agent tools, instead of the generic edit right. Which files must be edited?",
+      "expectedFiles": [
+        "src/lib/authz/policy.ts",
+        "src/actions/page.ts",
+        "src/lib/api/page-write.ts"
+      ],
+      "expectedMatch": "all",
+      "expectedSemanticEdges": [
+        {
+          "from": "src/lib/api/page-write.ts#apiMovePage",
+          "relation": "CALLS",
+          "to": "src/lib/authz/permission.ts#can"
+        },
+        {
+          "from": "src/actions/page.ts#movePageToSpace",
+          "relation": "CALLS",
+          "to": "src/lib/authz/permission.ts#assertCan"
+        },
+        {
+          "from": "src/lib/authz/permission.ts#can",
+          "relation": "CALLS",
+          "to": "src/lib/authz/policy.ts#actionAllowedForRole"
+        }
+      ]
+    }
+  ]
+}

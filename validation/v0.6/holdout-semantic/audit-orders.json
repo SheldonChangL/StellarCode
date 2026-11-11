@@ -1,0 +1,381 @@
+{
+  "schemaVersion": 1,
+  "contextFlags": [
+    "--compact",
+    "--with-source",
+    "--depth",
+    "1",
+    "--max-files",
+    "6",
+    "--max-lines",
+    "160",
+    "--max-bytes",
+    "12000",
+    "--json"
+  ],
+  "summary": {
+    "tasks": 12,
+    "tasksWithSemanticEdges": 2,
+    "annotatedTasks": 8,
+    "requiredEdges": 16,
+    "requiredEdgeRecallContext": 0,
+    "requiredEdgeRecallIndex": 0.8125,
+    "expectedFileGroundingRate": 0.03333333333333333,
+    "medianSourceBytes": 1643
+  },
+  "tasks": [
+    {
+      "taskId": "nav-meter-rollover-energy",
+      "category": "navigation",
+      "intent": "navigation",
+      "primary": "src/models/interfaces/IPoint.ts#Stop",
+      "topTargetExpected": false,
+      "semanticEdges": 0,
+      "confidence": {
+        "high": 0,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 0,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [],
+      "sourceBytes": 1578,
+      "expectedFilesGrounded": 0,
+      "expectedFiles": 1,
+      "semanticPathLength": 0,
+      "requiredEdges": 1,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 1,
+      "missingRequiredEdges": [
+        "src/services/audit.service.ts#AuditService._calculateEnergyUsage|CALLS|src/services/audit.service.ts#AuditService._findClosestPowersOfTwo"
+      ]
+    },
+    {
+      "taskId": "nav-bearer-token-identity",
+      "category": "navigation",
+      "intent": "navigation",
+      "primary": "src/models/interfaces/Common.ts#ServiceResponse",
+      "topTargetExpected": false,
+      "semanticEdges": 2,
+      "confidence": {
+        "high": 2,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 2,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "src/controllers/system.controller.ts#SystemController.version",
+        "src/services/audit.service.ts#AuditService.checkAudit"
+      ],
+      "sourceBytes": 2677,
+      "expectedFilesGrounded": 0,
+      "expectedFiles": 1,
+      "semanticPathLength": 1,
+      "requiredEdges": 1,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 0,
+      "missingRequiredEdges": [
+        "src/middlewares/deserializeUser.ts#deserializeUser|CALLS|src/utils/jwt.ts#verifyJwt"
+      ]
+    },
+    {
+      "taskId": "nav-incoming-file-disk-name",
+      "category": "navigation",
+      "intent": "navigation",
+      "primary": "src/models/interfaces/IEmailVerify.ts#Send",
+      "topTargetExpected": false,
+      "semanticEdges": 0,
+      "confidence": {
+        "high": 0,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 0,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [],
+      "sourceBytes": 967,
+      "expectedFilesGrounded": 0,
+      "expectedFiles": 1,
+      "semanticPathLength": 0,
+      "requiredEdges": 0,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 0,
+      "missingRequiredEdges": []
+    },
+    {
+      "taskId": "flow-reconcile-to-history-record",
+      "category": "flow",
+      "intent": "flow",
+      "primary": "src/models/interfaces/IInvoiceRecord.ts#InvoiceRecord",
+      "topTargetExpected": false,
+      "semanticEdges": 0,
+      "confidence": {
+        "high": 0,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 0,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [],
+      "sourceBytes": 1989,
+      "expectedFilesGrounded": 0,
+      "expectedFiles": 3,
+      "semanticPathLength": 0,
+      "requiredEdges": 3,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 3,
+      "missingRequiredEdges": [
+        "src/routes/audit.route.ts#AuditRoute.setRoutes|CALLS|src/controllers/audit.controller.ts#AuditController.audit",
+        "src/controllers/audit.controller.ts#AuditController.audit|CALLS|src/services/audit.service.ts#AuditService.audit",
+        "src/services/audit.service.ts#AuditService.audit|CALLS|src/services/audit.service.ts#AuditService._createAuditRecord"
+      ]
+    },
+    {
+      "taskId": "flow-invalid-token-rejected",
+      "category": "flow",
+      "intent": "flow",
+      "primary": "src/models/interfaces/IInvoice.ts#CheckDonateCode",
+      "topTargetExpected": false,
+      "semanticEdges": 1,
+      "confidence": {
+        "high": 1,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 1,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "src/logger/api.logger.ts#APILogger.error"
+      ],
+      "sourceBytes": 1352,
+      "expectedFilesGrounded": 0,
+      "expectedFiles": 4,
+      "semanticPathLength": 1,
+      "requiredEdges": 2,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 1,
+      "missingRequiredEdges": [
+        "src/middlewares/deserializeUser.ts#deserializeUser|CALLS|src/utils/jwt.ts#verifyJwt",
+        "src/routes/audit.route.ts#AuditRoute.setRoutes|REGISTERS|src/middlewares/requireUser.ts#requireUser"
+      ]
+    },
+    {
+      "taskId": "flow-monthly-report-email",
+      "category": "flow",
+      "intent": "flow",
+      "primary": "src/models/interfaces/IPoint.ts#Station",
+      "topTargetExpected": false,
+      "semanticEdges": 0,
+      "confidence": {
+        "high": 0,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 0,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [],
+      "sourceBytes": 2227,
+      "expectedFilesGrounded": 0,
+      "expectedFiles": 3,
+      "semanticPathLength": 0,
+      "requiredEdges": 3,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 3,
+      "missingRequiredEdges": [
+        "src/routes/audit.route.ts#AuditRoute.setRoutes|CALLS|src/controllers/audit.controller.ts#AuditController.monthAudit",
+        "src/controllers/audit.controller.ts#AuditController.monthAudit|CALLS|src/services/audit.service.ts#AuditService.monthAudit",
+        "src/services/audit.service.ts#AuditService.monthAudit|CALLS|src/services/audit.service.ts#AuditService.sendEmail"
+      ]
+    },
+    {
+      "taskId": "impact-token-verify-throws",
+      "category": "impact",
+      "intent": "impact",
+      "primary": "src/models/interfaces/ICustomer.ts#AccessToken",
+      "topTargetExpected": false,
+      "semanticEdges": 0,
+      "confidence": {
+        "high": 0,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 0,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [],
+      "sourceBytes": 1504,
+      "expectedFilesGrounded": 0,
+      "expectedFiles": 2,
+      "semanticPathLength": 0,
+      "requiredEdges": 1,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 0,
+      "missingRequiredEdges": [
+        "src/middlewares/deserializeUser.ts#deserializeUser|CALLS|src/utils/jwt.ts#verifyJwt"
+      ]
+    },
+    {
+      "taskId": "impact-schema-check-decorator",
+      "category": "impact",
+      "intent": "impact",
+      "primary": "src/models/interfaces/IOrder.ts#List",
+      "topTargetExpected": false,
+      "semanticEdges": 0,
+      "confidence": {
+        "high": 0,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 0,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [],
+      "sourceBytes": 1754,
+      "expectedFilesGrounded": 0,
+      "expectedFiles": 3,
+      "semanticPathLength": 0,
+      "requiredEdges": 3,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 3,
+      "missingRequiredEdges": [
+        "src/controllers/audit.controller.ts#AuditController.audit|CALLS|src/services/audit.service.ts#AuditService.audit",
+        "src/controllers/audit.controller.ts#AuditController.monthAudit|CALLS|src/services/audit.service.ts#AuditService.monthAudit",
+        "src/controllers/audit.controller.ts#AuditController.list|CALLS|src/services/audit.service.ts#AuditService.list"
+      ]
+    },
+    {
+      "taskId": "impact-history-record-columns",
+      "category": "impact",
+      "intent": "navigation",
+      "primary": "src/models/interfaces/IPointModel.ts#FindByName",
+      "topTargetExpected": false,
+      "semanticEdges": 0,
+      "confidence": {
+        "high": 0,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 0,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [],
+      "sourceBytes": 1092,
+      "expectedFilesGrounded": 0,
+      "expectedFiles": 3,
+      "semanticPathLength": 0,
+      "requiredEdges": 0,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 0,
+      "missingRequiredEdges": []
+    },
+    {
+      "taskId": "edit-history-list-date-filter",
+      "category": "editing-prep",
+      "intent": "navigation",
+      "primary": "src/models/interfaces/Common.ts#IListQuery",
+      "topTargetExpected": false,
+      "semanticEdges": 0,
+      "confidence": {
+        "high": 0,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 0,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [],
+      "sourceBytes": 1573,
+      "expectedFilesGrounded": 0,
+      "expectedFiles": 2,
+      "semanticPathLength": 0,
+      "requiredEdges": 0,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 0,
+      "missingRequiredEdges": []
+    },
+    {
+      "taskId": "edit-storage-dir-configurable",
+      "category": "editing-prep",
+      "intent": "navigation",
+      "primary": "src/index.ts",
+      "topTargetExpected": false,
+      "semanticEdges": 0,
+      "confidence": {
+        "high": 0,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 0,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [],
+      "sourceBytes": 2297,
+      "expectedFilesGrounded": 1,
+      "expectedFiles": 4,
+      "semanticPathLength": 0,
+      "requiredEdges": 0,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 0,
+      "missingRequiredEdges": []
+    },
+    {
+      "taskId": "edit-owner-only-history-delete",
+      "category": "editing-prep",
+      "intent": "editing-prep",
+      "primary": "src/models/interfaces/IUser.ts#NotificationDelete",
+      "topTargetExpected": false,
+      "semanticEdges": 0,
+      "confidence": {
+        "high": 0,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 0,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [],
+      "sourceBytes": 1643,
+      "expectedFilesGrounded": 0,
+      "expectedFiles": 3,
+      "semanticPathLength": 0,
+      "requiredEdges": 2,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 2,
+      "missingRequiredEdges": [
+        "src/routes/audit.route.ts#AuditRoute.setRoutes|CALLS|src/controllers/audit.controller.ts#AuditController.delete",
+        "src/controllers/audit.controller.ts#AuditController.delete|CALLS|src/services/audit.service.ts#AuditService.delete"
+      ]
+    }
+  ]
+}

@@ -1,6 +1,8 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import crypto from 'node:crypto'
+import { extractSemanticFacts } from './semantic-extract.js'
+import { matchBracket, functionBodyOpen, arrowFunctionRange, declarationBodyOpen } from './js-ranges.js'
 
 function id(parts) {
   return crypto.createHash('sha1').update(parts.join('|')).digest('hex')
@@ -34,6 +36,23 @@ function stripCommentsAndStrings(text) {
     if (state === 'code') {
       if (c === '/' && n === '/') { out += '  '; i += 2; state = 'lineComment'; continue }
       if (c === '/' && n === '*') { out += '  '; i += 2; state = 'blockComment'; continue }
+      // A regex literal (`/"/g`) must not flip string state. It starts where an operand is
+      // expected: after an operator/punctuator, at the start, or after a keyword.
+      if (c === '/' && regexAllowed(out)) {
+        let j = i + 1, inClass = false
+        while (j < text.length && text[j] !== '\n') {
+          if (text[j] === '\\') { j += 2; continue }
+          if (text[j] === '[') inClass = true
+          else if (text[j] === ']') inClass = false
+          else if (text[j] === '/' && !inClass) break
+          j++
+        }
+        if (j < text.length && text[j] === '/') {
+          j++
+          while (/[A-Za-z]/.test(text[j] ?? '')) j++
+          out += ' '.repeat(j - i); i = j; continue
+        }
+      }
       if (c === '"' || c === "'" || c === '`') { quote = c; out += ' '; i++; state = 'string'; continue }
       out += c; i++; continue
     }
@@ -52,6 +71,21 @@ function stripCommentsAndStrings(text) {
     }
   }
   return out
+}
+
+const REGEX_KEYWORDS = new Set(['return', 'typeof', 'case', 'do', 'else', 'in', 'of', 'void', 'yield', 'await', 'throw', 'delete', 'instanceof', 'new'])
+
+// Scans backward from the end (constant work per `/`, not proportional to the file).
+function regexAllowed(out) {
+  let i = out.length - 1
+  while (i >= 0 && /\s/.test(out[i])) i--
+  if (i < 0) return true
+  const last = out[i]
+  if ('(,=:[!&|?{};+-*%<>~^'.includes(last)) return true
+  if (!/[\w$]/.test(last)) return false
+  let j = i
+  while (j >= 0 && i - j < 12 && /[\w$]/.test(out[j])) j--
+  return REGEX_KEYWORDS.has(out.slice(j + 1, i + 1))
 }
 
 function findBlockEnd(masked, openIndex) {
@@ -104,6 +138,17 @@ function parseJsTs(text, file) {
       importedNames: parseJSImportBindings(match[2], Boolean(match[1]))
     })
   }
+  // `export { a as b } from './m'` and `export * from './m'` are module dependencies too:
+  // without them a barrel index is a dead end in the graph.
+  for (const match of text.matchAll(/\bexport\s+(type\s+)?(?:\*(?:\s+as\s+[A-Za-z_$][\w$]*)?|\{([^}]*)\})\s*from\s*["']([^"']+)["']/g)) {
+    const importedNames = []
+    for (let part of String(match[2] ?? '').split(',')) {
+      part = part.trim().replace(/^type\s+/, '')
+      const named = part.match(/^([A-Za-z_$][\w$]*)(?:\s+as\s+([A-Za-z_$][\w$]*))?$/)
+      if (named && named[1] !== 'default') importedNames.push({ importedName: named[1], localName: named[2] ?? named[1], kind: match[1] ? 'type' : 'named' })
+    }
+    imports.push({ specifier: match[3], line: lineAt(text, match.index), sourceOffset: `re${match.index}`, importedNames })
+  }
   for (const match of text.matchAll(/\bimport\s+["']([^"']+)["']/g)) {
     imports.push({ specifier: match[1], line: lineAt(text, match.index), sourceOffset: match.index, importedNames: [] })
   }
@@ -114,11 +159,11 @@ function parseJsTs(text, file) {
   }
 
   const declarations = [
-    { kind: 'function', re: /\b(export\s+)?(?:default\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/g },
-    { kind: 'class', re: /\b(export\s+)?(?:default\s+)?class\s+([A-Za-z_$][\w$]*)/g },
+    { kind: 'function', re: /\b(export\s+)?(?:default\s+)?(?:async\s+)?function\s*\*?\s*([A-Za-z_$][\w$]*)\s*(?:<[^()]*?>)?\s*\(/g },
+    { kind: 'class', re: /\b(export\s+)?(?:default\s+)?(?:abstract\s+)?class\s+([A-Za-z_$][\w$]*)/g },
     { kind: 'interface', re: /\b(export\s+)?interface\s+([A-Za-z_$][\w$]*)/g },
-    { kind: 'type', re: /\b(export\s+)?type\s+([A-Za-z_$][\w$]*)\s*=/g },
-    { kind: 'constant', re: /\b(export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>/g }
+    { kind: 'type', re: /\b(export\s+)?type\s+([A-Za-z_$][\w$]*)\s*(?:<[^=]*?>)?\s*=/g },
+    { kind: 'constant', re: /\b(export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::[^=;\n]+?)?=(?![=>])/g }
   ]
 
   for (const decl of declarations) {
@@ -126,14 +171,18 @@ function parseJsTs(text, file) {
       const name = match[2]
       const startLine = lineAt(masked, match.index)
       let endLine = startLine
-      let brace = masked.indexOf('{', match.index + match[0].length)
-      if (brace >= 0 && (decl.kind === 'function' || decl.kind === 'class' || decl.kind === 'interface')) {
-        endLine = lineAt(masked, findBlockEnd(masked, brace))
+      let brace = -1
+      if (decl.kind === 'function') {
+        brace = functionBodyOpen(masked, match.index + match[0].length - 1)
+        if (brace >= 0) { const end = matchBracket(masked, brace); if (end >= 0) endLine = lineAt(masked, end); else brace = -1 }
+      } else if (decl.kind === 'class' || decl.kind === 'interface') {
+        brace = declarationBodyOpen(masked, match.index + match[0].length)
+        if (brace >= 0) { const end = matchBracket(masked, brace); if (end >= 0) endLine = lineAt(masked, end); else brace = -1 }
       } else if (decl.kind === 'constant') {
-        let cursor = match.index + match[0].length
-        while (/\s/.test(masked[cursor] ?? '')) cursor++
-        brace = masked[cursor] === '{' ? cursor : -1
-        if (brace >= 0) endLine = lineAt(masked, findBlockEnd(masked, brace))
+        const arrow = arrowFunctionRange(masked, match.index + match[0].length)
+        if (!arrow) continue
+        brace = arrow.bodyOpen
+        endLine = lineAt(masked, arrow.endIndex)
       }
       symbols.push({
         symbolId: makeSymbolId(file, decl.kind, name, startLine, match.index),
@@ -151,17 +200,24 @@ function parseJsTs(text, file) {
         const end = findBlockEnd(masked, brace)
         const body = masked.slice(brace + 1, end)
         const methodRe = /(?:^|\n)\s*(?:public\s+|private\s+|protected\s+|static\s+|async\s+|readonly\s+)*([A-Za-z_$][\w$]*)\s*\([^;{}]*\)\s*(?::\s*[^={]+)?\s*\{/g
+        // Only class-body members (depth 0): `name() {` inside a method body is an
+        // object-literal method or a nested block, not a member of this class.
+        const depthAt = new Int32Array(body.length + 1)
+        for (let k = 0, d = 0; k < body.length; k++) { depthAt[k] = d; const ch = body[k]; if (ch === '{' || ch === '(' || ch === '[') d++; else if (ch === '}' || ch === ')' || ch === ']') d-- }
         for (const mm of body.matchAll(methodRe)) {
           const methodName = mm[1]
+          if (depthAt[mm.index + Math.max(0, mm[0].indexOf(methodName))] !== 0) continue
           if (['if','for','while','switch','catch','constructor'].includes(methodName)) {
             if (methodName !== 'constructor') continue
           }
           const methodNameOffset = mm[0].indexOf(methodName)
           const absoluteIndex = brace + 1 + mm.index + Math.max(0, methodNameOffset)
           const methodLine = lineAt(masked, absoluteIndex)
-          const openOffset = mm[0].lastIndexOf('{')
-          const methodOpen = brace + 1 + mm.index + Math.max(0, openOffset)
-          const methodEndLine = methodOpen >= 0 ? lineAt(masked, findBlockEnd(masked, methodOpen)) : methodLine
+          // Re-locate the body structurally: the regex `{` may belong to a return type.
+          const parenOpen = masked.indexOf('(', absoluteIndex + methodName.length)
+          const methodOpen = functionBodyOpen(masked, parenOpen)
+          const methodClose = methodOpen >= 0 ? matchBracket(masked, methodOpen) : -1
+          const methodEndLine = methodClose >= 0 ? lineAt(masked, methodClose) : methodLine
           symbols.push({
             symbolId: makeSymbolId(file, 'method', `${name}.${methodName}`, methodLine, absoluteIndex),
             fileId: file.fileId,
@@ -191,18 +247,80 @@ function parseJsTs(text, file) {
     }
   }
 
-  return { symbols, imports }
+  const { facts, extraSymbols } = extractSemanticFacts({ text, masked, symbols, imports, file })
+  for (const extra of extraSymbols) symbols.push({ ...extra, symbolId: makeSymbolId(file, extra.kind, extra.qualifiedName, extra.startLine, extra.sourceOffset), sourceOffset: undefined })
+  return { symbols, imports, semantic: facts }
 }
 
-function pythonBlockEnd(lines, startIndex, indent) {
-  let endLine = startIndex + 1
-  for (let i = startIndex + 1; i < lines.length; i++) {
-    const raw = lines[i]
-    const trimmed = raw.trim()
-    if (!trimmed || trimmed.startsWith('#')) { endLine = i + 1; continue }
-    const currentIndent = raw.match(/^\s*/)[0].replace(/\t/g, '    ').length
-    if (currentIndent <= indent) break
-    endLine = i + 1
+// Python logical lines: a statement may span physical lines inside brackets, after a
+// backslash, or inside a triple-quoted string. Returns [{ start, end }] (0-based physical
+// line indexes) for every logical line that holds code; blank and comment-only lines and
+// string/bracket continuation lines never start a statement.
+export function pythonLogicalLines(text) {
+  const logical = []
+  let depth = 0, quote = '', triple = false, current = null, line = 0, continued = false
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]
+    if (c === '\n') {
+      if (current && !quote && depth === 0 && !continued) { current.end = line; logical.push(current); current = null }
+      if (quote && !triple) quote = '' // unterminated single-line string: recover
+      continued = false
+      line++
+      continue
+    }
+    if (quote) {
+      if (c === '\\') { if (text[i + 1] === '\n') { i++; line++ } else i++; continue }
+      if (triple ? text.startsWith(quote.repeat(3), i) : c === quote) { if (triple) i += 2; quote = ''; triple = false }
+      continue
+    }
+    if (c === '#') { while (i + 1 < text.length && text[i + 1] !== '\n') i++; continue }
+    if (c === ' ' || c === '\t' || c === '\r' || c === '\f') continue
+    if (c === '\\' && (text[i + 1] === '\n' || (text[i + 1] === '\r' && text[i + 2] === '\n'))) { continued = true; continue }
+    if (!current) current = { start: line, end: line }
+    continued = false
+    if (c === '"' || c === "'") {
+      quote = c
+      triple = text[i + 1] === c && text[i + 2] === c
+      if (triple) i += 2
+      continue
+    }
+    if (c === '(' || c === '[' || c === '{') depth++
+    else if (c === ')' || c === ']' || c === '}') depth = Math.max(0, depth - 1)
+  }
+  if (current) { current.end = line; logical.push(current) }
+  return logical
+}
+
+const pyIndent = raw => raw.match(/^\s*/)[0].replace(/\t/g, '    ').length
+
+// The colon that ends a def/class header at bracket depth 0 (skipping `-> Type`), and
+// whether a body follows it on the same logical line (`def f(): return 1`).
+function pythonHeaderInline(headerText) {
+  let depth = 0, quote = ''
+  for (let i = 0; i < headerText.length; i++) {
+    const c = headerText[i]
+    if (quote) { if (c === '\\') i++; else if (c === quote) quote = ''; continue }
+    if (c === '"' || c === "'") { quote = c; continue }
+    if (c === '#') { while (i < headerText.length && headerText[i] !== '\n') i++; continue }
+    if (c === '(' || c === '[' || c === '{') depth++
+    else if (c === ')' || c === ']' || c === '}') depth--
+    else if (c === ':' && depth === 0) return headerText.slice(i + 1).replace(/#.*$/gm, '').trim().length > 0
+  }
+  return false
+}
+
+// Last physical line (1-based) of the block opened by logical line `k`: the body runs
+// over following logical lines indented deeper than the header; trailing blanks and
+// comments are not part of it.
+function pythonBlockEnd(lines, logical, k) {
+  const header = logical[k]
+  const indent = pyIndent(lines[header.start])
+  const headerText = lines.slice(header.start, header.end + 1).join('\n')
+  if (pythonHeaderInline(headerText)) return header.end + 1
+  let endLine = header.end + 1
+  for (let j = k + 1; j < logical.length; j++) {
+    if (pyIndent(lines[logical[j].start]) <= indent) break
+    endLine = logical[j].end + 1
   }
   return endLine
 }
@@ -212,34 +330,36 @@ function parsePython(text, file) {
   const symbols = []
   const imports = []
   const classStack = []
+  const logical = pythonLogicalLines(text)
 
-  for (let i = 0; i < lines.length; i++) {
+  for (let k = 0; k < logical.length; k++) {
+    const i = logical[k].start
     const raw = lines[i]
     const trimmed = raw.trim()
-    if (!trimmed || trimmed.startsWith('#')) continue
-    const indent = raw.match(/^\s*/)[0].replace(/\t/g, '    ').length
+    if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('@')) continue
+    const indent = pyIndent(raw)
     while (classStack.length && indent <= classStack[classStack.length - 1].indent) classStack.pop()
 
-    let m = trimmed.match(/^class\s+([A-Za-z_]\w*)\s*(?:\([^)]*\))?\s*:/)
+    let m = trimmed.match(/^class\s+([A-Za-z_]\w*)\s*[(:\[]/)
     if (m) {
       const name = m[1]
       symbols.push({
         symbolId: makeSymbolId(file, 'class', name, i + 1, i), fileId: file.fileId,
-        qualifiedName: name, name, kind: 'class', startLine: i + 1, endLine: pythonBlockEnd(lines, i, indent),
+        qualifiedName: name, name, kind: 'class', startLine: i + 1, endLine: pythonBlockEnd(lines, logical, k),
         exported: !name.startsWith('_'), signature: trimmed.slice(0, 300)
       })
       classStack.push({ name, indent })
       continue
     }
 
-    m = trimmed.match(/^(?:async\s+)?def\s+([A-Za-z_]\w*)\s*\(([^)]*)\)/)
+    m = trimmed.match(/^(?:async\s+)?def\s+([A-Za-z_]\w*)\s*[(\[]/)
     if (m) {
       const name = m[1]
       const cls = classStack[classStack.length - 1]
       const qualifiedName = cls ? `${cls.name}.${name}` : name
       symbols.push({
         symbolId: makeSymbolId(file, cls ? 'method' : 'function', qualifiedName, i + 1, i), fileId: file.fileId,
-        qualifiedName, name, kind: cls ? 'method' : 'function', startLine: i + 1, endLine: pythonBlockEnd(lines, i, indent),
+        qualifiedName, name, kind: cls ? 'method' : 'function', startLine: i + 1, endLine: pythonBlockEnd(lines, logical, k),
         exported: !name.startsWith('_'), signature: trimmed.slice(0, 300)
       })
       continue
@@ -257,7 +377,15 @@ function parsePython(text, file) {
       }
     }
   }
-  return { symbols, imports }
+  const { facts } = extractSemanticFacts({ text, symbols, imports, file })
+  // Keep `as` aliases and parenthesized multi-line names that the line scan above cannot see.
+  for (const imp of facts.imports) {
+    const existing = imports.find(entry => entry.specifier === imp.specifier && entry.line === imp.line)
+    const importedNames = imp.bindings.map(b => ({ importedName: b.imported, localName: b.local, kind: 'named' }))
+    if (existing) existing.importedNames = importedNames
+    else imports.push({ specifier: imp.specifier, line: imp.line, sourceOffset: `py${imp.line}`, importedNames })
+  }
+  return { symbols, imports, semantic: facts }
 }
 
 export async function parseFile(file) {

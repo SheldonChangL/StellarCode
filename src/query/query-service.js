@@ -3,6 +3,8 @@ import path from 'node:path'
 import { withFreshProjectDb } from '../core/runtime.js'
 import { loadArchitectureHints, classifyArchitecture, architectureRank, hierarchyForPath, summarizeHierarchy } from './architecture.js'
 import { classifyIntent } from './intent.js'
+import { semanticSlice, semanticSliceEnabled, capabilityFor } from './semantic-slice.js'
+import { selectSemanticSeeds, symbolNature, SEED_POOL_FILES } from './semantic-seed.js'
 import { stemTerm, termMatch, termWeights, weightedScore, termCoverage, rankFileSymbols, focusRange, overlapLines, subtractTaken, allocateBudget, densestWindow, identifierPattern } from './precision.js'
 
 const QUERY_CONCEPTS = [
@@ -359,6 +361,7 @@ export async function contextForTask(projectPath, task, options = {}) {
 
     let primaryRanked = []
     let rankedById = new Map()
+    let lexicalPool = []
     const flowCallees = []
     if (profile.architectureOverview) {
       const viable = enriched.filter(v => !['test', 'docs', 'config'].includes(v.architecture.role))
@@ -418,6 +421,7 @@ export async function contextForTask(projectPath, task, options = {}) {
         ranked.sort((a, b) => b.score - a.score || a.file.path.localeCompare(b.file.path))
       }
       rankedById = new Map(ranked.map(v => [v.file.file_id, v]))
+      lexicalPool = ranked.filter(v => !v.file.is_test)
 
       const viable = ranked.filter(v => !v.file.is_test && !/(^|\/)types?(\/|$)/.test(v.file.path))
       const topScore = viable[0]?.score ?? 0
@@ -586,6 +590,39 @@ export async function contextForTask(projectPath, task, options = {}) {
       const targets=kept.slice(0,Math.min(3,limit)).map(v=>({path:v.path,lines:v.read.lines,symbol:v.symbols?.[0]?.qualifiedName??null,confidence:Number((v.score/(kept[0].score||1)).toFixed(2)),reason:v.precisionReason}))
       const targetPaths=new Set(targets.map(target=>target.path))
       const relatedHints=depth>0?relatedFiles.filter(v=>!targetPaths.has(v.path)).slice(0,Math.max(0,limit-targets.length)).map(v=>({path:v.path,lines:v.read.lines,symbol:v.symbols?.[0]?.qualifiedName??null,relation:v.relation??'imports',direction:v.direction??'outgoing'})):[]
+      // v0.6: follow resolved semantic relations from the targets. When the slice grounds
+      // any neighbor, it replaces the lexical related-evidence heuristics below.
+      const sliceOn=depth>0&&!profile.architectureOverview&&semanticSliceEnabled(options)
+      // v0.6.1: the slice starts from semantic seeds, not blindly from the lexical top
+      // target. Seeds come from the same lexical candidates (targets + top lexical files),
+      // filtered by the query's seed role; the lexical targets themselves are unchanged.
+      let seeds=[]
+      let seedTrace=null
+      if(sliceOn) {
+        const pool=[]
+        const poolIds=new Set()
+        const addPool=v=>{if(v&&!poolIds.has(v.file.file_id)&&!v.file.is_test){poolIds.add(v.file.file_id);pool.push(v)}}
+        for(const target of targets)addPool(rankedById.get(target.path)??values.find(v=>v.file.path===target.path))
+        for(const v of lexicalPool.slice(0,SEED_POOL_FILES))addPool(v)
+        const candidates=[]
+        for(const v of pool) {const choice=await chooseSymbols(v);candidates.push({path:v.file.path,fileScore:Number(v.score??0),ranked:choice.ranked,lines:choice.lines,ownSymbols:v.ownSymbols})}
+        const selection=selectSemanticSeeds(db,{role:intentDetail.seedRole,candidates,terms:qTokens,weights})
+        seeds=selection.seeds
+        if(options.semanticTrace)seedTrace={pool:candidates.map(c=>`${c.path} ${c.fileScore.toFixed(1)}`),candidateKeys:selection.candidateKeys,candidatePaths:selection.candidatePaths,ranking:selection.ranking}
+        // Fallback when no candidate passes the role filter: lexical targets that the role
+        // still allows (a type never seeds a behavior or flow slice).
+        if(!seeds.length) for(const target of targets) {
+          if(!target.symbol)continue
+          const row=db.prepare('SELECT qualified_name,kind,start_line,end_line,signature FROM symbols WHERE file_id=? AND qualified_name=? LIMIT 1').get(target.path,target.symbol)
+          if(!row)continue
+          const owner=row.qualified_name.includes('.')?db.prepare('SELECT kind FROM symbols WHERE file_id=? AND qualified_name=? LIMIT 1').get(target.path,row.qualified_name.slice(0,row.qualified_name.lastIndexOf('.')))?.kind:null
+          const nature=symbolNature(row,owner)
+          if((intentDetail.seedRole==='behavior'||intentDetail.seedRole==='flow')&&nature!=='executable')continue
+          seeds.push({path:target.path,symbol:row.qualified_name,kind:row.kind,nature,lines:[Number(row.start_line),Number(row.end_line)],fallback:true})
+          if(seeds.length>=2)break
+        }
+      }
+      const slice=sliceOn&&seeds.length?semanticSlice(db,{intent,targets:seeds,terms:qTokens,weights,trace:Boolean(options.semanticTrace),seedRole:intentDetail.seedRole,intentConfidence:intentDetail.intentConfidence}):{edges:[],ground:[],more:false,...(options.semanticTrace?{trace:{seeds:[],admitted:[]}}:{})}
       const evidenceLimit=depth>0?Math.min(EVIDENCE_LIMITS[intent]??1,Math.max(0,limit-targets.length)):0
       const evidenceCandidates=[]
       if(evidenceLimit>0) for(const primaryValue of primaryRanked.filter(v=>!calleeIds.has(v.file.file_id))) {
@@ -683,7 +720,21 @@ export async function contextForTask(projectPath, task, options = {}) {
         // lines), then split the byte budget fairly instead of first-come-first-served.
         const requests=[]
         for(const [index,target] of targets.entries()) requests.push({entry:target,range:target.lines,cap:maxLines,weight:index===0?1.5:1.2,minLines:1})
-        for(const candidate of uniqueEvidence) {
+        // A seed that is not already a target range is grounded as the slice's start.
+        for(const seed of seeds) {
+          if(targets.some(t=>t.path===seed.path&&t.lines&&t.lines[0]<=seed.lines[1]&&seed.lines[0]<=t.lines[1]))continue
+          if(slice.ground.some(item=>item.path===seed.path&&item.symbol===seed.symbol))continue
+          requests.push({entry:{path:seed.path,symbol:seed.symbol,lines:seed.lines,relation:'semantic-seed',direction:'seed',semantic:{relation:'SEED',role:intentDetail.seedRole},reason:`semantic slice starts at ${seed.symbol} (${intentDetail.seedRole})`},range:seed.lines,cap:80,weight:1.2,minLines:3,evidence:true,semantic:true})
+        }
+        for(const item of slice.ground) {
+          // `relation` keeps the v0.5 vocabulary for compatibility; `semantic` names the resolved relation.
+          const sameFile=targets.some(t=>t.path===item.path)
+          const relation=sameFile?'same-file-symbol':item.direction==='incoming'?'imported-by':'imported-symbol'
+          requests.push({entry:{path:item.path,symbol:item.symbol,lines:item.lines,relation,direction:item.direction,semantic:{relation:item.relation,confidence:item.confidence},reason:item.reason},range:item.lines,cap:80,weight:1,minLines:3,evidence:true,semantic:true})
+        }
+        // Lexical evidence fills in only what the semantic slice did not already ground.
+        const semanticKeys=new Set(slice.ground.map(item=>`${item.path}#${item.symbol}`))
+        for(const candidate of uniqueEvidence.filter(candidate=>!semanticKeys.has(`${candidate.path}#${candidate.symbol}`))) {
           const start=Math.max(1,candidate.start-3)
           const end=Math.min(candidate.lineCount,candidate.end+5)
           requests.push({entry:{path:candidate.path,symbol:candidate.symbol,lines:[start,end],relation:candidate.relation,direction:candidate.direction,reason:candidate.reason},range:[start,end],cap:80,weight:1,minLines:3,evidence:true})
@@ -696,7 +747,7 @@ export async function contextForTask(projectPath, task, options = {}) {
           const start=Math.max(1,request.range?.[0]??1)
           let range=[start,Math.min(lines.length,Math.max(start,request.range?.[1]??start),start+request.cap-1)]
           if(range[1]<range[0])continue
-          if(request.evidence)range=focusRange(range,lines,{terms:qTokens,weights})
+          if(request.evidence&&!request.semantic)range=focusRange(range,lines,{terms:qTokens,weights})
           range=subtractTaken(range,taken.get(request.entry.path))
           if(!range)continue
           taken.set(request.entry.path,[...(taken.get(request.entry.path)??[]),range])
@@ -721,7 +772,8 @@ export async function contextForTask(projectPath, task, options = {}) {
       }
       const groundedPaths=new Set(groundedFiles)
       const finalRelatedHints=relatedHints.filter(item=>!groundedPaths.has(item.path))
-      return {targets,relatedEvidence,relatedHints:finalRelatedHints,groundedFiles,intent,intentDetail:{confidence:intentDetail.confidence,signals:intentDetail.signals},depth,more:values.length>primary.length+finalRelatedHints.length+relatedEvidence.length||uniqueEvidence.length>relatedEvidence.length,...(options.withSource?{sourceOfTruth:'targets[].source and relatedEvidence[].source are repository source read live from the working tree'}:{})}
+      const semanticFields=sliceOn?{...(slice.trace?{semanticTrace:{...slice.trace,...(seedTrace??{})}}:{}),semanticRoute:{seedRole:intentDetail.seedRole,intentConfidence:intentDetail.intentConfidence,plan:slice.plan??null,seeds:seeds.map(seed=>({path:seed.path,symbol:seed.symbol,kind:seed.kind}))},semanticEvidence:slice.edges,...(slice.hints?.length?{semanticHints:slice.hints}:{}),semanticCapability:capabilityFor([...new Set([...targets.map(t=>t.path),...slice.edges.flatMap(e=>[e.from.path,e.to.path])].map(p=>enriched.find(v=>v.file.path===p)?.file.language))])}:{}
+      return {targets,relatedEvidence,relatedHints:finalRelatedHints,groundedFiles,...semanticFields,intent,intentDetail:{confidence:intentDetail.confidence,intentConfidence:intentDetail.intentConfidence,seedRole:intentDetail.seedRole,signals:intentDetail.signals},depth,more:values.length>primary.length+finalRelatedHints.length+relatedEvidence.length||uniqueEvidence.length>relatedEvidence.length||slice.more,...(options.withSource?{sourceOfTruth:'targets[].source and relatedEvidence[].source are repository source read live from the working tree'}:{})}
     }
     return {
       query: task,

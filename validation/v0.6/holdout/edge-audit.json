@@ -1,0 +1,899 @@
+[
+ {
+  "id": 1,
+  "repo": "audit-orders",
+  "tasks": [
+   "flow-invalid-token-rejected"
+  ],
+  "relation": "CALLS",
+  "from": "src/middlewares/jetResponse.ts#jetResponse:11",
+  "to": "src/logger/api.logger.ts#APILogger.error",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "logger is default import from ../logger, which re-exports the APILogger instance; call is in anonymous res.jetSend fn inside jetResponse"
+ },
+ {
+  "id": 2,
+  "repo": "audit-orders",
+  "tasks": [
+   "nav-bearer-token-identity"
+  ],
+  "relation": "CALLS",
+  "from": "src/controllers/system.controller.ts#SystemController.version:8",
+  "to": "src/services/system.service.ts#SystemService.version",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "this._systemService typed/instantiated as SystemService"
+ },
+ {
+  "id": 3,
+  "repo": "audit-orders",
+  "tasks": [
+   "nav-bearer-token-identity"
+  ],
+  "relation": "CALLS",
+  "from": "src/services/audit.service.ts#AuditService.checkAudit:89",
+  "to": "src/services/audit.service.ts#AuditService.sendEmail2",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 4,
+  "repo": "jetbook",
+  "tasks": [
+   "edit-api-update-page-icon"
+  ],
+  "relation": "CALLS",
+  "from": "src/app/(app)/s/[spaceSlug]/[pageSlug]/history/restore-version-button.tsx#onConfirm:34",
+  "to": "src/actions/page.ts#restorePageVersion",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 5,
+  "repo": "jetbook",
+  "tasks": [
+   "edit-api-update-page-icon"
+  ],
+  "relation": "CALLS",
+  "from": "src/app/(app)/settings/notifications-section.tsx#toggle:30",
+  "to": "src/actions/settings.ts#updateEmailNotificationPrefAction",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 6,
+  "repo": "jetbook",
+  "tasks": [
+   "edit-api-update-page-icon"
+  ],
+  "relation": "CALLS",
+  "from": "src/app/(app)/s/[spaceSlug]/settings/general-section.tsx#onSave:42",
+  "to": "src/actions/space.ts#updateSpace",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 7,
+  "repo": "jetbook",
+  "tasks": [
+   "edit-moderators-edit-comments"
+  ],
+  "relation": "CALLS",
+  "from": "src/app/(app)/s/[spaceSlug]/[pageSlug]/edit/page.tsx#(module level):35",
+  "to": "src/lib/authz/permission.ts#can",
+  "confidence": "high",
+  "verdict": "true-caller-imprecise",
+  "note": "claimed module level; line 35 is inside `export default async function EditPage` (edit/page.tsx:15)"
+ },
+ {
+  "id": 8,
+  "repo": "jetbook",
+  "tasks": [
+   "edit-moderators-edit-comments"
+  ],
+  "relation": "CALLS",
+  "from": "src/lib/api/page-write.ts#apiDeletePage:434",
+  "to": "src/lib/authz/permission.ts#can",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 9,
+  "repo": "jetbook",
+  "tasks": [
+   "edit-moderators-edit-comments"
+  ],
+  "relation": "CALLS",
+  "from": "src/app/(app)/s/[spaceSlug]/[pageSlug]/history/page.tsx#(module level):40",
+  "to": "src/lib/authz/permission.ts#can",
+  "confidence": "high",
+  "verdict": "true-caller-imprecise",
+  "note": "claimed module level; line 40 is inside `export async function generateMetadata` (history/page.tsx:26-49)"
+ },
+ {
+  "id": 10,
+  "repo": "jetbook",
+  "tasks": [
+   "edit-separate-move-permission"
+  ],
+  "relation": "CALLS",
+  "from": "src/components/tree/page-tree.tsx#handleCrossSpace:597",
+  "to": "src/actions/page.ts#movePageToSpace",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 11,
+  "repo": "jetbook",
+  "tasks": [
+   "edit-separate-move-permission"
+  ],
+  "relation": "CALLS",
+  "from": "src/app/admin/spaces/restore-space-button.tsx#onRestore:21",
+  "to": "src/actions/space.ts#restoreSpaceAction",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 12,
+  "repo": "jetbook",
+  "tasks": [
+   "edit-separate-move-permission"
+  ],
+  "relation": "CALLS",
+  "from": "src/actions/comment.ts#addComment:43",
+  "to": "src/actions/comment.ts#requirePageSpace",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 13,
+  "repo": "jetbook",
+  "tasks": [
+   "flow-api-update-archived-space-refused"
+  ],
+  "relation": "CALLS",
+  "from": "src/app/(app)/s/[spaceSlug]/settings/archive-section.tsx#onConfirm:31",
+  "to": "src/actions/space.ts#archiveSpace",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 14,
+  "repo": "jetbook",
+  "tasks": [
+   "flow-api-update-archived-space-refused"
+  ],
+  "relation": "CALLS",
+  "from": "src/actions/space.ts#archiveSpace:138",
+  "to": "src/lib/spaces/manage.ts#setSpaceArchived",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 15,
+  "repo": "jetbook",
+  "tasks": [
+   "flow-api-update-archived-space-refused"
+  ],
+  "relation": "CALLS",
+  "from": "src/actions/page.ts#copyPageToSpace:352",
+  "to": "src/lib/pages/cross-space.ts#copyPageSubtreeToSpace",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 16,
+  "repo": "jetbook",
+  "tasks": [
+   "flow-api-update-archived-space-refused"
+  ],
+  "relation": "CALLS",
+  "from": "src/actions/space.ts#archiveSpace:136",
+  "to": "src/lib/authz/permission.ts#assertCan",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 17,
+  "repo": "jetbook",
+  "tasks": [
+   "flow-api-update-archived-space-refused"
+  ],
+  "relation": "CALLS",
+  "from": "src/actions/page.ts#copyPageToSpace:360",
+  "to": "src/lib/jobs/queue.ts#triggerEmbedPage",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 18,
+  "repo": "jetbook",
+  "tasks": [
+   "flow-api-update-archived-space-refused"
+  ],
+  "relation": "CALLS",
+  "from": "src/components/tree/page-tree.tsx#handleCrossSpace:611",
+  "to": "src/actions/page.ts#copyPageToSpace",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 19,
+  "repo": "jetbook",
+  "tasks": [
+   "flow-autosave-version-conflict"
+  ],
+  "relation": "CALLS",
+  "from": "src/actions/page.ts#restorePageVersion:627",
+  "to": "src/actions/page.ts#requireEditor",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 20,
+  "repo": "jetbook",
+  "tasks": [
+   "flow-autosave-version-conflict"
+  ],
+  "relation": "CALLS",
+  "from": "src/actions/page.ts#restorePageVersion:636",
+  "to": "src/actions/page.ts#savePage",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 21,
+  "repo": "jetbook",
+  "tasks": [
+   "flow-autosave-version-conflict"
+  ],
+  "relation": "CALLS",
+  "from": "src/actions/page.ts#restorePageVersion:646",
+  "to": "src/lib/audit.ts#writeAudit",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 22,
+  "repo": "jetbook",
+  "tasks": [
+   "flow-autosave-version-conflict"
+  ],
+  "relation": "CALLS",
+  "from": "src/actions/page.ts#restorePageVersion:656",
+  "to": "src/lib/audit.ts#ipFromHeaders",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 23,
+  "repo": "jetbook",
+  "tasks": [
+   "flow-autosave-version-conflict"
+  ],
+  "relation": "CALLS",
+  "from": "src/actions/admin.ts#(module level):261",
+  "to": "src/actions/admin.ts#importSchemaError",
+  "confidence": "high",
+  "verdict": "true-caller-imprecise",
+  "note": "claimed module level; line 261 is inside `export async function previewUserImportAction` (admin.ts:256)"
+ },
+ {
+  "id": 24,
+  "repo": "jetbook",
+  "tasks": [
+   "flow-comment-reply-email"
+  ],
+  "relation": "CALLS",
+  "from": "src/app/(app)/s/[spaceSlug]/[pageSlug]/comments-panel.tsx#onDeleteThread:241",
+  "to": "src/actions/comment.ts#deleteComment",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 25,
+  "repo": "jetbook",
+  "tasks": [
+   "flow-comment-reply-email"
+  ],
+  "relation": "CALLS",
+  "from": "src/actions/page.ts#deletePage:394",
+  "to": "src/lib/jobs/queue.ts#reembedIndexedPages",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 26,
+  "repo": "jetbook",
+  "tasks": [
+   "flow-comment-reply-email"
+  ],
+  "relation": "CALLS",
+  "from": "src/components/tree/page-tree.tsx#handleDelete:542",
+  "to": "src/actions/page.ts#deletePage",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 27,
+  "repo": "jetbook",
+  "tasks": [
+   "flow-comment-reply-email"
+  ],
+  "relation": "CALLS",
+  "from": "src/actions/comment.ts#deleteComment:135",
+  "to": "src/lib/comments/service.ts#softDeleteComment",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 28,
+  "repo": "jetbook",
+  "tasks": [
+   "flow-comment-reply-email"
+  ],
+  "relation": "CALLS",
+  "from": "src/actions/page.ts#deletePage:388",
+  "to": "src/lib/pages/trash.ts#softDeletePageSubtree",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 29,
+  "repo": "jetbook",
+  "tasks": [
+   "flow-comment-reply-email"
+  ],
+  "relation": "CALLS",
+  "from": "src/actions/comment.ts#deleteComment:128",
+  "to": "src/lib/comments/service.ts#getCommentWithSpace",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 30,
+  "repo": "jetbook",
+  "tasks": [
+   "impact-content-write-pipeline-signature"
+  ],
+  "relation": "CONSUMES",
+  "from": "src/actions/page.ts#restorePageVersion:630",
+  "to": "src/lib/db/schema.ts#pageVersions",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 31,
+  "repo": "jetbook",
+  "tasks": [
+   "impact-content-write-pipeline-signature"
+  ],
+  "relation": "CONSUMES",
+  "from": "src/actions/page.ts#restorePageVersion:625",
+  "to": "src/lib/db/schema.ts#pages",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 32,
+  "repo": "jetbook",
+  "tasks": [
+   "impact-content-write-pipeline-signature"
+  ],
+  "relation": "CONSUMES",
+  "from": "src/actions/page.ts#restorePageVersion:634",
+  "to": "src/lib/content/types.ts#ProseMirrorDoc",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 33,
+  "repo": "jetbook",
+  "tasks": [
+   "impact-content-write-pipeline-signature"
+  ],
+  "relation": "CONSUMES",
+  "from": "src/actions/page.ts#restorePageVersion:625",
+  "to": "src/lib/db/index.ts#db",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 34,
+  "repo": "jetbook",
+  "tasks": [
+   "impact-content-write-pipeline-signature"
+  ],
+  "relation": "CALLS",
+  "from": "src/lib/pages/content-write.ts#writePageContentTx:47",
+  "to": "src/lib/content/serialize.ts#docToPlainText",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 35,
+  "repo": "jetbook",
+  "tasks": [
+   "impact-verified-token-id-field"
+  ],
+  "relation": "CALLS",
+  "from": "src/app/api/mcp/route.ts#writeGate:62",
+  "to": "src/lib/api-tokens/bearer.ts#checkApiTokenRate",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 36,
+  "repo": "jetbook",
+  "tasks": [
+   "impact-verified-token-id-field"
+  ],
+  "relation": "CALLS",
+  "from": "src/lib/api-tokens/bearer.ts#requireApiAuth:58",
+  "to": "src/lib/api-tokens/bearer.ts#checkApiTokenRate",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "same-file definition at bearer.ts:75"
+ },
+ {
+  "id": 37,
+  "repo": "jetbook",
+  "tasks": [
+   "nav-editor-autosave-delay"
+  ],
+  "relation": "CALLS",
+  "from": "src/app/(app)/s/[spaceSlug]/[pageSlug]/edit/edit-lock-notice.tsx#steal:26",
+  "to": "src/actions/lock.ts#acquireLockAction",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 38,
+  "repo": "jetbook",
+  "tasks": [
+   "nav-editor-autosave-delay"
+  ],
+  "relation": "CALLS",
+  "from": "src/actions/lock.ts#acquireLockAction:22",
+  "to": "src/lib/pages/lock.ts#getLockState",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 39,
+  "repo": "jetbook",
+  "tasks": [
+   "nav-editor-autosave-delay"
+  ],
+  "relation": "CALLS",
+  "from": "src/app/(app)/s/[spaceSlug]/[pageSlug]/edit/page.tsx#(module level):40",
+  "to": "src/lib/pages/lock.ts#acquireLock",
+  "confidence": "high",
+  "verdict": "true-caller-imprecise",
+  "note": "claimed module level; line 40 is inside `export default async function EditPage` (edit/page.tsx:15)"
+ },
+ {
+  "id": 40,
+  "repo": "jetbook",
+  "tasks": [
+   "nav-editor-autosave-delay"
+  ],
+  "relation": "CALLS",
+  "from": "src/actions/lock.ts#acquireLockAction:20",
+  "to": "src/actions/lock.ts#editorFor",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 41,
+  "repo": "jetbook",
+  "tasks": [
+   "nav-editor-autosave-delay"
+  ],
+  "relation": "CALLS",
+  "from": "src/lib/api/page-write.ts#apiUpdatePage:165",
+  "to": "src/lib/pages/lock.ts#acquireLock",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 42,
+  "repo": "jetbook",
+  "tasks": [
+   "nav-editor-autosave-delay"
+  ],
+  "relation": "CALLS",
+  "from": "src/actions/lock.ts#acquireLockAction:21",
+  "to": "src/lib/pages/lock.ts#acquireLock",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 43,
+  "repo": "jetbook",
+  "tasks": [
+   "nav-image-import-blocked-addresses"
+  ],
+  "relation": "CALLS",
+  "from": "src/components/tree/page-tree.tsx#handleExternalSubmit:421",
+  "to": "src/actions/page.ts#updateExternalLink",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 44,
+  "repo": "jetbook",
+  "tasks": [
+   "nav-image-import-blocked-addresses"
+  ],
+  "relation": "CALLS",
+  "from": "src/lib/storage/import-url.ts#(module level):343",
+  "to": "src/lib/storage/import-url.ts#downloadImage",
+  "confidence": "high",
+  "verdict": "true-caller-imprecise",
+  "note": "claimed module level; line 343 is inside `export async function importAttachmentFromUrl` (import-url.ts:326)"
+ },
+ {
+  "id": 45,
+  "repo": "jetbook",
+  "tasks": [
+   "nav-image-import-blocked-addresses"
+  ],
+  "relation": "CALLS",
+  "from": "src/lib/content/markdown-to-doc.ts#blockTokensToNodes:268",
+  "to": "src/lib/content/markdown-to-doc.ts#loneImageBlock",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 46,
+  "repo": "jetbook",
+  "tasks": [
+   "nav-login-lockout-duration"
+  ],
+  "relation": "CALLS",
+  "from": "src/actions/settings.ts#(module level):86",
+  "to": "src/lib/auth/account.ts#changeOwnPassword",
+  "confidence": "high",
+  "verdict": "true-caller-imprecise",
+  "note": "claimed module level; line 86 is inside `export async function changePasswordAction` (settings.ts:69)"
+ },
+ {
+  "id": 47,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "edit-add-watch-delivery-channel"
+  ],
+  "relation": "CALLS",
+  "from": "extension/src/sidepanel/App.tsx#App:194",
+  "to": "extension/src/sidepanel/sse.ts#startChatStream",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "call is inside openStream useCallback arrow nested in App; App is nearest named symbol"
+ },
+ {
+  "id": 48,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "edit-add-watch-delivery-channel"
+  ],
+  "relation": "CALLS",
+  "from": "extension/src/sidepanel/App.tsx#App:127",
+  "to": "extension/src/sidepanel/App.tsx#fetchActiveTicket",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "inside useEffect callback in App"
+ },
+ {
+  "id": 49,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "edit-add-watch-delivery-channel"
+  ],
+  "relation": "CALLS",
+  "from": "extension/src/sidepanel/sse.ts#startChatStream:106",
+  "to": "extension/src/sidepanel/sse.ts#parseFrame",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 50,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "edit-add-watch-delivery-channel"
+  ],
+  "relation": "CALLS",
+  "from": "backend/alembic/env.py#run_migrations_offline:28",
+  "to": "backend/alembic/env.py#_sync_database_url",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 51,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "edit-add-watch-delivery-channel"
+  ],
+  "relation": "CALLS",
+  "from": "backend/alembic/env.py#run_migrations_online:35",
+  "to": "backend/alembic/env.py#_sync_database_url",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 52,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "edit-inference-reply-redis-key"
+  ],
+  "relation": "CALLS",
+  "from": "extension/src/sidepanel/PreviewCard.tsx#(module level):95",
+  "to": "extension/src/sidepanel/PreviewCard.tsx#itemKey",
+  "confidence": "high",
+  "verdict": "true-caller-imprecise",
+  "note": "claimed module level; line 95 is inside the useState initializer arrow within `export function PreviewCard` (PreviewCard.tsx:73)"
+ },
+ {
+  "id": 53,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "edit-inference-reply-redis-key"
+  ],
+  "relation": "CALLS",
+  "from": "extension/src/sidepanel/PreviewCard.tsx#setAll:114",
+  "to": "extension/src/sidepanel/PreviewCard.tsx#itemKey",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 54,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "edit-inference-reply-redis-key"
+  ],
+  "relation": "CALLS",
+  "from": "backend/inference/client.py#(module level):154",
+  "to": "backend/inference/client.py#_resolve_model_name",
+  "confidence": "high",
+  "verdict": "true-caller-imprecise",
+  "note": "claimed module level; line 154 is inside `async def infer` (client.py:131)"
+ },
+ {
+  "id": 55,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "edit-redmine-api-key-secret-naming"
+  ],
+  "relation": "CALLS",
+  "from": "backend/app/redmine_token.py#(module level):101",
+  "to": "backend/app/redmine_token.py#_secret_key",
+  "confidence": "high",
+  "verdict": "true-caller-imprecise",
+  "note": "claimed module level; line 101 is inside `def put_redmine_token` (redmine_token.py:84)"
+ },
+ {
+  "id": 56,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "edit-redmine-api-key-secret-naming"
+  ],
+  "relation": "CALLS",
+  "from": "backend/app/redmine_client.py#RedmineClient._load_token:232",
+  "to": "backend/app/redmine_client.py#_secret_key",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 57,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "flow-approve-staged-batch-update"
+  ],
+  "relation": "CALLS",
+  "from": "backend/app/redmine_token.py#(module level):91",
+  "to": "backend/app/redmine_token.py#_validate_against_redmine",
+  "confidence": "high",
+  "verdict": "true-caller-imprecise",
+  "note": "claimed module level; line 91 is inside `def put_redmine_token` (redmine_token.py:84)"
+ },
+ {
+  "id": 58,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "flow-recurring-watch-notification"
+  ],
+  "relation": "CALLS",
+  "from": "backend/app/notifier.py#_send_email:123",
+  "to": "backend/app/notifier.py#_format_email_body",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 59,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "flow-recurring-watch-notification"
+  ],
+  "relation": "CALLS",
+  "from": "backend/app/notifier.py#_send_email:118",
+  "to": "backend/app/notifier.py#_smtp_settings",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 60,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "flow-recurring-watch-notification"
+  ],
+  "relation": "CALLS",
+  "from": "backend/app/inspection_runner.py#InspectionScheduler.load_jobs:191",
+  "to": "backend/app/inspection_runner.py#load_recurring_inspections",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 61,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "flow-side-panel-message-intent"
+  ],
+  "relation": "CALLS",
+  "from": "backend/orch/intent.py#(module level):120",
+  "to": "backend/orch/intent.py#build_prompt",
+  "confidence": "high",
+  "verdict": "true-caller-imprecise",
+  "note": "claimed module level; line 120 is inside `async def classify_intent` (intent.py:105)"
+ },
+ {
+  "id": 62,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "impact-chat-run-slot-and-sse-helpers"
+  ],
+  "relation": "CALLS",
+  "from": "backend/app/chat.py#_stream_events:173",
+  "to": "backend/app/chat.py#_sse_event",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 63,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "impact-chat-run-slot-and-sse-helpers"
+  ],
+  "relation": "CALLS",
+  "from": "backend/app/chat.py#(module level):198",
+  "to": "backend/app/chat.py#_stream_events",
+  "confidence": "high",
+  "verdict": "true-caller-imprecise",
+  "note": "claimed module level; line 198 is inside `async def chat` (chat.py:177), in its return StreamingResponse(...)"
+ },
+ {
+  "id": 64,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "impact-chat-run-slot-and-sse-helpers"
+  ],
+  "relation": "CALLS",
+  "from": "scripts/poc/latency_bench.py#main:151",
+  "to": "scripts/poc/latency_bench.py#run_one",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 65,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "impact-published-rule-loader-contract"
+  ],
+  "relation": "CALLS",
+  "from": "backend/rules/engine.py#(module level):138",
+  "to": "backend/rules/engine.py#load_published_rules",
+  "confidence": "high",
+  "verdict": "true-caller-imprecise",
+  "note": "claimed module level; line 138 is inside `def validate_required_fields` (engine.py:119)"
+ },
+ {
+  "id": 66,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "impact-ticket-update-diff-helpers"
+  ],
+  "relation": "CALLS",
+  "from": "extension/src/sidepanel/App.tsx#App:114",
+  "to": "extension/src/sidepanel/App.tsx#newId",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "import/definition and enclosing function verified"
+ },
+ {
+  "id": 67,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "impact-ticket-update-diff-helpers"
+  ],
+  "relation": "CALLS",
+  "from": "extension/content.js#(module level):26",
+  "to": "extension/content.js#currentTicketId",
+  "confidence": "high",
+  "verdict": "true",
+  "note": "inside an anonymous IIFE wrapping the whole file (no named enclosing function); module-level attribution is acceptable"
+ },
+ {
+  "id": 68,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "impact-ticket-update-diff-helpers"
+  ],
+  "relation": "CALLS",
+  "from": "backend/orch/nodes/interactive_checklist.py#(module level):293",
+  "to": "backend/orch/nodes/interactive_checklist.py#_coerce_ticket_id",
+  "confidence": "high",
+  "verdict": "true-caller-imprecise",
+  "note": "claimed module level; line 293 is inside `def build_review_record` (interactive_checklist.py:248)"
+ },
+ {
+  "id": 69,
+  "repo": "redmine-ai-agent",
+  "tasks": [
+   "nav-nda-ticket-llm-guard"
+  ],
+  "relation": "CALLS",
+  "from": "backend/orch/nl_query.py#(module level):161",
+  "to": "backend/orch/nl_query.py#build_prompt",
+  "confidence": "high",
+  "verdict": "true-caller-imprecise",
+  "note": "claimed module level; line 161 is inside `async def nl_to_redmine_query` (nl_query.py:143)"
+ }
+]

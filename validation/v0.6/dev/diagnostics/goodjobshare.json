@@ -1,0 +1,569 @@
+{
+ "index": {
+  "files": 562,
+  "symbols": 1222,
+  "semanticEdges": {
+   "CALLS": 298,
+   "IMPLEMENTS": 0,
+   "REGISTERS": 15,
+   "CONSUMES": 373
+  },
+  "ms": 721
+ },
+ "semantic": {
+  "summary": {
+   "tasks": 12,
+   "tasksWithSemanticEdges": 7,
+   "annotatedTasks": 0,
+   "requiredEdges": 0,
+   "requiredEdgeRecallContext": null,
+   "requiredEdgeRecallIndex": null,
+   "expectedFileGroundingRate": 0.18181818181818182,
+   "medianSourceBytes": 1611
+  },
+  "tasks": [
+   {
+    "taskId": "nav-interview-share-completeness-score",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/actions/jobTitle.js#queryJobTitleTimeAndSalary",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1601,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "nav-first-visit-content-access-grant",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/actions/search.js#SET_SEARCH_BY_KEYWORD",
+    "topTargetExpected": false,
+    "semanticEdges": 1,
+    "confidence": {
+     "high": 1,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 1,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 2187,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 1,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "nav-company-rating-structured-data",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/actions/company.js#queryCompanyOverview",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1322,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "flow-card-checkout-to-3ds-redirect",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/actions/payment.js#navigateToRedirectUrl",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1260,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "flow-ssr-prefetch-state-hydration",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/actions/payment.js#SET_REDIRECT_URL",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1130,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "flow-google-signin-forbidden-to-alert",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/actions/toastNotification.js#pushErrorNotificationAndRollbar",
+    "topTargetExpected": true,
+    "semanticEdges": 1,
+    "confidence": {
+     "high": 1,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 1,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1575,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 4,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "impact-countdown-hook-signature",
+    "category": "impact",
+    "intent": "editing-prep",
+    "primary": "src/components/BuyResultPage/PaymentResult/helpers.js#renderCountdown",
+    "topTargetExpected": false,
+    "semanticEdges": 5,
+    "confidence": {
+     "high": 5,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 5,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 4118,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 4,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "impact-rest-helper-calling-convention",
+    "category": "impact",
+    "intent": "navigation",
+    "primary": "src/actions/toastNotification.js#pushErrorNotificationAndRollbarAndThrowError",
+    "topTargetExpected": false,
+    "semanticEdges": 2,
+    "confidence": {
+     "high": 2,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 2,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 2575,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "impact-query-search-term-selector",
+    "category": "impact",
+    "intent": "navigation",
+    "primary": "src/actions/search.js#SET_SEARCH_BY_KEYWORD",
+    "topTargetExpected": false,
+    "semanticEdges": 1,
+    "confidence": {
+     "high": 1,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 1,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1611,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 4,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "edit-add-success-toast-severity",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "src/components/common/Alert.js#Alert.close",
+    "topTargetExpected": false,
+    "semanticEdges": 1,
+    "confidence": {
+     "high": 1,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 1,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1971,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "edit-salary-questionnaire-company-size",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "src/components/ShareExperience/questionCreators.js#createGenderQuestion",
+    "topTargetExpected": true,
+    "semanticEdges": 1,
+    "confidence": {
+     "high": 1,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 1,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 2291,
+    "expectedFilesGrounded": 3,
+    "expectedFiles": 3,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "edit-explainer-article-updated-date",
+    "category": "editing-prep",
+    "intent": "navigation",
+    "primary": "src/actions/jobTitle.js#fetchJobTitles",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1146,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   }
+  ]
+ },
+ "lexical": {
+  "summary": {
+   "tasks": 12,
+   "tasksWithSemanticEdges": 0,
+   "annotatedTasks": 0,
+   "requiredEdges": 0,
+   "requiredEdgeRecallContext": null,
+   "requiredEdgeRecallIndex": null,
+   "expectedFileGroundingRate": 0.09090909090909091,
+   "medianSourceBytes": 1601
+  },
+  "tasks": [
+   {
+    "taskId": "nav-interview-share-completeness-score",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/actions/jobTitle.js#queryJobTitleTimeAndSalary",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1601,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "nav-first-visit-content-access-grant",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/actions/search.js#SET_SEARCH_BY_KEYWORD",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1747,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "nav-company-rating-structured-data",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/actions/company.js#queryCompanyOverview",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1322,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "flow-card-checkout-to-3ds-redirect",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/actions/payment.js#navigateToRedirectUrl",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1260,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "flow-ssr-prefetch-state-hydration",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/actions/payment.js#SET_REDIRECT_URL",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1130,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "flow-google-signin-forbidden-to-alert",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/actions/toastNotification.js#pushErrorNotificationAndRollbar",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1165,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 4,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "impact-countdown-hook-signature",
+    "category": "impact",
+    "intent": "editing-prep",
+    "primary": "src/components/BuyResultPage/PaymentResult/helpers.js#renderCountdown",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 2042,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 4,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "impact-rest-helper-calling-convention",
+    "category": "impact",
+    "intent": "navigation",
+    "primary": "src/actions/toastNotification.js#pushErrorNotificationAndRollbarAndThrowError",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1412,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "impact-query-search-term-selector",
+    "category": "impact",
+    "intent": "navigation",
+    "primary": "src/actions/search.js#SET_SEARCH_BY_KEYWORD",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1611,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 4,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "edit-add-success-toast-severity",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "src/components/common/Alert.js#Alert.close",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1971,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "edit-salary-questionnaire-company-size",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "src/components/ShareExperience/questionCreators.js#createGenderQuestion",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1700,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "edit-explainer-article-updated-date",
+    "category": "editing-prep",
+    "intent": "navigation",
+    "primary": "src/actions/jobTitle.js#fetchJobTitles",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1146,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   }
+  ]
+ }
+}

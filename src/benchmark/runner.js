@@ -8,7 +8,9 @@ import { prepareBenchmarkSnapshot } from './snapshot.js'
 import { runAgent, commandVersion } from './agents.js'
 import { loadBenchmarkTasks, benchmarkConfigPath } from './tasks.js'
 import { StellarError } from '../core/errors.js'
-import { sourceCoverage } from './evidence.js'
+import { sourceCoverage, completedEvidence } from './evidence.js'
+import { stellarContextArgs } from './agents.js'
+import { DELIVERY_MODES, PREFETCH_MODES, latinSquareOrder, buildContextEnvelope, deliveryMetrics } from './delivery.js'
 import { classifyIntent } from '../query/intent.js'
 import { runtimeFingerprint, fileSha256, latencyDecomposition, repositoryIdentity } from './campaign.js'
 
@@ -22,10 +24,10 @@ async function writeShim(binDir, mode, stellarBin, snapshot) {
   await fs.mkdir(binDir,{recursive:true})
   const file=path.join(binDir,process.platform==='win32'?'stellar.cmd':'stellar')
   if(process.platform==='win32') {
-    const body=mode==='stellar' ? `@echo off\r\n"${process.execPath}" "${stellarBin}" %*\r\n` : '@echo off\r\necho StellarCode disabled for baseline benchmark 1>&2\r\nexit /b 64\r\n'
+    const body=mode!=='baseline' ? `@echo off\r\nset STELLAR_SEMANTIC_SLICE=${mode==='stellar-lexical'?'0':'1'}\r\n"${process.execPath}" "${stellarBin}" %*\r\n` : '@echo off\r\necho StellarCode disabled for baseline benchmark 1>&2\r\nexit /b 64\r\n'
     await fs.writeFile(file,body)
   } else {
-    const body=mode==='stellar' ? `#!/bin/sh\n${snapshot ? `export STELLAR_BENCH_INDEX_FILE=${shellQuote(snapshot.indexFile)}\n` : ''}exec ${shellQuote(process.execPath)} ${shellQuote(stellarBin)} "$@"\n` : '#!/bin/sh\necho "StellarCode disabled for baseline benchmark" >&2\nexit 64\n'
+    const body=mode!=='baseline' ? `#!/bin/sh\n${snapshot ? `export STELLAR_BENCH_INDEX_FILE=${shellQuote(snapshot.indexFile)}\n` : ''}export STELLAR_SEMANTIC_SLICE=${mode==='stellar-lexical'?'0':'1'}\nexec ${shellQuote(process.execPath)} ${shellQuote(stellarBin)} "$@"\n` : '#!/bin/sh\necho "StellarCode disabled for baseline benchmark" >&2\nexit 64\n'
     await fs.writeFile(file,body,{mode:0o755})
   }
   return file
@@ -77,14 +79,36 @@ export async function benchmarkDoctor({agents=['claude','codex'],env=process.env
   return results
 }
 
-export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='both',model,limit,repeat=1,outDir,stellarBin,env=process.env,onProgress,keepWorktreeOnFailure=false,repository}) {
+// `stellar-lexical` is the v0.6 comparison condition: the same runtime, index and prompt
+// as `stellar`, with the semantic slice switched off inside the stellar shim.
+export const BENCHMARK_CONDITIONS = ['baseline', 'stellar', 'stellar-lexical', ...DELIVERY_MODES]
+
+// --mode both | delivery | a condition | a comma-separated list of conditions.
+export function parseBenchmarkModes(mode) {
+  if (mode === 'both') return ['baseline', 'stellar']
+  if (mode === 'delivery') return [...DELIVERY_MODES]
+  return String(mode ?? '').split(',').map(value => value.trim()).filter(Boolean)
+}
+
+// Order of conditions within one task and repetition. The original two-condition design
+// alternates by task and repetition; any other set uses a deterministic Latin square.
+export function conditionOrder(modes, mode, taskIndex, repetition) {
+  if (mode === 'both') return (taskIndex + repetition) % 2 === 1 ? [...modes].reverse() : modes
+  return latinSquareOrder(modes, repetition)
+}
+
+export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='both',model,limit,repeat=1,outDir,stellarBin,env=process.env,onProgress,keepWorktreeOnFailure=false,repository,taskIds}) {
   const configFile=tasksFile ?? await benchmarkConfigPath(projectRoot)
-  const {tasks:allTasks}=await loadBenchmarkTasks(configFile)
+  const {tasks:loadedTasks}=await loadBenchmarkTasks(configFile)
+  // A fixed subset is selected by id; the task file itself (and its hash) stays unchanged.
+  const wanted=taskIds?.length?new Set(taskIds):null
+  if(wanted){const missing=[...wanted].filter(id=>!loadedTasks.some(task=>task.id===id));if(missing.length)throw new StellarError(`Unknown task ids: ${missing.join(', ')}`,'USAGE',2)}
+  const allTasks=wanted?loadedTasks.filter(task=>wanted.has(task.id)):loadedTasks
   const tasks=Number(limit)>0?allTasks.slice(0,Number(limit)):allTasks
-  const modes=mode==='both'?['baseline','stellar']:[mode]
+  const modes=parseBenchmarkModes(mode)
   if(tasks.some(t=>t.category==='edit'))throw new StellarError('v0.5.1 benchmark run supports read-only navigation tasks only; edit benchmarks are not yet implemented.','BENCHMARK_EDIT_UNSUPPORTED',2)
   if(!['claude','codex'].includes(agent))throw new StellarError('--agent must be claude or codex','USAGE',2)
-  if(!modes.every(v=>['baseline','stellar'].includes(v)))throw new StellarError('--mode must be baseline, stellar, or both','USAGE',2)
+  if(!modes.length||!modes.every(v=>BENCHMARK_CONDITIONS.includes(v))||new Set(modes).size!==modes.length)throw new StellarError(`--mode must be both, delivery, or a list of ${BENCHMARK_CONDITIONS.join('|')}`,'USAGE',2)
   const agentInfo=(await benchmarkDoctor({agents:[agent],env}))[0]
   if(!agentInfo.available)throw new StellarError(`${agent} CLI is unavailable: ${agentInfo.error??agentInfo.version??'not found'}`,'BENCHMARK_AGENT_UNAVAILABLE',2)
   if(agentInfo.compatible===false)throw new StellarError(`${agent} CLI is missing benchmark-required flags: ${agentInfo.missingFlags.join(', ')}. Upgrade the CLI or use a compatible version.`,'BENCHMARK_AGENT_INCOMPATIBLE',2)
@@ -92,7 +116,7 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
   const dirty=await git(projectRoot,['status','--porcelain']).then(v=>v?v.split(/\r?\n/).filter(line=>{const p=line.slice(3).trim().replaceAll('\\','/');return p!=='.stellar'&&!p.startsWith('.stellar/')}).length:0)
   const destination=outDir??path.join(projectRoot,'.stellar','benchmark','runs',`${new Date().toISOString().replace(/[:.]/g,'-')}-${agent}`)
   await fs.mkdir(destination,{recursive:true})
-  const files={baseline:path.join(destination,'baseline.jsonl'),stellar:path.join(destination,'stellar.jsonl')}
+  const files=Object.fromEntries((mode==='both'?['baseline','stellar']:modes).map(condition=>[condition,path.join(destination,`${condition}.jsonl`)]))
   await Promise.all(Object.values(files).map(f=>fs.writeFile(f,'')))
   const packageRoot=path.resolve(fileURLToPath(new URL('../../',import.meta.url)))
   stellarBin=stellarBin??path.join(packageRoot,'bin','stellar.js')
@@ -112,8 +136,8 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
   for(let r=1;r<=repeat;r++) {
     for(let i=0;i<tasks.length;i++) {
       const task=tasks[i]
-      const ordered=mode==='both' && (i+r)%2===1?[...modes].reverse():modes
-      for(const condition of ordered) {
+      const ordered=conditionOrder(modes,mode,i,r)
+      for(const [orderIndex,condition] of ordered.entries()) {
         await assertRuntimeUnchanged()
         const base=await fs.mkdtemp(path.join(os.tmpdir(),'stellar-bench-'))
         const {worktree,cleanup}=await makeWorktree(projectRoot,base)
@@ -123,11 +147,11 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
         await fs.writeFile(path.join(diagnosticDir,'diagnostic.json'),JSON.stringify({mode:condition,taskId:task.id,projectRoot,worktreeRoot:worktree,agentVersion:agentInfo.version},null,2)+'\n',{mode:0o600})
         try {
           const dirs={data:path.join(base,'stellar-data'),cache:path.join(base,'stellar-cache'),logs:path.join(base,'stellar-logs')}
-          const snapshot=condition==='stellar'?await prepareBenchmarkSnapshot(projectRoot,worktree,base,commit,env):null
+          const snapshot=condition!=='baseline'?await prepareBenchmarkSnapshot(projectRoot,worktree,base,commit,env):null
           const binDir=path.join(base,'bin');const stellarExecutable=await writeShim(binDir,condition,stellarBin,snapshot)
           const childEnv={...env,PATH:`${binDir}${path.delimiter}${env.PATH??''}`,STELLAR_DATA_DIR:dirs.data,STELLAR_CACHE_DIR:dirs.cache,STELLAR_LOG_DIR:dirs.logs,STELLAR_BENCH_TRACE_FILE:'',STELLAR_BENCH_INDEX_FILE:snapshot?.indexFile??''}
           let preflight={stellarAvailable:false,stellarVersion:null,projectResolved:false}
-          if(condition==='stellar') {
+          if(condition!=='baseline') {
             const checks=[]
             for(const args of [['--version'],['status','--json'],['projects','--json']]) {
               const {stdout,stderr}=await execFileAsync(stellarExecutable,args,{cwd:worktree,env:childEnv})
@@ -137,8 +161,29 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
             if(status.projectId!==snapshot.projectId || status.lastIndexedHead!==commit)throw new Error('Benchmark preflight project/index mismatch')
             preflight={stellarAvailable:true,stellarVersion:checks[0].stdout.trim(),projectResolved:true,projectId:status.projectId,indexFile:status.dbPath,checks}
           }
+          // Prefetch: the runner itself runs the exact command the pull condition asks the
+          // agent to run, from the task prompt alone, before the agent starts.
+          let prefetch=null
+          if(PREFETCH_MODES.has(condition)) {
+            const args=stellarContextArgs(task.prompt)
+            const t0=performance.now()
+            const {stdout}=await execFileAsync(stellarExecutable,args,{cwd:worktree,env:childEnv,maxBuffer:64*1024*1024})
+            const localMs=Math.round(performance.now()-t0)
+            const envelope=buildContextEnvelope(JSON.parse(stdout),{snapshotCommit:commit})
+            // Same verbatim-source check as a pull-mode context call: only excerpts that match
+            // the working tree count as inspected source; hints never do.
+            const evidence=await completedEvidence({input:`stellar ${args.join(' ')}`,output:stdout,ok:true,cwd:worktree,atMs:0,via:'prefetch'})
+            prefetch={envelope,localMs,reads:evidence.reads.map(read=>({...read,turn:0})),discovered:evidence.discovered}
+            await fs.writeFile(path.join(diagnosticDir,'prefetch-envelope.txt'),envelope.text)
+          }
           onProgress?.({phase:'start',task:task.id,mode:condition,repetition:r,completed,total})
-          const result=await runAgent({agent,task:{prompt:task.prompt},mode:condition,cwd:worktree,env:childEnv,model,maxTurns:task.maxTurns,diagnosticDir,diagnostic:{mode:condition,taskId:task.id,agentVersion:agentInfo.version,stellarExecutable,projectRoot,worktreeRoot:worktree,...preflight,snapshot}})
+          const result=await runAgent({agent,task:{prompt:task.prompt},mode:condition,cwd:worktree,env:childEnv,model,maxTurns:task.maxTurns,diagnosticDir,envelope:prefetch?.envelope.text??null,diagnostic:{mode:condition,taskId:task.id,agentVersion:agentInfo.version,stellarExecutable,projectRoot,worktreeRoot:worktree,...preflight,snapshot}})
+          if(prefetch) {
+            // Delivered source was supplied to the model before turn 1: it counts as read.
+            result.metrics.sourceReads=[...prefetch.reads,...(result.metrics.sourceReads??[])]
+            result.metrics.filesOpened=[...new Set([...prefetch.reads.map(read=>read.path),...(result.metrics.filesOpened??[])])].sort()
+            result.metrics.filesMentioned=[...new Set([...prefetch.discovered,...(result.metrics.filesMentioned??[])])].sort()
+          }
           const discoveryPaths=[...new Set(result.metrics.filesMentioned??[])]
           const sourceReadPaths=[...new Set(result.metrics.filesOpened??[])]
           const discovery=judgePaths(task,discoveryPaths)
@@ -152,6 +197,7 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
           // Diagnostic only: what StellarCode's deterministic classifier infers from the prompt,
           // recorded next to the author's category to measure classification accuracy later.
           const classifiedIntent=classifyIntent(task.prompt).intent
+          const delivery=condition==='baseline'?{}:deliveryMetrics({condition,result,prefetch,expectedFiles:task.expectedFiles,answerFiles:answer.answerFiles??[]})
           const row={
             schemaVersion:4,taskId:task.id,repetition:r,category:task.category,categorySource:task.categorySource,benchmarkCategory:task.category,classifiedIntent,mode:condition,agent,agentVersion:agentInfo.version,model:model??null,signal:result.signal??null,
             projectCommit:commit,projectDirtyCount:dirty,exitCode:result.exitCode,durationMs:result.durationMs,firstRelevantMs,firstRelevantSourceMs:firstRelevantMs,...latency,
@@ -162,7 +208,8 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
             discoveryVerified:discovery.verified,discoverySuccess:result.exitCode===0?discovery.success:false,discoveredExpectedFiles:discovery.matched,
             sourceGroundingVerified:grounding.verified,sourceGrounded:result.exitCode===0?grounding.success:false,groundedExpectedFiles:grounding.matched,
             answerVerified:answer.verified,answerSuccess:result.exitCode===0?answer.success:false,matchedExpectedFiles:answer.matched,missingExpectedFiles:answer.missing,answerFiles:answer.answerFiles??[],
-            final:result.metrics.structured??result.metrics.finalText,stderr:result.exitCode===0?'':result.stderr.slice(0,4000)
+            final:result.metrics.structured??result.metrics.finalText,stderr:result.exitCode===0?'':result.stderr.slice(0,4000),
+            conditionOrder:orderIndex+1,...delivery
           }
           failed=!groundedSuccess
           const diagnosticFile=path.join(diagnosticDir,'diagnostic.json')

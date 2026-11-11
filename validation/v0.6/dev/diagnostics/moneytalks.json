@@ -1,0 +1,569 @@
+{
+ "index": {
+  "files": 242,
+  "symbols": 860,
+  "semanticEdges": {
+   "CALLS": 373,
+   "IMPLEMENTS": 4,
+   "REGISTERS": 13,
+   "CONSUMES": 228
+  },
+  "ms": 522
+ },
+ "semantic": {
+  "summary": {
+   "tasks": 12,
+   "tasksWithSemanticEdges": 7,
+   "annotatedTasks": 0,
+   "requiredEdges": 0,
+   "requiredEdgeRecallContext": null,
+   "requiredEdgeRecallIndex": null,
+   "expectedFileGroundingRate": 0.4,
+   "medianSourceBytes": 3902
+  },
+  "tasks": [
+   {
+    "taskId": "nightly-aggregation-scheduler-owner",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/interfaces/IStatistics.ts#Station",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3236,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "service-method-argument-zod-wrapper",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/services/ai-chat.service.ts#SendMessageRequest",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3200,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "downloadable-charging-report-worksheets",
+    "category": "navigation",
+    "intent": "editing-prep",
+    "primary": "src/interfaces/IOrder.ts#Detail",
+    "topTargetExpected": false,
+    "semanticEdges": 1,
+    "confidence": {
+     "high": 1,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 1,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 6584,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 1,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "assistant-message-to-database-tool-calls",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/services/ai-chat.service.ts#AIChatService.getSessionHistory",
+    "topTargetExpected": true,
+    "semanticEdges": 2,
+    "confidence": {
+     "high": 2,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 2,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 7124,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 3,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "charger-offline-event-to-admin-alert",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/services/receive-notification.service.ts#ReceiveNotificationService._sendNotification",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 2268,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "customer-message-email-delivery-path",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/interfaces/INotification.ts#SystemMessageSMS",
+    "topTargetExpected": false,
+    "semanticEdges": 1,
+    "confidence": {
+     "high": 1,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 1,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3298,
+    "expectedFilesGrounded": 3,
+    "expectedFiles": 3,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "token-sign-verify-helper-impact",
+    "category": "impact",
+    "intent": "editing-prep",
+    "primary": "src/services/auth.service.ts#AuthService._signAccessToken",
+    "topTargetExpected": true,
+    "semanticEdges": 6,
+    "confidence": {
+     "high": 6,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 6,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 6085,
+    "expectedFilesGrounded": 3,
+    "expectedFiles": 4,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "realtime-socket-singleton-api-impact",
+    "category": "impact",
+    "intent": "navigation",
+    "primary": "src/utils/aws-bedrock.ts#AWSBedrockClient.getInstance",
+    "topTargetExpected": false,
+    "semanticEdges": 2,
+    "confidence": {
+     "high": 2,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 2,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 4389,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 4,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "direct-smtp-mailer-send-contract-impact",
+    "category": "impact",
+    "intent": "navigation",
+    "primary": "src/utils/aws-bedrock.ts#AWSBedrockClient.testConnection",
+    "topTargetExpected": false,
+    "semanticEdges": 1,
+    "confidence": {
+     "high": 1,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 1,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3694,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "protocol-history-include-event-filter",
+    "category": "editing-prep",
+    "intent": "navigation",
+    "primary": "src/interfaces/Common.ts#Pagination",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3636,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "tariff-listing-query-params-and-sort",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "src/services/price.service.ts#PriceService.findByName",
+    "topTargetExpected": true,
+    "semanticEdges": 6,
+    "confidence": {
+     "high": 6,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 5,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 1
+    },
+    "sourceBytes": 11930,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 3,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "remote-unlock-connector-endpoint",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "src/services/connector.service.ts#ConnectorService.findById",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3902,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   }
+  ]
+ },
+ "lexical": {
+  "summary": {
+   "tasks": 12,
+   "tasksWithSemanticEdges": 0,
+   "annotatedTasks": 0,
+   "requiredEdges": 0,
+   "requiredEdgeRecallContext": null,
+   "requiredEdgeRecallIndex": null,
+   "expectedFileGroundingRate": 0.3333333333333333,
+   "medianSourceBytes": 3532
+  },
+  "tasks": [
+   {
+    "taskId": "nightly-aggregation-scheduler-owner",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/interfaces/IStatistics.ts#Station",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3236,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "service-method-argument-zod-wrapper",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/services/ai-chat.service.ts#SendMessageRequest",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3200,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "downloadable-charging-report-worksheets",
+    "category": "navigation",
+    "intent": "editing-prep",
+    "primary": "src/interfaces/IOrder.ts#Detail",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 5912,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "assistant-message-to-database-tool-calls",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/services/ai-chat.service.ts#AIChatService.getSessionHistory",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 6615,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "charger-offline-event-to-admin-alert",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/services/receive-notification.service.ts#ReceiveNotificationService._sendNotification",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 2268,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "customer-message-email-delivery-path",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/interfaces/INotification.ts#SystemMessageSMS",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 2775,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "token-sign-verify-helper-impact",
+    "category": "impact",
+    "intent": "editing-prep",
+    "primary": "src/services/auth.service.ts#AuthService._signAccessToken",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 2317,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 4,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "realtime-socket-singleton-api-impact",
+    "category": "impact",
+    "intent": "navigation",
+    "primary": "src/utils/aws-bedrock.ts#AWSBedrockClient.getInstance",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3723,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 4,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "direct-smtp-mailer-send-contract-impact",
+    "category": "impact",
+    "intent": "navigation",
+    "primary": "src/utils/aws-bedrock.ts#AWSBedrockClient.testConnection",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3036,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "protocol-history-include-event-filter",
+    "category": "editing-prep",
+    "intent": "navigation",
+    "primary": "src/interfaces/Common.ts#Pagination",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3636,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "tariff-listing-query-params-and-sort",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "src/services/price.service.ts#PriceService.findByName",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3532,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "remote-unlock-connector-endpoint",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "src/services/connector.service.ts#ConnectorService.findById",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3902,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   }
+  ]
+ }
+}

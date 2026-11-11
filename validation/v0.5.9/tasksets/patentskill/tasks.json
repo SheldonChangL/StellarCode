@@ -1,0 +1,141 @@
+{
+  "version": 1,
+  "notes": "patentskill v0.5.8 holdout, commit 3e5e2a78608aabd5ebed4889698d53841f664922. Authored and independently reviewed without StellarCode (see AUTHORING.md). Frozen before any v0.5.8 benchmark run on this repository.",
+  "tasks": [
+    {
+      "id": "audit-looked-up-case-phrase",
+      "enabled": true,
+      "category": "navigation",
+      "prompt": "Our audit command-line tool prints a 'looked up' column with phrases like 'US application 14643719'. USPTO attempts often record no query parameters because the case number is in the URL path. Where is the logic that derives that short phrase -- trying the attempt's own query parameters first, then a parameter whose value is a URL, then the source URL of the snapshot the attempt froze -- and falls back to '(not recorded)' when none of them says anything? Point me to the single module that owns it.",
+      "expectedFiles": [
+        "patent-search-mcp/server/src/patent_search_mcp/audit/subjects.py"
+      ],
+      "expectedMatch": "any"
+    },
+    {
+      "id": "shared-deployment-credential-hmac-derivation",
+      "enabled": true,
+      "category": "navigation",
+      "prompt": "On the shared HTTP deployment, colleagues authenticate with a bearer credential shaped like ps<version>.<base32 address>.<base32 MAC>. Which module implements deriving that credential from a server secret with HMAC-SHA256, parsing it back into its three dot-separated segments, and checking it against the configured per-version secrets and the revocation list?",
+      "expectedFiles": [
+        "patent-search-mcp/server/src/patent_search_mcp/access/codes.py"
+      ],
+      "expectedMatch": "any"
+    },
+    {
+      "id": "taiwan-patent-number-kind-classification",
+      "enabled": true,
+      "category": "navigation",
+      "prompt": "When a caller gives a Taiwanese patent number in one of its many forms (for example 'TW I933774', a nine-digit number whose first three digits are a ROC/民國 filing year, a nine-digit 西元-year publication number, or a number still carrying the -A0304 full-text filename suffix), where is it decided whether it is an application, grant/certificate or publication number, and which applclass value must be sent to TIPO beside it? I want the one module that owns that classification.",
+      "expectedFiles": [
+        "patent-search-mcp/server/src/patent_search_mcp/adapters/identifiers.py"
+      ],
+      "expectedMatch": "any"
+    },
+    {
+      "id": "http-caller-identity-to-attempt-json",
+      "enabled": true,
+      "category": "flow",
+      "prompt": "Trace how the verified email address of a caller on the shared Streamable-HTTP deployment ends up as the callerIdentity field in each provider attempt's attempt.json. Start where the tool-call handler has the authenticated principal and publishes it, then show the object that holds it for the duration of the call and how it is set and reset, where the per-provider-call bookkeeping picks it up, and end at the code that actually writes the field into the JSON document on disk.",
+      "expectedFiles": [
+        "patent-search-mcp/server/src/patent_search_mcp/http_app.py",
+        "patent-search-mcp/server/src/patent_search_mcp/evidence/caller_context.py",
+        "patent-search-mcp/server/src/patent_search_mcp/evidence/recording.py",
+        "patent-search-mcp/server/src/patent_search_mcp/evidence/store.py"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "tipo-claim-text-ftps-fallback-chain",
+      "enabled": true,
+      "category": "flow",
+      "prompt": "For a Taiwanese (TIPO) claim-text lookup, trace what happens when the REST record publishes an FTPS full-text URL but the FTPS fetch fails with a timeout or unavailability: where it is decided that this is a channel failure worth falling back on, how the HTTPS 專利公告公報 grant-bulletin issue is fetched and the matching case's claim entries are pulled out of its XML, and where the tool response gets the warning that names which full-text channel answered.",
+      "expectedFiles": [
+        "patent-search-mcp/server/src/patent_search_mcp/adapters/tipo/adapter.py",
+        "patent-search-mcp/server/src/patent_search_mcp/adapters/tipo/claims.py",
+        "patent-search-mcp/server/src/patent_search_mcp/adapters/tipo/gazette.py"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "taiwan-family-walk-depth-bound",
+      "enabled": true,
+      "category": "flow",
+      "prompt": "For a TIPO family lookup (分割/改請/一案兩請 relations plus the priority basis), trace how the walk is bounded: where the TIPO-specific traversal limits (depth 2, node ceiling) are declared and the per-node neighbour lookup is handed to the walker, how the breadth-first walk stops at a node sitting on the depth boundary and records that truncation, and where the truncation and summary notes are turned into the warnings lines returned to the caller.",
+      "expectedFiles": [
+        "patent-search-mcp/server/src/patent_search_mcp/adapters/tipo/adapter.py",
+        "patent-search-mcp/server/src/patent_search_mcp/graph/expansion.py"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "sliding-window-decision-shape-change",
+      "enabled": true,
+      "category": "impact",
+      "prompt": "We're changing the per-key decision object returned by the in-memory sliding-window limiter (allowed / limit / window_seconds / remaining / retry_after_seconds) -- for example retry_after_seconds becomes an integer number of milliseconds. Which production modules must be reviewed? Include the module that defines it and every module that directly reads fields of that decision object. Exclude tests, the testing helpers package, package __init__ re-exports, and code that only sees values already copied out of it into some other result type.",
+      "expectedFiles": [
+        "patent-search-mcp/server/src/patent_search_mcp/access/rate_limit.py",
+        "patent-search-mcp/server/src/patent_search_mcp/access/quota.py",
+        "patent-search-mcp/server/src/patent_search_mcp/access/requests.py"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "provider-override-resolver-signature-change",
+      "enabled": true,
+      "category": "impact",
+      "prompt": "Contract 1.3.0 added the sourceJurisdictions and sourceIdentifiers maps, which override the request-level jurisdiction(s) and identifier for one provider only. The shared helper functions that resolve those overrides currently take (arguments, provider). If their signature changes to take the whole incoming request object instead, which production Python modules must be reviewed? Include the module that defines the helpers and every module that imports and calls them; ignore tests, docs, and mentions in comments.",
+      "expectedFiles": [
+        "patent-search-mcp/server/src/patent_search_mcp/adapters/per_source.py",
+        "patent-search-mcp/server/src/patent_search_mcp/adapters/tipo/adapter.py",
+        "patent-search-mcp/server/src/patent_search_mcp/adapters/uspto/adapter.py"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "worker-thread-tool-invocation-signature-change",
+      "enabled": true,
+      "category": "impact",
+      "prompt": "The async helper that runs one tool invocation off the event loop on a worker thread, under the per-call wall-clock budget and the process-wide capacity limiter, currently takes (registry, tool name, arguments). If it changes to take a single call object instead, which production modules must be reviewed? Include the module that defines it and every module that imports and awaits it, covering both the stdio and the shared HTTP entry points; ignore tests and mentions in comments.",
+      "expectedFiles": [
+        "patent-search-mcp/server/src/patent_search_mcp/concurrency.py",
+        "patent-search-mcp/server/src/patent_search_mcp/server.py",
+        "patent-search-mcp/server/src/patent_search_mcp/http_app.py"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "add-basis-to-per-provider-capability-declaration",
+      "enabled": true,
+      "category": "editing-prep",
+      "prompt": "Every successful tool response carries a structured per-provider object keyed by sourceId, whose entries hold status / verifiedAt / limits and describe the standing capability declaration each provider used by the call was served under. I want to add a `basis` property to each entry of that object. Which files must be changed so the property is actually produced and the response still passes output-contract validation? Don't count docs or tests.",
+      "expectedFiles": [
+        "patent-search-mcp/server/src/patent_search_mcp/coverage.py",
+        "patent-search-mcp/schemas/tool-definitions.json"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "audit-cli-show-key-version",
+      "enabled": true,
+      "category": "editing-prep",
+      "prompt": "Make the audit command-line tool show which server key version (the ps<n> version that verified the caller's access credential) applies to each provider attempt in its `activity` and `run` output -- both the text tables and --json -- whether it is reading the on-disk evidence package or the imported PostgreSQL database. The attempt JSON and the provider_attempts table already carry that value. Which files must be changed?",
+      "expectedFiles": [
+        "patent-search-mcp/server/src/patent_search_mcp/audit/sources.py",
+        "patent-search-mcp/server/src/patent_search_mcp/audit/render.py"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "persist-caller-source-ip-on-attempts",
+      "enabled": true,
+      "category": "editing-prep",
+      "prompt": "The client IP of a caller on the shared HTTP deployment is already captured alongside the authenticated caller for each tool call, but it is never persisted. I want it written into every provider attempt's attempt.json and loaded into the provider_attempts table when the on-disk evidence package is imported into PostgreSQL (I'll add the column in a new migration file myself). Which existing Python files must be modified? Audit display changes are out of scope.",
+      "expectedFiles": [
+        "patent-search-mcp/server/src/patent_search_mcp/evidence/store.py",
+        "patent-search-mcp/server/src/patent_search_mcp/db/repository.py"
+      ],
+      "expectedMatch": "all"
+    }
+  ]
+}

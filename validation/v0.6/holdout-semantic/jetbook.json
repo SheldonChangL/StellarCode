@@ -1,0 +1,442 @@
+{
+  "schemaVersion": 1,
+  "contextFlags": [
+    "--compact",
+    "--with-source",
+    "--depth",
+    "1",
+    "--max-files",
+    "6",
+    "--max-lines",
+    "160",
+    "--max-bytes",
+    "12000",
+    "--json"
+  ],
+  "summary": {
+    "tasks": 12,
+    "tasksWithSemanticEdges": 12,
+    "annotatedTasks": 9,
+    "requiredEdges": 26,
+    "requiredEdgeRecallContext": 0.07692307692307693,
+    "requiredEdgeRecallIndex": 0.6153846153846154,
+    "expectedFileGroundingRate": 0.4411764705882353,
+    "medianSourceBytes": 6830
+  },
+  "tasks": [
+    {
+      "taskId": "nav-login-lockout-duration",
+      "category": "navigation",
+      "intent": "navigation",
+      "primary": "src/lib/auth/password.ts#MIN_PASSWORD_LENGTH",
+      "topTargetExpected": false,
+      "semanticEdges": 1,
+      "confidence": {
+        "high": 1,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 1,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "src/actions/settings.ts"
+      ],
+      "sourceBytes": 3464,
+      "expectedFilesGrounded": 0,
+      "expectedFiles": 1,
+      "semanticPathLength": 1,
+      "requiredEdges": 1,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 1,
+      "missingRequiredEdges": [
+        "src/lib/auth/throttle.ts#recordLoginFailure|CALLS|src/lib/auth/throttle.ts#lockDurationMs"
+      ]
+    },
+    {
+      "taskId": "nav-image-import-blocked-addresses",
+      "category": "navigation",
+      "intent": "navigation",
+      "primary": "src/actions/page.ts#updateExternalLink",
+      "topTargetExpected": false,
+      "semanticEdges": 3,
+      "confidence": {
+        "high": 3,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 3,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "src/components/tree/page-tree.tsx#handleExternalSubmit",
+        "src/lib/storage/import-url.ts",
+        "src/lib/content/markdown-to-doc.ts#blockTokensToNodes"
+      ],
+      "sourceBytes": 7329,
+      "expectedFilesGrounded": 1,
+      "expectedFiles": 1,
+      "semanticPathLength": 1,
+      "requiredEdges": 0,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 0,
+      "missingRequiredEdges": []
+    },
+    {
+      "taskId": "nav-editor-autosave-delay",
+      "category": "navigation",
+      "intent": "editing-prep",
+      "primary": "src/actions/lock.ts#acquireLockAction",
+      "topTargetExpected": false,
+      "semanticEdges": 6,
+      "confidence": {
+        "high": 6,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 6,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "src/app/(app)/s/[spaceSlug]/[pageSlug]/edit/edit-lock-notice.tsx#steal",
+        "src/lib/pages/lock.ts#getLockState",
+        "src/app/(app)/s/[spaceSlug]/[pageSlug]/edit/page.tsx",
+        "src/lib/api/page-write.ts#apiUpdatePage"
+      ],
+      "sourceBytes": 4328,
+      "expectedFilesGrounded": 0,
+      "expectedFiles": 1,
+      "semanticPathLength": 1,
+      "requiredEdges": 0,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 0,
+      "missingRequiredEdges": []
+    },
+    {
+      "taskId": "flow-comment-reply-email",
+      "category": "flow",
+      "intent": "flow",
+      "primary": "src/app/(app)/s/[spaceSlug]/[pageSlug]/comments-panel.tsx#onDeleteThread",
+      "topTargetExpected": false,
+      "semanticEdges": 6,
+      "confidence": {
+        "high": 6,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 6,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "src/actions/comment.ts#deleteComment",
+        "src/lib/jobs/queue.ts#reembedIndexedPages",
+        "src/components/tree/page-tree.tsx#handleDelete",
+        "src/lib/comments/service.ts#softDeleteComment",
+        "src/lib/pages/trash.ts#softDeletePageSubtree",
+        "src/lib/comments/service.ts#getCommentWithSpace"
+      ],
+      "sourceBytes": 7587,
+      "expectedFilesGrounded": 2,
+      "expectedFiles": 4,
+      "semanticPathLength": 2,
+      "requiredEdges": 4,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 3,
+      "missingRequiredEdges": [
+        "src/actions/comment.ts#replyComment|CALLS|src/lib/notifications.ts#notifyCommentReply",
+        "src/lib/notifications.ts#notifyCommentReply|CALLS|src/lib/notifications.ts#notify",
+        "src/lib/notifications.ts#notify|CALLS|src/lib/notifications-email.ts#mirrorNotificationEmail",
+        "src/lib/notifications-email.ts#mirrorNotificationEmail|CALLS|src/lib/jobs/queue.ts#enqueueNotificationEmail"
+      ]
+    },
+    {
+      "taskId": "flow-api-update-archived-space-refused",
+      "category": "flow",
+      "intent": "flow",
+      "primary": "src/actions/space.ts#archiveSpace",
+      "topTargetExpected": false,
+      "semanticEdges": 6,
+      "confidence": {
+        "high": 6,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 6,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "src/app/(app)/s/[spaceSlug]/settings/archive-section.tsx#onConfirm",
+        "src/lib/spaces/manage.ts#setSpaceArchived",
+        "src/lib/pages/cross-space.ts#copyPageSubtreeToSpace",
+        "src/lib/authz/permission.ts#assertCan",
+        "src/lib/jobs/queue.ts#triggerEmbedPage",
+        "src/components/tree/page-tree.tsx#handleCrossSpace"
+      ],
+      "sourceBytes": 9567,
+      "expectedFilesGrounded": 1,
+      "expectedFiles": 4,
+      "semanticPathLength": 1,
+      "requiredEdges": 3,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 2,
+      "missingRequiredEdges": [
+        "src/app/api/v1/pages/[id]/route.ts#PATCH|CALLS|src/lib/api/page-write.ts#apiUpdatePage",
+        "src/lib/api/page-write.ts#apiUpdatePage|CALLS|src/lib/authz/permission.ts#can",
+        "src/lib/authz/permission.ts#can|CALLS|src/lib/authz/policy.ts#actionAllowedWhenArchived"
+      ]
+    },
+    {
+      "taskId": "flow-autosave-version-conflict",
+      "category": "flow",
+      "intent": "flow",
+      "primary": "src/lib/pages/errors.ts#VersionConflictError.constructor",
+      "topTargetExpected": true,
+      "semanticEdges": 6,
+      "confidence": {
+        "high": 6,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 6,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "src/app/(app)/s/[spaceSlug]/[pageSlug]/history/restore-version-button.tsx#onConfirm",
+        "src/actions/page.ts#requireEditor",
+        "src/actions/page.ts#savePage",
+        "src/lib/audit.ts#writeAudit",
+        "src/lib/audit.ts#ipFromHeaders",
+        "src/actions/admin.ts"
+      ],
+      "sourceBytes": 6830,
+      "expectedFilesGrounded": 2,
+      "expectedFiles": 4,
+      "semanticPathLength": 1,
+      "requiredEdges": 2,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 0,
+      "missingRequiredEdges": [
+        "src/components/editor/page-editor.tsx#PageEditor|CALLS|src/actions/page.ts#savePage",
+        "src/actions/page.ts#savePage|CALLS|src/lib/pages/content-write.ts#writePageContentTx"
+      ]
+    },
+    {
+      "taskId": "impact-content-write-pipeline-signature",
+      "category": "impact",
+      "intent": "editing-prep",
+      "primary": "src/actions/page.ts#restorePageVersion",
+      "topTargetExpected": true,
+      "semanticEdges": 6,
+      "confidence": {
+        "high": 6,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 2,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 4
+      },
+      "groundedSemanticSymbols": [
+        "src/app/(app)/s/[spaceSlug]/[pageSlug]/history/restore-version-button.tsx#onConfirm",
+        "src/lib/db/schema.ts#pageVersions",
+        "src/lib/db/schema.ts#pages",
+        "src/lib/content/types.ts#ProseMirrorDoc",
+        "src/lib/db/index.ts#db",
+        "src/lib/pages/content-write.ts#writePageContentTx"
+      ],
+      "sourceBytes": 9487,
+      "expectedFilesGrounded": 2,
+      "expectedFiles": 4,
+      "semanticPathLength": 1,
+      "requiredEdges": 5,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 3,
+      "missingRequiredEdges": [
+        "src/actions/page.ts#savePage|CALLS|src/lib/pages/content-write.ts#writePageContentTx",
+        "src/lib/api/page-write.ts#apiUpdatePage|CALLS|src/lib/pages/content-write.ts#writePageContentTx",
+        "src/lib/api/page-write.ts#apiCreatePage|CALLS|src/lib/pages/content-write.ts#writePageContentTx",
+        "src/lib/pages/cross-space.ts#copyPageSubtreeToSpace|CALLS|src/lib/pages/content-write.ts#writePageContentTx",
+        "src/lib/jobs/import-zip.ts#runImportZip|CALLS|src/lib/pages/content-write.ts#writePageContentTx"
+      ]
+    },
+    {
+      "taskId": "impact-verified-token-id-field",
+      "category": "impact",
+      "intent": "editing-prep",
+      "primary": "src/lib/api-tokens/bearer.ts#checkApiTokenRate",
+      "topTargetExpected": true,
+      "semanticEdges": 2,
+      "confidence": {
+        "high": 2,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 2,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "src/app/api/mcp/route.ts#writeGate",
+        "src/lib/api-tokens/bearer.ts#requireApiAuth"
+      ],
+      "sourceBytes": 4306,
+      "expectedFilesGrounded": 3,
+      "expectedFiles": 3,
+      "semanticPathLength": 1,
+      "requiredEdges": 4,
+      "requiredEdgesReturned": 2,
+      "requiredEdgesIndexed": 3,
+      "missingRequiredEdges": [
+        "src/lib/api-tokens/bearer.ts#requireApiAuth|CALLS|src/lib/api-tokens/index.ts#verifyApiToken",
+        "src/lib/api-tokens/bearer.ts#ApiAuthResult|CONSUMES|src/lib/api-tokens/index.ts#VerifiedApiToken"
+      ]
+    },
+    {
+      "taskId": "impact-save-action-return-shape",
+      "category": "impact",
+      "intent": "navigation",
+      "primary": "src/actions/page.ts#restorePageVersion",
+      "topTargetExpected": true,
+      "semanticEdges": 2,
+      "confidence": {
+        "high": 2,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 2,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "src/app/(app)/s/[spaceSlug]/[pageSlug]/history/restore-version-button.tsx#onConfirm",
+        "src/actions/comment.ts#addComment"
+      ],
+      "sourceBytes": 4944,
+      "expectedFilesGrounded": 2,
+      "expectedFiles": 3,
+      "semanticPathLength": 1,
+      "requiredEdges": 3,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 1,
+      "missingRequiredEdges": [
+        "src/components/editor/page-editor.tsx#PageEditor|CALLS|src/actions/page.ts#savePage",
+        "src/actions/page.ts#restorePageVersion|CALLS|src/actions/page.ts#savePage",
+        "src/app/(app)/s/[spaceSlug]/[pageSlug]/history/restore-version-button.tsx#RestoreVersionButton|CALLS|src/actions/page.ts#restorePageVersion"
+      ]
+    },
+    {
+      "taskId": "edit-api-update-page-icon",
+      "category": "editing-prep",
+      "intent": "navigation",
+      "primary": "src/actions/page.ts#restorePageVersion",
+      "topTargetExpected": false,
+      "semanticEdges": 3,
+      "confidence": {
+        "high": 3,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 3,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "src/app/(app)/s/[spaceSlug]/[pageSlug]/history/restore-version-button.tsx#onConfirm",
+        "src/app/(app)/settings/notifications-section.tsx#toggle",
+        "src/app/(app)/s/[spaceSlug]/settings/general-section.tsx#onSave"
+      ],
+      "sourceBytes": 6276,
+      "expectedFilesGrounded": 0,
+      "expectedFiles": 4,
+      "semanticPathLength": 1,
+      "requiredEdges": 1,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 0,
+      "missingRequiredEdges": [
+        "src/app/api/v1/pages/[id]/route.ts#PATCH|CALLS|src/lib/api/page-write.ts#apiUpdatePage"
+      ]
+    },
+    {
+      "taskId": "edit-moderators-edit-comments",
+      "category": "editing-prep",
+      "intent": "navigation",
+      "primary": "src/app/(app)/s/[spaceSlug]/[pageSlug]/history/version-sidebar.tsx#VersionSidebar",
+      "topTargetExpected": false,
+      "semanticEdges": 3,
+      "confidence": {
+        "high": 3,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 3,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "src/app/(app)/s/[spaceSlug]/[pageSlug]/edit/page.tsx",
+        "src/lib/api/page-write.ts#apiDeletePage",
+        "src/app/(app)/s/[spaceSlug]/[pageSlug]/history/page.tsx"
+      ],
+      "sourceBytes": 4906,
+      "expectedFilesGrounded": 1,
+      "expectedFiles": 2,
+      "semanticPathLength": 1,
+      "requiredEdges": 0,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 0,
+      "missingRequiredEdges": []
+    },
+    {
+      "taskId": "edit-separate-move-permission",
+      "category": "editing-prep",
+      "intent": "navigation",
+      "primary": "src/actions/page.ts#movePageToSpace",
+      "topTargetExpected": true,
+      "semanticEdges": 3,
+      "confidence": {
+        "high": 3,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 3,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "src/components/tree/page-tree.tsx#handleCrossSpace",
+        "src/app/admin/spaces/restore-space-button.tsx#onRestore",
+        "src/actions/comment.ts#addComment"
+      ],
+      "sourceBytes": 9476,
+      "expectedFilesGrounded": 1,
+      "expectedFiles": 3,
+      "semanticPathLength": 1,
+      "requiredEdges": 3,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 3,
+      "missingRequiredEdges": [
+        "src/lib/api/page-write.ts#apiMovePage|CALLS|src/lib/authz/permission.ts#can",
+        "src/actions/page.ts#movePageToSpace|CALLS|src/lib/authz/permission.ts#assertCan",
+        "src/lib/authz/permission.ts#can|CALLS|src/lib/authz/policy.ts#actionAllowedForRole"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+ "old": {
+  "nestmind": {
+   "tasks": 12,
+   "expectedGrounding": 0.8,
+   "medianBytes": 7776,
+   "maxBytes": 11766,
+   "medianEdges": 4
+  },
+  "jetchat-admin": {
+   "tasks": 12,
+   "expectedGrounding": 0.467,
+   "medianBytes": 7581.5,
+   "maxBytes": 11979,
+   "medianEdges": 4
+  },
+  "reefmori": {
+   "tasks": 10,
+   "expectedGrounding": 0.947,
+   "medianBytes": 8915.5,
+   "maxBytes": 11974,
+   "medianEdges": 6
+  },
+  "kc002-ota": {
+   "tasks": 12,
+   "expectedGrounding": 0.786,
+   "medianBytes": 7668.5,
+   "maxBytes": 11956,
+   "medianEdges": 5
+  },
+  "patentskill": {
+   "tasks": 12,
+   "expectedGrounding": 0.556,
+   "medianBytes": 10646.5,
+   "maxBytes": 11930,
+   "medianEdges": 5
+  },
+  "goodjobshare": {
+   "tasks": 12,
+   "expectedGrounding": 0.242,
+   "medianBytes": 5112.5,
+   "maxBytes": 9539,
+   "medianEdges": 1.5
+  }
+ },
+ "new": {
+  "nestmind": {
+   "tasks": 12,
+   "expectedGrounding": 0.733,
+   "medianBytes": 8830.5,
+   "maxBytes": 11984,
+   "medianEdges": 5
+  },
+  "jetchat-admin": {
+   "tasks": 12,
+   "expectedGrounding": 0.733,
+   "medianBytes": 9914.5,
+   "maxBytes": 11977,
+   "medianEdges": 6
+  },
+  "reefmori": {
+   "tasks": 10,
+   "expectedGrounding": 1,
+   "medianBytes": 8245,
+   "maxBytes": 11982,
+   "medianEdges": 6
+  },
+  "kc002-ota": {
+   "tasks": 12,
+   "expectedGrounding": 0.821,
+   "medianBytes": 7263,
+   "maxBytes": 11986,
+   "medianEdges": 5
+  },
+  "patentskill": {
+   "tasks": 12,
+   "expectedGrounding": 0.556,
+   "medianBytes": 11594,
+   "maxBytes": 11913,
+   "medianEdges": 6
+  },
+  "goodjobshare": {
+   "tasks": 12,
+   "expectedGrounding": 0.273,
+   "medianBytes": 4952.5,
+   "maxBytes": 7184,
+   "medianEdges": 2
+  }
+ }
+}

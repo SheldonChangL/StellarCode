@@ -1,0 +1,569 @@
+{
+ "index": {
+  "files": 214,
+  "symbols": 1728,
+  "semanticEdges": {
+   "CALLS": 1491,
+   "IMPLEMENTS": 28,
+   "REGISTERS": 14,
+   "CONSUMES": 366
+  },
+  "ms": 1026
+ },
+ "semantic": {
+  "summary": {
+   "tasks": 12,
+   "tasksWithSemanticEdges": 11,
+   "annotatedTasks": 0,
+   "requiredEdges": 0,
+   "requiredEdgeRecallContext": null,
+   "requiredEdgeRecallIndex": null,
+   "expectedFileGroundingRate": 0.6129032258064516,
+   "medianSourceBytes": 6001
+  },
+  "tasks": [
+   {
+    "taskId": "chat-suggestion-prefix-and-link-filter",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "apps/api/src/chat/rules.ts#containsNumericHost",
+    "topTargetExpected": true,
+    "semanticEdges": 3,
+    "confidence": {
+     "high": 3,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 3,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 4322,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 1,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "gemini-call-cost-ledger-arithmetic",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "apps/worker/src/generation/gemini/pricing.ts#textCostUsdMicros",
+    "topTargetExpected": true,
+    "semanticEdges": 1,
+    "confidence": {
+     "high": 1,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 1,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 2423,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 1,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "winner-reveal-spin-order",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "apps/api/src/draw/draw.ts#spinOrder",
+    "topTargetExpected": true,
+    "semanticEdges": 1,
+    "confidence": {
+     "high": 1,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 1,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3801,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 1,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "obs-browser-source-secret-exchange",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "apps/api/src/persistence/database.ts#createDatabase",
+    "topTargetExpected": false,
+    "semanticEdges": 1,
+    "confidence": {
+     "high": 1,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 1,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 9246,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "queued-attempt-claim-to-story-call",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "apps/worker/src/generation/gemini/story.ts#GeminiStoryProvider.generate",
+    "topTargetExpected": false,
+    "semanticEdges": 6,
+    "confidence": {
+     "high": 6,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 6,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 10805,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 3,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "emergency-safe-slate-button-trace",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "apps/api/src/host/routes.ts#idempotencyKey",
+    "topTargetExpected": true,
+    "semanticEdges": 6,
+    "confidence": {
+     "high": 6,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 6,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 6001,
+    "expectedFilesGrounded": 3,
+    "expectedFiles": 4,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "collection-countdown-helpers-consumers",
+    "category": "impact",
+    "intent": "editing-prep",
+    "primary": "apps/api/src/chat/window.ts#resumeCollectionWindow",
+    "topTargetExpected": true,
+    "semanticEdges": 5,
+    "confidence": {
+     "high": 5,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 3,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 2
+    },
+    "sourceBytes": 4844,
+    "expectedFilesGrounded": 4,
+    "expectedFiles": 4,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "deferred-object-removal-ledger-consumers",
+    "category": "impact",
+    "intent": "navigation",
+    "primary": "apps/api/src/storage/tombstones.ts#convergeObjectTombstones",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 2778,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 4,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "generated-scene-picture-key-and-url-consumers",
+    "category": "impact",
+    "intent": "editing-prep",
+    "primary": "apps/api/src/assets/scene-images.ts#sceneImageStorageKey",
+    "topTargetExpected": true,
+    "semanticEdges": 6,
+    "confidence": {
+     "high": 6,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 6,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 4702,
+    "expectedFilesGrounded": 4,
+    "expectedFiles": 4,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "new-skip-refusal-reason-with-host-copy",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "apps/api/src/host/routes.ts#conflictCode",
+    "topTargetExpected": false,
+    "semanticEdges": 3,
+    "confidence": {
+     "high": 3,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 2,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 1
+    },
+    "sourceBytes": 6819,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 2,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "live-feed-reconnect-backoff-cap",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "apps/web/src/overlay/stream.ts#OverlayStreamClient.armFailSafe",
+    "topTargetExpected": true,
+    "semanticEdges": 6,
+    "confidence": {
+     "high": 6,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 1,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 5
+    },
+    "sourceBytes": 8738,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 2,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "overlay-heartbeat-freshness-threshold",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "apps/api/src/host/routes.ts#stop",
+    "topTargetExpected": false,
+    "semanticEdges": 5,
+    "confidence": {
+     "high": 5,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 4,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 1
+    },
+    "sourceBytes": 7494,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 2,
+    "semanticPathLength": 1
+   }
+  ]
+ },
+ "lexical": {
+  "summary": {
+   "tasks": 12,
+   "tasksWithSemanticEdges": 0,
+   "annotatedTasks": 0,
+   "requiredEdges": 0,
+   "requiredEdgeRecallContext": null,
+   "requiredEdgeRecallIndex": null,
+   "expectedFileGroundingRate": 0.3870967741935484,
+   "medianSourceBytes": 4357
+  },
+  "tasks": [
+   {
+    "taskId": "chat-suggestion-prefix-and-link-filter",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "apps/api/src/chat/rules.ts#containsNumericHost",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 2791,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "gemini-call-cost-ledger-arithmetic",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "apps/worker/src/generation/gemini/pricing.ts#textCostUsdMicros",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1870,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "winner-reveal-spin-order",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "apps/api/src/draw/draw.ts#spinOrder",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3036,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "obs-browser-source-secret-exchange",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "apps/api/src/persistence/database.ts#createDatabase",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 8664,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "queued-attempt-claim-to-story-call",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "apps/worker/src/generation/gemini/story.ts#GeminiStoryProvider.generate",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 7844,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "emergency-safe-slate-button-trace",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "apps/api/src/host/routes.ts#idempotencyKey",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 4708,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 4,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "collection-countdown-helpers-consumers",
+    "category": "impact",
+    "intent": "editing-prep",
+    "primary": "apps/api/src/chat/window.ts#resumeCollectionWindow",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3028,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 4,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "deferred-object-removal-ledger-consumers",
+    "category": "impact",
+    "intent": "navigation",
+    "primary": "apps/api/src/storage/tombstones.ts#convergeObjectTombstones",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 2778,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 4,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "generated-scene-picture-key-and-url-consumers",
+    "category": "impact",
+    "intent": "editing-prep",
+    "primary": "apps/api/src/assets/scene-images.ts#sceneImageStorageKey",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1584,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 4,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "new-skip-refusal-reason-with-host-copy",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "apps/api/src/host/routes.ts#conflictCode",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 5111,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "live-feed-reconnect-backoff-cap",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "apps/web/src/overlay/stream.ts#OverlayStreamClient.armFailSafe",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 4357,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "overlay-heartbeat-freshness-threshold",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "apps/api/src/host/routes.ts#stop",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 5087,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   }
+  ]
+ }
+}

@@ -1,0 +1,569 @@
+{
+ "index": {
+  "files": 186,
+  "symbols": 817,
+  "semanticEdges": {
+   "CALLS": 308,
+   "IMPLEMENTS": 0,
+   "REGISTERS": 6,
+   "CONSUMES": 255
+  },
+  "ms": 488
+ },
+ "semantic": {
+  "summary": {
+   "tasks": 12,
+   "tasksWithSemanticEdges": 8,
+   "annotatedTasks": 0,
+   "requiredEdges": 0,
+   "requiredEdgeRecallContext": null,
+   "requiredEdgeRecallIndex": null,
+   "expectedFileGroundingRate": 0.4666666666666667,
+   "medianSourceBytes": 4793
+  },
+  "tasks": [
+   {
+    "taskId": "nav-unauthenticated-redirect-and-token-cache",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/app/actions/auth.ts#validateToken",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 858,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "nav-malformed-ai-chart-rejection",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/components/ai-assistant/report/dynamic-chart-renderer.tsx#ChartErrorDisplay",
+    "topTargetExpected": true,
+    "semanticEdges": 2,
+    "confidence": {
+     "high": 2,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 2,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 6381,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "nav-all-organizations-account-listing",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/lib/utils/organization.ts#createAllGroupsOption",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 2314,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "flow-sign-in-to-session-cookie",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/lib/ai/firebase-ai-client.ts#createChatSession",
+    "topTargetExpected": false,
+    "semanticEdges": 6,
+    "confidence": {
+     "high": 6,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 6,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 9299,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 4,
+    "semanticPathLength": 2
+   },
+   {
+    "taskId": "flow-member-disable-and-enable",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/app/[locale]/(dashboard)/members/[id]/page.tsx#handleConfirmEnable",
+    "topTargetExpected": true,
+    "semanticEdges": 4,
+    "confidence": {
+     "high": 4,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 4,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 6483,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 3,
+    "semanticPathLength": 2
+   },
+   {
+    "taskId": "flow-conversation-list-date-window",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/hooks/use-conversations-list.ts#useConversationsList",
+    "topTargetExpected": true,
+    "semanticEdges": 6,
+    "confidence": {
+     "high": 6,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 6,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 4430,
+    "expectedFilesGrounded": 3,
+    "expectedFiles": 3,
+    "semanticPathLength": 2
+   },
+   {
+    "taskId": "impact-shared-date-picker-props",
+    "category": "impact",
+    "intent": "editing-prep",
+    "primary": "src/components/ui/calendar.tsx#Calendar",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1664,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 4,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "impact-browser-readable-access-cookie",
+    "category": "impact",
+    "intent": "navigation",
+    "primary": "src/stores/permission-store.ts#parsePermissionsCookie",
+    "topTargetExpected": true,
+    "semanticEdges": 2,
+    "confidence": {
+     "high": 2,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 2,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 2443,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 2,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "impact-ai-generation-settings-shape",
+    "category": "impact",
+    "intent": "flow",
+    "primary": "src/app/actions/auth.ts#getAuthToken",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1470,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 4,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "edit-expose-organizations-module",
+    "category": "editing-prep",
+    "intent": "navigation",
+    "primary": "src/lib/utils/route-permissions.ts#canAccessRoute",
+    "topTargetExpected": true,
+    "semanticEdges": 1,
+    "confidence": {
+     "high": 1,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 1,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 4793,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 2,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "edit-new-ai-assistant-tool",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "src/hooks/use-permissions.ts#UsePermissionsReturn.canAccessModule",
+    "topTargetExpected": false,
+    "semanticEdges": 6,
+    "confidence": {
+     "high": 6,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 6,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 11877,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 2,
+    "semanticPathLength": 1
+   },
+   {
+    "taskId": "edit-group-admin-account-creation",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "src/components/users/dialogs/create/create-user-fields.tsx#RoleFieldProps.onRoleChange",
+    "topTargetExpected": false,
+    "semanticEdges": 2,
+    "confidence": {
+     "high": 2,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 1,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 1
+    },
+    "sourceBytes": 5252,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 1
+   }
+  ]
+ },
+ "lexical": {
+  "summary": {
+   "tasks": 12,
+   "tasksWithSemanticEdges": 0,
+   "annotatedTasks": 0,
+   "requiredEdges": 0,
+   "requiredEdgeRecallContext": null,
+   "requiredEdgeRecallIndex": null,
+   "expectedFileGroundingRate": 0.4,
+   "medianSourceBytes": 3935
+  },
+  "tasks": [
+   {
+    "taskId": "nav-unauthenticated-redirect-and-token-cache",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/app/actions/auth.ts#validateToken",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 858,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "nav-malformed-ai-chart-rejection",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/components/ai-assistant/report/dynamic-chart-renderer.tsx#ChartErrorDisplay",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 5223,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "nav-all-organizations-account-listing",
+    "category": "navigation",
+    "intent": "navigation",
+    "primary": "src/lib/utils/organization.ts#createAllGroupsOption",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 2314,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 1,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "flow-sign-in-to-session-cookie",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/lib/ai/firebase-ai-client.ts#createChatSession",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 5778,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 4,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "flow-member-disable-and-enable",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/app/[locale]/(dashboard)/members/[id]/page.tsx#handleConfirmEnable",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 4374,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "flow-conversation-list-date-window",
+    "category": "flow",
+    "intent": "flow",
+    "primary": "src/hooks/use-conversations-list.ts#useConversationsList",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3420,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 3,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "impact-shared-date-picker-props",
+    "category": "impact",
+    "intent": "editing-prep",
+    "primary": "src/components/ui/calendar.tsx#Calendar",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1664,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 4,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "impact-browser-readable-access-cookie",
+    "category": "impact",
+    "intent": "navigation",
+    "primary": "src/stores/permission-store.ts#parsePermissionsCookie",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1394,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "impact-ai-generation-settings-shape",
+    "category": "impact",
+    "intent": "flow",
+    "primary": "src/app/actions/auth.ts#getAuthToken",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 1470,
+    "expectedFilesGrounded": 0,
+    "expectedFiles": 4,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "edit-expose-organizations-module",
+    "category": "editing-prep",
+    "intent": "navigation",
+    "primary": "src/lib/utils/route-permissions.ts#canAccessRoute",
+    "topTargetExpected": true,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 4262,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "edit-new-ai-assistant-tool",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "src/hooks/use-permissions.ts#UsePermissionsReturn.canAccessModule",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 6658,
+    "expectedFilesGrounded": 1,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   },
+   {
+    "taskId": "edit-group-admin-account-creation",
+    "category": "editing-prep",
+    "intent": "editing-prep",
+    "primary": "src/components/users/dialogs/create/create-user-fields.tsx#RoleFieldProps.onRoleChange",
+    "topTargetExpected": false,
+    "semanticEdges": 0,
+    "confidence": {
+     "high": 0,
+     "medium": 0
+    },
+    "relations": {
+     "CALLS": 0,
+     "REGISTERS": 0,
+     "IMPLEMENTS": 0,
+     "CONSUMES": 0
+    },
+    "sourceBytes": 3935,
+    "expectedFilesGrounded": 2,
+    "expectedFiles": 2,
+    "semanticPathLength": 0
+   }
+  ]
+ }
+}

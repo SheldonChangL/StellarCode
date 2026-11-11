@@ -1,7 +1,7 @@
 export const PRODUCT_NAME = 'StellarCode'
 export const PROJECT_SCHEMA_VERSION = 1
-export const DB_SCHEMA_VERSION = 3
-export const INDEXER_VERSION = 2
+export const DB_SCHEMA_VERSION = 4
+export const INDEXER_VERSION = 5
 export const DEFAULT_PORT = 7432
 export const MAX_SOURCE_BYTES = 2 * 1024 * 1024
 export const SUPPORTED_EXTENSIONS = new Map([

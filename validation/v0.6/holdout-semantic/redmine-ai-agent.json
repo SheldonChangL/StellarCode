@@ -1,0 +1,433 @@
+{
+  "schemaVersion": 1,
+  "contextFlags": [
+    "--compact",
+    "--with-source",
+    "--depth",
+    "1",
+    "--max-files",
+    "6",
+    "--max-lines",
+    "160",
+    "--max-bytes",
+    "12000",
+    "--json"
+  ],
+  "summary": {
+    "tasks": 12,
+    "tasksWithSemanticEdges": 12,
+    "annotatedTasks": 11,
+    "requiredEdges": 32,
+    "requiredEdgeRecallContext": 0.03125,
+    "requiredEdgeRecallIndex": 0.28125,
+    "expectedFileGroundingRate": 0.3333333333333333,
+    "medianSourceBytes": 3839
+  },
+  "tasks": [
+    {
+      "taskId": "nav-per-user-redmine-throttle",
+      "category": "navigation",
+      "intent": "navigation",
+      "primary": "backend/app/redmine_token.py#_validate_against_redmine",
+      "topTargetExpected": false,
+      "semanticEdges": 1,
+      "confidence": {
+        "high": 1,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 1,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "backend/app/redmine_token.py"
+      ],
+      "sourceBytes": 4788,
+      "expectedFilesGrounded": 1,
+      "expectedFiles": 1,
+      "semanticPathLength": 1,
+      "requiredEdges": 2,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 1,
+      "missingRequiredEdges": [
+        "backend/app/redmine_client.py#RedmineClient._request|CALLS|backend/app/redmine_client.py#RedmineClient._bucket",
+        "backend/app/redmine_client.py#TokenBucket.acquire|CALLS|backend/app/redmine_client.py#TokenBucket._refill"
+      ]
+    },
+    {
+      "taskId": "nav-nda-ticket-llm-guard",
+      "category": "navigation",
+      "intent": "navigation",
+      "primary": "backend/orch/nodes/explain_ticket.py#TicketContextCache.put",
+      "topTargetExpected": false,
+      "semanticEdges": 2,
+      "confidence": {
+        "high": 2,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 2,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "backend/orch/nl_query.py",
+        "extension/content.js"
+      ],
+      "sourceBytes": 3131,
+      "expectedFilesGrounded": 0,
+      "expectedFiles": 1,
+      "semanticPathLength": 1,
+      "requiredEdges": 3,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 3,
+      "missingRequiredEdges": [
+        "backend/primitives/confidential.py#is_bypassed|CALLS|backend/primitives/confidential.py#is_confidential",
+        "backend/primitives/confidential.py#is_bypassed|CALLS|backend/primitives/confidential.py#is_llm_primitive",
+        "backend/primitives/confidential.py#enforce|CALLS|backend/primitives/confidential.py#is_bypassed"
+      ]
+    },
+    {
+      "taskId": "nav-free-text-to-issue-filters",
+      "category": "navigation",
+      "intent": "navigation",
+      "primary": "backend/rag/fts.py#default_fts_search",
+      "topTargetExpected": false,
+      "semanticEdges": 1,
+      "confidence": {
+        "high": 1,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 1,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "backend/app/redmine_token.py"
+      ],
+      "sourceBytes": 3443,
+      "expectedFilesGrounded": 0,
+      "expectedFiles": 1,
+      "semanticPathLength": 1,
+      "requiredEdges": 2,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 0,
+      "missingRequiredEdges": [
+        "backend/orch/nl_query.py#nl_to_redmine_query|CALLS|backend/orch/nl_query.py#build_prompt",
+        "backend/orch/nl_query.py#nl_to_redmine_query|CALLS|backend/orch/nl_query.py#_parse"
+      ]
+    },
+    {
+      "taskId": "flow-approve-staged-batch-update",
+      "category": "flow",
+      "intent": "flow",
+      "primary": "backend/app/prb_checklist_export.py#ReviewRecord",
+      "topTargetExpected": false,
+      "semanticEdges": 1,
+      "confidence": {
+        "high": 1,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 1,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "backend/app/redmine_token.py"
+      ],
+      "sourceBytes": 3839,
+      "expectedFilesGrounded": 0,
+      "expectedFiles": 4,
+      "semanticPathLength": 1,
+      "requiredEdges": 4,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 0,
+      "missingRequiredEdges": [
+        "backend/app/confirm.py#confirm|CALLS|backend/previews/store.py#load_preview",
+        "backend/app/confirm.py#confirm|CALLS|backend/app/confirm.py#_execute_item",
+        "backend/app/confirm.py#_execute_item|CALLS|backend/primitives/write_update_issue.py#write_update_issue",
+        "backend/app/confirm.py#confirm|CALLS|backend/rollback/store.py#save_rollback_plan"
+      ]
+    },
+    {
+      "taskId": "flow-recurring-watch-notification",
+      "category": "flow",
+      "intent": "flow",
+      "primary": "backend/app/notifier.py#_send_email",
+      "topTargetExpected": true,
+      "semanticEdges": 4,
+      "confidence": {
+        "high": 4,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 4,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "backend/app/notifier.py#_smtp_settings",
+        "backend/app/inspection_runner.py#InspectionScheduler.load_jobs",
+        "backend/app/redmine_token.py"
+      ],
+      "sourceBytes": 6044,
+      "expectedFilesGrounded": 2,
+      "expectedFiles": 3,
+      "semanticPathLength": 1,
+      "requiredEdges": 4,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 2,
+      "missingRequiredEdges": [
+        "backend/app/inspection_runner.py#InspectionScheduler.load_jobs|REGISTERS|backend/app/inspection_runner.py#run_inspection",
+        "backend/app/inspection_runner.py#run_inspection|CALLS|backend/app/inspection_runner.py#_query_redmine",
+        "backend/app/notifier.py#dispatch_notifications|CALLS|backend/app/notifier.py#_dispatch_one",
+        "backend/app/notifier.py#_dispatch_one|CALLS|backend/app/audit.py#audit_scope"
+      ]
+    },
+    {
+      "taskId": "flow-side-panel-message-intent",
+      "category": "flow",
+      "intent": "flow",
+      "primary": "extension/src/sidepanel/App.tsx#handleSend",
+      "topTargetExpected": false,
+      "semanticEdges": 1,
+      "confidence": {
+        "high": 1,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 1,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "backend/orch/intent.py"
+      ],
+      "sourceBytes": 3619,
+      "expectedFilesGrounded": 1,
+      "expectedFiles": 4,
+      "semanticPathLength": 1,
+      "requiredEdges": 4,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 1,
+      "missingRequiredEdges": [
+        "backend/app/chat.py#chat|CALLS|backend/app/chat.py#_claim_run",
+        "backend/app/chat.py#_default_graph_factory|CALLS|backend/orch/graph.py#compile_graph",
+        "backend/orch/graph.py#build_graph|REGISTERS|backend/orch/graph.py#_classify_intent",
+        "backend/orch/graph.py#_classify_intent|CALLS|backend/orch/intent.py#classify_intent"
+      ]
+    },
+    {
+      "taskId": "impact-chat-run-slot-and-sse-helpers",
+      "category": "impact",
+      "intent": "editing-prep",
+      "primary": "backend/app/chat.py#_stream_events",
+      "topTargetExpected": true,
+      "semanticEdges": 5,
+      "confidence": {
+        "high": 5,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 5,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "extension/src/sidepanel/App.tsx#App",
+        "backend/app/chat.py#_sse_event",
+        "backend/app/chat.py",
+        "extension/src/sidepanel/sse.ts#parseFrame",
+        "scripts/poc/latency_bench.py#main"
+      ],
+      "sourceBytes": 7409,
+      "expectedFilesGrounded": 1,
+      "expectedFiles": 2,
+      "semanticPathLength": 1,
+      "requiredEdges": 2,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 0,
+      "missingRequiredEdges": [
+        "backend/app/macros.py#run_macro|CALLS|backend/app/chat.py#_claim_run",
+        "backend/app/macros.py#run_macro|CALLS|backend/app/chat.py#_stream_events"
+      ]
+    },
+    {
+      "taskId": "impact-published-rule-loader-contract",
+      "category": "impact",
+      "intent": "navigation",
+      "primary": "backend/rules/engine.py#load_published_rules",
+      "topTargetExpected": true,
+      "semanticEdges": 1,
+      "confidence": {
+        "high": 1,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 1,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "backend/rules/engine.py"
+      ],
+      "sourceBytes": 2674,
+      "expectedFilesGrounded": 1,
+      "expectedFiles": 3,
+      "semanticPathLength": 1,
+      "requiredEdges": 3,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 0,
+      "missingRequiredEdges": [
+        "backend/rules/engine.py#validate_required_fields|CALLS|backend/rules/engine.py#load_published_rules",
+        "backend/orch/nodes/validate_before_transition.py#validate_before_transition|CALLS|backend/rules/engine.py#validate_required_fields",
+        "backend/orch/nodes/explain_ticket.py#explain_ticket|CONSUMES|backend/rules/engine.py#load_published_rules"
+      ]
+    },
+    {
+      "taskId": "impact-ticket-update-diff-helpers",
+      "category": "impact",
+      "intent": "editing-prep",
+      "primary": "extension/src/sidepanel/App.tsx#newId",
+      "topTargetExpected": false,
+      "semanticEdges": 3,
+      "confidence": {
+        "high": 3,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 3,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "extension/src/sidepanel/App.tsx#App",
+        "extension/content.js",
+        "backend/orch/nodes/interactive_checklist.py"
+      ],
+      "sourceBytes": 6011,
+      "expectedFilesGrounded": 0,
+      "expectedFiles": 2,
+      "semanticPathLength": 1,
+      "requiredEdges": 3,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 0,
+      "missingRequiredEdges": [
+        "backend/previews/builder.py#build_update_preview|CALLS|backend/primitives/write_update_issue.py#_build_updates",
+        "backend/previews/builder.py#build_update_preview|CALLS|backend/primitives/write_update_issue.py#_compute_diff",
+        "backend/previews/builder.py#_read_before|CALLS|backend/primitives/write_update_issue.py#_get_before"
+      ]
+    },
+    {
+      "taskId": "edit-redmine-api-key-secret-naming",
+      "category": "editing-prep",
+      "intent": "editing-prep",
+      "primary": "backend/app/redmine_token.py#_secret_key",
+      "topTargetExpected": true,
+      "semanticEdges": 2,
+      "confidence": {
+        "high": 2,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 2,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "backend/app/redmine_token.py",
+        "backend/app/redmine_client.py#RedmineClient._load_token"
+      ],
+      "sourceBytes": 3657,
+      "expectedFilesGrounded": 2,
+      "expectedFiles": 2,
+      "semanticPathLength": 1,
+      "requiredEdges": 3,
+      "requiredEdgesReturned": 1,
+      "requiredEdgesIndexed": 1,
+      "missingRequiredEdges": [
+        "backend/app/redmine_token.py#put_redmine_token|CALLS|backend/app/redmine_token.py#_secret_key",
+        "backend/app/redmine_token.py#get_redmine_token_status|CALLS|backend/app/redmine_token.py#_secret_key"
+      ]
+    },
+    {
+      "taskId": "edit-inference-reply-redis-key",
+      "category": "editing-prep",
+      "intent": "editing-prep",
+      "primary": "extension/src/sidepanel/PreviewCard.tsx#itemKey",
+      "topTargetExpected": false,
+      "semanticEdges": 3,
+      "confidence": {
+        "high": 3,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 3,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "extension/src/sidepanel/PreviewCard.tsx",
+        "extension/src/sidepanel/PreviewCard.tsx#setAll",
+        "backend/inference/client.py"
+      ],
+      "sourceBytes": 3715,
+      "expectedFilesGrounded": 1,
+      "expectedFiles": 2,
+      "semanticPathLength": 1,
+      "requiredEdges": 2,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 1,
+      "missingRequiredEdges": [
+        "backend/inference/client.py#infer|CALLS|backend/inference/client.py#result_key",
+        "backend/inference/worker.py#InferenceWorker._persist_result|CALLS|backend/inference/worker.py#result_key"
+      ]
+    },
+    {
+      "taskId": "edit-add-watch-delivery-channel",
+      "category": "editing-prep",
+      "intent": "editing-prep",
+      "primary": "extension/src/sidepanel/App.tsx#fetchActiveTicket",
+      "topTargetExpected": false,
+      "semanticEdges": 5,
+      "confidence": {
+        "high": 5,
+        "medium": 0
+      },
+      "relations": {
+        "CALLS": 5,
+        "REGISTERS": 0,
+        "IMPLEMENTS": 0,
+        "CONSUMES": 0
+      },
+      "groundedSemanticSymbols": [
+        "extension/src/sidepanel/App.tsx#App",
+        "extension/src/sidepanel/App.tsx#App",
+        "extension/src/sidepanel/sse.ts#parseFrame",
+        "backend/alembic/env.py#run_migrations_online"
+      ],
+      "sourceBytes": 6414,
+      "expectedFilesGrounded": 0,
+      "expectedFiles": 2,
+      "semanticPathLength": 1,
+      "requiredEdges": 0,
+      "requiredEdgesReturned": 0,
+      "requiredEdgesIndexed": 0,
+      "missingRequiredEdges": []
+    }
+  ]
+}
