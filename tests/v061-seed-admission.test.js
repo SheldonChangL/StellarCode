@@ -134,3 +134,35 @@ test('v0.6.1 a guard registered everywhere ranks below the specific callee withi
     assert.ok(guard < 0 || guard > callee, keys.join('\n'))
   } finally { await w.cleanup() }
 })
+
+test('v0.6.1 relations beyond the edge budget are reported as hints without source', async () => {
+  const helpers = Array.from({ length: 10 }, (_, i) => `step${i}`)
+  const files = { 'src/flow/run.ts': `${helpers.map(h => `import { ${h} } from './${h}'`).join('\n')}\n\nexport function runCheckout(order: string) {\n${helpers.map(h => `  ${h}(order)`).join('\n')}\n  return order\n}\n` }
+  for (const h of helpers) files[`src/flow/${h}.ts`] = `export function ${h}(order: string) {\n  return order\n}\n`
+  const w = await semanticRepo(files)
+  try {
+    const ctx = await contextForTask(w.repo, 'Trace the flow of runCheckout from the request to the result.', { dirs: w.dirs, ...BENCH })
+    const key = e => `${e.from.path}#${e.from.symbol}|${e.relation}|${e.to.path}#${e.to.symbol}`
+    const edges = ctx.semanticEvidence.map(key)
+    const hints = (ctx.semanticHints ?? []).map(key)
+    assert.equal(edges.length, SLICE_PLANS.flow.maxEdges, 'the grounded edge budget is unchanged')
+    assert.equal(hints.length, 4, 'the four admitted relations beyond the budget are hinted')
+    assert.ok(hints.every(k => !edges.includes(k)), 'a hint never repeats a returned edge')
+    assert.equal(new Set([...edges, ...hints]).size, 10)
+    const hintedFiles = new Set(ctx.semanticHints.map(e => e.to.path))
+    assert.ok(!ctx.relatedEvidence.some(e => e.semantic && e.source && hintedFiles.has(e.path)), 'a hinted relation attaches no source')
+    assert.ok(ctx.semanticHints.every(e => !('source' in e)))
+  } finally { await w.cleanup() }
+})
+
+test('v0.6.1 no hints field when every admitted relation fits the budget', async () => {
+  const w = await semanticRepo({
+    'src/a.ts': `import { b } from './b'\n\nexport function runSmall(x: string) {\n  return b(x)\n}\n`,
+    'src/b.ts': `export function b(x: string) {\n  return x\n}\n`
+  })
+  try {
+    const ctx = await contextForTask(w.repo, 'Trace the flow of runSmall from the request to the result.', { dirs: w.dirs, ...BENCH })
+    assert.ok(ctx.semanticEvidence.length >= 1)
+    assert.ok(!('semanticHints' in ctx))
+  } finally { await w.cleanup() }
+})

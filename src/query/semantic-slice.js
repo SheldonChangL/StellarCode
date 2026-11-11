@@ -141,7 +141,7 @@ function endpoint(db, id) {
 // `targets` are the semantic seeds (v0.6.1: chosen by semantic-seed.js, not the lexical top).
 export function semanticSlice(db, { intent, targets, terms = [], weights = new Map(), trace = false, seedRole = null, intentConfidence = null }) {
   const plan = slicePlanFor(intent, { seedRole, intentConfidence })
-  if (!plan.maxEdges || !targets.length) return { edges: [], ground: [], seeds: 0, more: false }
+  if (!plan.maxEdges || !targets.length) return { edges: [], hints: [], ground: [], seeds: 0, more: false }
   const seeds = seedSymbols(db, targets, intent)
   const seedIds = [...seeds.keys()]
   const seedSet = new Set(seedIds)
@@ -232,14 +232,19 @@ export function semanticSlice(db, { intent, targets, terms = [], weights = new M
   scored.sort((a, b) => b.score - a.score || a.neighbor.path.localeCompare(b.neighbor.path) || (a.candidate.metadata.line ?? 0) - (b.candidate.metadata.line ?? 0))
   const chosen = scored.slice(0, plan.maxEdges)
 
-  const edges = chosen.map(({ candidate, from, to }) => ({
+  const describe = ({ candidate, from, to }) => ({
     relation: candidate.edge_type,
     direction: candidate.direction,
     from: { path: from.path, symbol: from.symbol, line: candidate.metadata.line ?? null },
     to: { path: to.path, symbol: to.symbol },
     confidence: candidate.metadata.confidence,
     depth: candidate.depth
-  }))
+  })
+  const edges = chosen.map(describe)
+  // Relations the traversal admitted but the edge budget left out. They are reported as
+  // relations only: no source is attached and nothing is grounded, so the grounded budget
+  // (maxEdges) and the byte budget are unchanged. At most maxEdges more, in score order.
+  const hints = scored.slice(plan.maxEdges, plan.maxEdges * 2).map(describe)
 
   // Ground each neighbor once: a callee/implementation by its symbol range, a caller
   // or consumer by the window around the evidence line inside its symbol.
@@ -276,7 +281,7 @@ export function semanticSlice(db, { intent, targets, terms = [], weights = new M
         : `${chosenLabel(candidate, 'from', db)} uses ${chosenLabel(candidate, 'to', db)} (${candidate.edge_type})`
     })
   }
-  const result = { edges, ground, seeds: seedIds.length, plan: plan.name, more: scored.length > chosen.length }
+  const result = { edges, hints, ground, seeds: seedIds.length, plan: plan.name, more: scored.length > chosen.length + hints.length }
   // Diagnostic only (benchmark funnel): the expanded seed set and every edge the
   // traversal admitted before the edge budget. Never part of the agent payload.
   if (trace) {

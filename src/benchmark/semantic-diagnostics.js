@@ -98,6 +98,7 @@ export async function semanticDiagnostics(projectRoot, tasksFile, options = {}) 
     const admitted = new Set(trace.admitted)
     const edges = ctx.semanticEvidence ?? []
     const returned = new Set(edges.map(e => `${key(e.from.path, e.from.symbol)}|${e.relation}|${key(e.to.path, e.to.symbol)}`))
+    const hinted = new Set((ctx.semanticHints ?? []).map(e => `${key(e.from.path, e.from.symbol)}|${e.relation}|${key(e.to.path, e.to.symbol)}`))
     const grounded = [...ctx.targets, ...ctx.relatedEvidence].filter(e => e.source)
     const required = task.expectedSemanticEdges ?? []
     const requiredKeys = required.map(e => `${e.from}|${e.relation}|${e.to}`)
@@ -117,6 +118,10 @@ export async function semanticDiagnostics(projectRoot, tasksFile, options = {}) 
       semanticPathLength: semanticPathLength(edges, ctx.targets),
       requiredEdges: required.length,
       requiredEdgesReturned: requiredKeys.filter(k => returned.has(k)).length,
+      // Relation-only hints beyond the grounded edge budget (no source attached).
+      requiredEdgesHinted: requiredKeys.filter(k => !returned.has(k) && hinted.has(k)).length,
+      semanticHints: (ctx.semanticHints ?? []).length,
+      semanticHintBytes: Buffer.byteLength(JSON.stringify(ctx.semanticHints ?? [])),
       requiredEdgesIndexed: requiredKeys.filter(k => indexed.has(k)).length,
       // Ceiling of seed selection: a required edge whose endpoint symbol (or file) is not
       // among the lexical seed candidates cannot be reached by any seed choice.
