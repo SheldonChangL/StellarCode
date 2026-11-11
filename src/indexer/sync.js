@@ -106,9 +106,22 @@ function resolvePythonImport(sourcePath, specifier, fileSet) {
     baseDir = ''
   }
   const modulePath = module.replaceAll('.', '/')
-  const base = path.posix.normalize(path.posix.join(baseDir, modulePath))
-  const candidates = [`${base}.py`, path.posix.join(base, '__init__.py')]
-  return candidates.find(c => fileSet.has(c)) ?? null
+  const at = dir => {
+    const base = path.posix.normalize(path.posix.join(dir, modulePath))
+    return [`${base}.py`, path.posix.join(base, '__init__.py')].find(c => fileSet.has(c)) ?? null
+  }
+  const direct = at(baseDir)
+  if (direct || specifier.startsWith('.')) return direct
+  // An absolute import that does not resolve from the repository root may be rooted at a
+  // source directory above the importing file (`backend/app/x.py`: `from previews.store
+  // import y` -> `backend/previews/store.py`). Accepted only when exactly one ancestor
+  // directory provides the module; an ambiguous root resolves to nothing.
+  const found = new Set()
+  for (let dir = path.posix.dirname(sourcePath); dir && dir !== '.'; dir = path.posix.dirname(dir)) {
+    const hit = at(dir)
+    if (hit) found.add(hit)
+  }
+  return found.size === 1 ? [...found][0] : null
 }
 
 function resolveImport(source, specifier, fileSet, aliases) {
