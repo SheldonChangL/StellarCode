@@ -135,3 +135,29 @@ test('v0.6.2 Python module-level bindings are attached and a tight budget attach
   const tight=await contextForTask(w.repo,'Find where an issue is fetched with retries.',{...CONTEXT,maxBytes:512,dirs:w.dirs})
   assert.ok(sourceBytes(tight)<=512)
 })
+
+test('v0.6.2 a compact response stays under the serialized size limit', async () => {
+  const w=await fixture({'src/auth/throttle.ts':THROTTLE,'src/auth/db.ts':'export const db = { find(email) { return null }, save() {} }\n'})
+  const task='Find where a login failure is recorded and how long the account stays locked.'
+  const full=await contextForTask(w.repo,task,{...CONTEXT,dirs:w.dirs})
+  assert.ok(full.relatedEvidence.length>0)
+  const size=Buffer.byteLength(JSON.stringify(full))
+  const capped=await contextForTask(w.repo,task,{...CONTEXT,dirs:w.dirs,maxResponseBytes:size-1})
+  assert.ok(Buffer.byteLength(JSON.stringify(capped))<size)
+  assert.ok(capped.relatedEvidence.length<full.relatedEvidence.length)
+  assert.equal(capped.more,true)
+  assert.deepEqual(capped.targets,full.targets)
+  const kept=new Set(grounded(capped).map(item=>item.path))
+  for(const file of capped.groundedFiles)assert.ok(kept.has(file))
+  const same=await contextForTask(w.repo,task,{...CONTEXT,dirs:w.dirs,maxResponseBytes:size})
+  assert.deepEqual(same,full)
+})
+
+test('v0.6.2 the CLI prints a compact context as one JSON line', async () => {
+  const w=await fixture(FILES)
+  const { execFile }=await import('node:child_process')
+  const run=args=>new Promise((resolve,reject)=>execFile(process.execPath,[path.resolve('bin/stellar.js'),'context','settleInvoice applies the late fee',...args,'--json'],{cwd:w.repo,env:{...process.env,STELLAR_DATA_DIR:w.dirs.data,STELLAR_CACHE_DIR:w.dirs.cache,STELLAR_LOG_DIR:w.dirs.logs}},(error,stdout)=>error?reject(error):resolve(stdout)))
+  const dense=await run(['--compact','--with-source'])
+  assert.equal(dense.trimEnd().split('\n').length,1)
+  assert.ok(JSON.parse(dense).targets.length>0)
+})

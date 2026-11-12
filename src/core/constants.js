@@ -22,3 +22,6 @@ export const DEFAULT_IGNORES = new Set([
 // Source bytes one context response may carry. A model turn costs far more input than a few
 // more kilobytes of source, so the budget favors whole symbols over a smaller payload.
 export const DEFAULT_CONTEXT_BYTES = 20_000
+// Serialized size one compact context response may reach. Agent harnesses cut a tool result
+// off near 30,000 characters and show only a preview, which costs more than the dropped entries.
+export const COMPACT_RESPONSE_BYTES = 29_000

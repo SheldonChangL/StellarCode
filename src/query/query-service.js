@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { withFreshProjectDb } from '../core/runtime.js'
-import { DEFAULT_CONTEXT_BYTES } from '../core/constants.js'
+import { COMPACT_RESPONSE_BYTES, DEFAULT_CONTEXT_BYTES } from '../core/constants.js'
 import { loadArchitectureHints, classifyArchitecture, architectureRank, hierarchyForPath, summarizeHierarchy } from './architecture.js'
 import { classifyIntent } from './intent.js'
 import { semanticSlice, semanticSliceEnabled, capabilityFor } from './semantic-slice.js'
@@ -870,7 +870,17 @@ export async function contextForTask(projectPath, task, options = {}) {
       const groundedPaths=new Set(groundedFiles)
       const finalRelatedHints=relatedHints.filter(item=>!groundedPaths.has(item.path))
       const semanticFields=sliceOn?{...(slice.trace?{semanticTrace:{...slice.trace,...(seedTrace??{})}}:{}),semanticRoute:{seedRole:intentDetail.seedRole,intentConfidence:intentDetail.intentConfidence,plan:slice.plan??null,seeds:seeds.map(seed=>({path:seed.path,symbol:seed.symbol,kind:seed.kind}))},semanticEvidence:slice.edges,...(slice.hints?.length?{semanticHints:slice.hints}:{}),semanticCapability:capabilityFor([...new Set([...targets.map(t=>t.path),...slice.edges.flatMap(e=>[e.from.path,e.to.path])].map(p=>enriched.find(v=>v.file.path===p)?.file.language))])}:{}
-      return {targets,relatedEvidence,relatedHints:finalRelatedHints,groundedFiles,...semanticFields,intent,intentDetail:{confidence:intentDetail.confidence,intentConfidence:intentDetail.intentConfidence,seedRole:intentDetail.seedRole,signals:intentDetail.signals},depth,more:values.length>primary.length+finalRelatedHints.length+evidenceCount||uniqueEvidence.length>evidenceCount||slice.more,...(options.withSource?{sourceOfTruth:'targets[].source and relatedEvidence[].source are repository source read live from the working tree'}:{})}
+      const response={targets,relatedEvidence,relatedHints:finalRelatedHints,groundedFiles,...semanticFields,intent,intentDetail:{confidence:intentDetail.confidence,intentConfidence:intentDetail.intentConfidence,seedRole:intentDetail.seedRole,signals:intentDetail.signals},depth,more:values.length>primary.length+finalRelatedHints.length+evidenceCount||uniqueEvidence.length>evidenceCount||slice.more,...(options.withSource?{sourceOfTruth:'targets[].source and relatedEvidence[].source are repository source read live from the working tree'}:{})}
+      // Keep the serialized response under the size a harness shows in full: drop evidence from
+      // the end, where the same-file declarations and the lowest-ranked ranges sit.
+      const responseLimit=options.maxResponseBytes??COMPACT_RESPONSE_BYTES
+      while(relatedEvidence.length&&Buffer.byteLength(JSON.stringify(response))>responseLimit) {
+        relatedEvidence.pop()
+        response.more=true
+      }
+      const keptPaths=new Set([...targets,...relatedEvidence].map(item=>item.path))
+      response.groundedFiles=groundedFiles.filter(filePath=>keptPaths.has(filePath))
+      return response
     }
     return {
       query: task,

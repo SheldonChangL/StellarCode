@@ -37,9 +37,10 @@ function help() {
 function hasFlag(args, flag) { return args.includes(flag) }
 function flagValue(args, flag, fallback) { const i=args.indexOf(flag); return i>=0 && args[i+1] ? args[i+1] : fallback }
 function positional(args) { const out=[]; for(let i=0;i<args.length;i++){if(args[i].startsWith('--')){if(!['--json','--dry-run','--install-agent-rule','--purge','--purge-orphaned','--force','--keep-worktree-on-failure','--compact','--with-source'].includes(args[i]))i++;continue}out.push(args[i])} return out }
-function print(value, json = false) {
+function print(value, json = false, dense = false) {
   traceCliResult(process.argv[2], process.argv.slice(3), value)
-  if (json) console.log(JSON.stringify(value, null, 2))
+  if (json && dense) console.log(JSON.stringify(value))
+  else if (json) console.log(JSON.stringify(value, null, 2))
   else if (typeof value === 'string') console.log(value)
   else console.log(JSON.stringify(value, null, 2))
 }
@@ -149,7 +150,7 @@ async function main() {
   if (command === 'context') {
     const pos=positional(args); if(!pos[0])throw new StellarError('context requires a task string','USAGE',2)
     const root=await queryRoot(args,pos[1]??process.cwd())
-    return print(await contextForTask(root,pos[0],{compact:hasFlag(args,'--compact'),depth:Number(flagValue(args,'--depth',0)),maxFiles:Number(flagValue(args,'--max-files',3)),maxLines:Number(flagValue(args,'--max-lines',300)),maxBytes:Number(flagValue(args,'--max-bytes',DEFAULT_CONTEXT_BYTES)),withSource:hasFlag(args,'--with-source')}),hasFlag(args,'--json'))
+    return print(await contextForTask(root,pos[0],{compact:hasFlag(args,'--compact'),depth:Number(flagValue(args,'--depth',0)),maxFiles:Number(flagValue(args,'--max-files',3)),maxLines:Number(flagValue(args,'--max-lines',300)),maxBytes:Number(flagValue(args,'--max-bytes',DEFAULT_CONTEXT_BYTES)),withSource:hasFlag(args,'--with-source')}),hasFlag(args,'--json'),hasFlag(args,'--compact'))
   }
   if (command === 'source') {
     const pos=positional(args); if(!pos[0])throw new StellarError('source requires a project-relative path','USAGE',2)
