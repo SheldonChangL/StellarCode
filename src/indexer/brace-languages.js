@@ -430,6 +430,11 @@ function extractKotlin(ctx) {
 const SWIFT_MODIFIERS = 'public|private|fileprivate|internal|open|package|final|static|class|override|mutating|nonmutating|convenience|required|indirect|lazy|weak|unowned|dynamic|nonisolated|isolated|distributed|consuming|borrowing'
 const SWIFT_MODS = `((?:(?:${SWIFT_MODIFIERS})(?:\\(set\\))?\\s+)*)`
 
+// Standard-library names in nearly every file; never worth a row.
+const SWIFT_COMMON_TYPES = new Set(['String', 'Int', 'Int8', 'Int16', 'Int32', 'Int64', 'UInt', 'UInt8', 'UInt16', 'UInt32', 'UInt64', 'Bool', 'Double', 'Float', 'Character', 'Void', 'Any', 'AnyObject', 'Self', 'Never', 'Array', 'Dictionary', 'Set', 'Optional', 'Error', 'Equatable', 'Hashable', 'Comparable', 'Codable', 'Encodable', 'Decodable', 'Sendable', 'Identifiable', 'CaseIterable', 'Data', 'Date', 'URL', 'UUID', 'Task', 'MainActor', 'Substring', 'Range'])
+// Marks an import row that is a type mention, not an import statement.
+export const TYPE_USE = 'type:'
+
 function extractSwift(ctx) {
   const { masked, nest } = ctx
   const visible = mods => !/\b(?:private|fileprivate)\b/.test(mods.replace(/\b(?:private|fileprivate)\(set\)/g, ''))
@@ -471,8 +476,19 @@ function extractSwift(ctx) {
     }
     ctx.declare({ kind: 'constant', name: m[2], index: m.index, exported: visible(m[1]), endIndex: expressionEnd(masked, m.index + m[0].length) })
   }
+  const skip = new Set(ctx.decls.filter(d => d.kind !== 'function' && d.kind !== 'constant').map(d => d.name))
   for (const m of masked.matchAll(/^[ \t]*(?:@\w+[ \t]+)*import[ \t]+(?:(?:class|struct|enum|protocol|func|var|let|typealias)[ \t]+)?([\w.]+)/gm)) {
     ctx.imports.push({ specifier: m[1], index: m.index, sourceOffset: `sw${m.index}`, importedNames: [] })
+    for (const part of m[1].split('.')) skip.add(part)
+  }
+  // Swift files never import each other: a file sees every type of its module. The type
+  // names a file mentions are therefore its only file-level dependencies. Each name is
+  // recorded once; whether it is a repository type is decided when edges are built.
+  for (const m of masked.matchAll(/(?<![.\w])[A-Z]\w+/g)) {
+    const name = m[0]
+    if (skip.has(name) || SWIFT_COMMON_TYPES.has(name)) continue
+    skip.add(name)
+    ctx.imports.push({ specifier: `${TYPE_USE}${name}`, index: m.index, sourceOffset: `swt${m.index}`, importedNames: [{ importedName: name, localName: name, kind: 'type' }] })
   }
 }
 
@@ -618,10 +634,45 @@ function resolveKotlinImport(source, specifier, fileSet) {
   return null
 }
 
+// SwiftPM keeps one module per directory under Sources/ or Tests/.
+function swiftModule(file) {
+  return /^((?:.*?\/)?(?:Sources|Tests)\/[^/]+)\//.exec(file)?.[1] ?? null
+}
+
+// Maps a type name mentioned in `source` to the one file that declares it, by Swift
+// visibility: the file's own module first, then the modules it imports. A file outside any
+// SwiftPM module (an app target) sees the whole repository. A name declared by more than
+// one visible file resolves to nothing.
+//   declarations: [{ name, path }]   moduleImports: Map(source path -> Set(module name))
+export function createSwiftTypeResolver(declarations, moduleImports) {
+  const byName = new Map()
+  for (const { name, path: file } of declarations) {
+    if (!byName.has(name)) byName.set(name, new Set())
+    byName.get(name).add(file)
+  }
+  const only = list => (list.length === 1 ? list[0] : null)
+  return (source, name) => {
+    const files = byName.get(name)
+    if (!files || files.has(source)) return null
+    const own = swiftModule(source)
+    if (own === null) return only([...files])
+    const same = [...files].filter(file => swiftModule(file) === own)
+    if (same.length) return only(same)
+    const imported = moduleImports.get(source)
+    if (!imported) return null
+    return only([...files].filter(file => {
+      const module = swiftModule(file)
+      return module !== null && imported.has(path.posix.basename(module))
+    }))
+  }
+}
+
 // Resolved file path or null; undefined when `source` is not a brace-language file.
-export function resolveBraceImport(source, specifier, fileSet) {
+// `resolveSwiftType` is a createSwiftTypeResolver() result.
+export function resolveBraceImport(source, specifier, fileSet, resolveSwiftType = null) {
   if (source.endsWith('.rs')) return resolveRustImport(source, specifier, fileSet)
   if (source.endsWith('.kt')) return resolveKotlinImport(source, specifier, fileSet)
-  if (source.endsWith('.swift')) return null // Swift imports name modules, never files
+  // Swift import statements name modules, never files; only type mentions resolve.
+  if (source.endsWith('.swift')) return resolveSwiftType && specifier.startsWith(TYPE_USE) ? resolveSwiftType(source, specifier.slice(TYPE_USE.length)) : null
   return undefined
 }

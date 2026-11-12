@@ -10,7 +10,7 @@ import { readProjectMetadata } from '../core/project.js'
 import { INDEXER_VERSION, SUPPORTED_EXTENSIONS } from '../core/constants.js'
 import { markProjectIndexed } from '../storage/registry.js'
 import { resolveSemanticEdges } from './semantic-resolve.js'
-import { resolveBraceImport } from './brace-languages.js'
+import { resolveBraceImport, createSwiftTypeResolver, TYPE_USE } from './brace-languages.js'
 
 function edgeId(source, target, type) {
   return crypto.createHash('sha1').update(`${source}|${target}|${type}`).digest('hex')
@@ -125,9 +125,23 @@ function resolvePythonImport(sourcePath, specifier, fileSet) {
   return found.size === 1 ? [...found][0] : null
 }
 
-function resolveImport(source, specifier, fileSet, aliases) {
+// Null when the project has no Swift type declarations.
+function swiftTypeResolver(db) {
+  const declarations = db.prepare(`SELECT s.name,f.path FROM symbols s JOIN files f ON f.file_id=s.file_id
+    WHERE f.language='Swift' AND s.kind IN ('class','interface','type') AND s.qualified_name=s.name`).all()
+  if (!declarations.length) return null
+  const moduleImports = new Map()
+  for (const row of db.prepare(`SELECT u.source_file_id,u.specifier FROM unresolved_imports u JOIN files f ON f.file_id=u.source_file_id WHERE f.language='Swift'`).all()) {
+    if (row.specifier.startsWith(TYPE_USE)) continue
+    if (!moduleImports.has(row.source_file_id)) moduleImports.set(row.source_file_id, new Set())
+    moduleImports.get(row.source_file_id).add(row.specifier.split('.')[0])
+  }
+  return createSwiftTypeResolver(declarations, moduleImports)
+}
+
+function resolveImport(source, specifier, fileSet, aliases, resolveSwiftType) {
   if (source.endsWith('.py')) return resolvePythonImport(source, specifier, fileSet)
-  const brace = resolveBraceImport(source, specifier, fileSet)
+  const brace = resolveBraceImport(source, specifier, fileSet, resolveSwiftType)
   return brace !== undefined ? brace : resolveJSImport(source, specifier, fileSet, aliases)
 }
 
@@ -140,13 +154,14 @@ function rebuildEdges(db, aliases = []) {
   const fileSet = new Set(files.map(f => f.path))
   const fileByPath = new Map(files.map(f => [f.path, f]))
   const imports = db.prepare('SELECT source_file_id,specifier,imported_names,line FROM unresolved_imports').all()
+  const resolveSwiftType = swiftTypeResolver(db)
 
   for (const row of db.prepare('SELECT symbol_id,file_id FROM symbols').all()) {
     insert.run(edgeId(row.file_id, row.symbol_id, 'contains'), row.file_id, row.symbol_id, 'contains', 1, 1, row.file_id, null)
   }
 
   for (const imp of imports) {
-    const targetPath = resolveImport(imp.source_file_id, imp.specifier, fileSet, aliases)
+    const targetPath = resolveImport(imp.source_file_id, imp.specifier, fileSet, aliases, resolveSwiftType)
     if (!targetPath) continue
     const target = fileByPath.get(targetPath)
     insert.run(edgeId(imp.source_file_id, target.file_id, 'imports'), imp.source_file_id, target.file_id, 'imports', 1, 1, imp.source_file_id,
