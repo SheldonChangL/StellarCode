@@ -874,7 +874,9 @@ export async function contextForTask(projectPath, task, options = {}) {
       // Keep the serialized response under the size a harness shows in full: drop evidence from
       // the end, where the same-file declarations and the lowest-ranked ranges sit.
       const responseLimit=options.maxResponseBytes??COMPACT_RESPONSE_BYTES
-      while(relatedEvidence.length&&Buffer.byteLength(JSON.stringify(response))>responseLimit) {
+      // The diagnostic trace is requested only by the benchmark and is not part of what an agent reads.
+      const traceBytes=response.semanticTrace?Buffer.byteLength(JSON.stringify(response.semanticTrace))+18:0
+      while(relatedEvidence.length&&Buffer.byteLength(JSON.stringify(response))-traceBytes>responseLimit) {
         relatedEvidence.pop()
         response.more=true
       }

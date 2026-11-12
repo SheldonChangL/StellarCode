@@ -161,3 +161,16 @@ test('v0.6.2 the CLI prints a compact context as one JSON line', async () => {
   assert.equal(dense.trimEnd().split('\n').length,1)
   assert.ok(JSON.parse(dense).targets.length>0)
 })
+
+test('v0.6.2 the diagnostic trace does not count toward the response size limit', async () => {
+  const throttle=`const FREE_ATTEMPTS = 5\nconst MAX_LOCK_MS = 15 * 60 * 1000\n\nfunction lockDurationMs(failedCount) {\n  if (failedCount <= FREE_ATTEMPTS) return 0\n  return Math.min(30000 * 2 ** (failedCount - FREE_ATTEMPTS), MAX_LOCK_MS)\n}\n\n${Array.from({length:30},(_, n)=>`export function pad${n}(value) {\n  return value + ${n}\n}\n`).join('\n')}\nexport async function recordLoginFailure(email) {\n  const row = await db.find(email)\n  const failedCount = (row?.failedCount ?? 0) + 1\n  const lockedUntil = new Date(Date.now() + lockDurationMs(failedCount))\n  await db.save(email, failedCount, lockedUntil)\n}\n`
+  const w=await fixture({'src/auth/throttle.ts':throttle,'src/auth/db.ts':'export const db = { find(email) { return null }, save() {} }\n'})
+  const task='Find where a login failure is recorded and how long the account stays locked.'
+  const plain=await contextForTask(w.repo,task,{...CONTEXT,dirs:w.dirs})
+  const limit=Buffer.byteLength(JSON.stringify(plain))
+  const traced=await contextForTask(w.repo,task,{...CONTEXT,dirs:w.dirs,semanticTrace:true,maxResponseBytes:limit})
+  assert.ok(traced.semanticTrace,'the trace is attached')
+  assert.ok(plain.relatedEvidence.length>0)
+  assert.deepEqual(traced.relatedEvidence,plain.relatedEvidence)
+  assert.deepEqual(traced.targets,plain.targets)
+})
