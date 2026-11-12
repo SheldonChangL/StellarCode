@@ -1,7 +1,7 @@
 export const PRODUCT_NAME = 'StellarCode'
 export const PROJECT_SCHEMA_VERSION = 1
 export const DB_SCHEMA_VERSION = 4
-export const INDEXER_VERSION = 5
+export const INDEXER_VERSION = 6
 export const DEFAULT_PORT = 7432
 export const MAX_SOURCE_BYTES = 2 * 1024 * 1024
 export const SUPPORTED_EXTENSIONS = new Map([
@@ -13,7 +13,10 @@ export const SUPPORTED_EXTENSIONS = new Map([
   ['.jsx', 'JavaScript'],
   ['.mjs', 'JavaScript'],
   ['.cjs', 'JavaScript'],
-  ['.py', 'Python']
+  ['.py', 'Python'],
+  ['.rs', 'Rust'],
+  ['.kt', 'Kotlin'],
+  ['.swift', 'Swift']
 ])
 export const DEFAULT_IGNORES = new Set([
   '.git', '.stellar', 'node_modules', 'vendor', 'dist', 'build', 'out', 'coverage',

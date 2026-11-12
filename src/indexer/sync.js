@@ -10,6 +10,7 @@ import { readProjectMetadata } from '../core/project.js'
 import { INDEXER_VERSION, SUPPORTED_EXTENSIONS } from '../core/constants.js'
 import { markProjectIndexed } from '../storage/registry.js'
 import { resolveSemanticEdges } from './semantic-resolve.js'
+import { resolveBraceImport } from './brace-languages.js'
 
 function edgeId(source, target, type) {
   return crypto.createHash('sha1').update(`${source}|${target}|${type}`).digest('hex')
@@ -125,9 +126,9 @@ function resolvePythonImport(sourcePath, specifier, fileSet) {
 }
 
 function resolveImport(source, specifier, fileSet, aliases) {
-  return source.endsWith('.py')
-    ? resolvePythonImport(source, specifier, fileSet)
-    : resolveJSImport(source, specifier, fileSet, aliases)
+  if (source.endsWith('.py')) return resolvePythonImport(source, specifier, fileSet)
+  const brace = resolveBraceImport(source, specifier, fileSet)
+  return brace !== undefined ? brace : resolveJSImport(source, specifier, fileSet, aliases)
 }
 
 function rebuildEdges(db, aliases = []) {
