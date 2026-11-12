@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
 
 import { initializeProject } from '../src/core/project.js'
@@ -85,9 +86,9 @@ test('v0.5.4 evidence extracts stellar source JSON even when shell output preced
 })
 
 test('v0.5.4 final JSON extraction ignores brace examples in prose before the answer', async () => {
-  const dir=await fs.mkdtemp('/tmp/stellar-json-answer-')
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'stellar-json-answer-'))
   try {
-    const fake=path.join(dir,'claude')
+    const fake=path.join(dir,'claude.mjs')
     const answer='Production uses new Phaser.Game({...}).\\n```json\\n{"summary":"ok","files":["src/main.ts"],"symbols":["start"]}\\n```'
     await fs.writeFile(fake,`#!/usr/bin/env node\nconsole.log(JSON.stringify({type:'result',usage:{input_tokens:1,output_tokens:1},result:${JSON.stringify(answer)}}))\n`,{mode:0o755})
     const result=await runAgent({agent:'claude',task:{prompt:'Find startup'},mode:'baseline',cwd:dir,env:{...process.env,STELLAR_BENCH_CLAUDE_BIN:fake}})

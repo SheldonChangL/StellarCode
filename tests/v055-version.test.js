@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs/promises'
@@ -7,7 +8,7 @@ import { VERSION, VERSION_LABEL } from '../src/core/version.js'
 import { handleMcpMessage } from '../src/mcp/server.js'
 
 const run = promisify(execFile)
-const bin = new URL('../bin/stellar.js', import.meta.url).pathname
+const bin = fileURLToPath(new URL('../bin/stellar.js', import.meta.url))
 
 async function packageVersion() {
   return JSON.parse(await fs.readFile(new URL('../package.json', import.meta.url), 'utf8')).version

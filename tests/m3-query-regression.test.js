@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
@@ -13,10 +14,10 @@ const execFileAsync = promisify(execFile)
 
 test('CLI documents and recognizes stellar search as an alias', async () => {
   const cli = new URL('../src/cli.js', import.meta.url)
-  const help = await execFileAsync(process.execPath, [cli.pathname, 'help'])
+  const help = await execFileAsync(process.execPath, [fileURLToPath(cli), 'help'])
   assert.match(help.stdout, /stellar search <query>/)
   try {
-    await execFileAsync(process.execPath, [cli.pathname, 'search'])
+    await execFileAsync(process.execPath, [fileURLToPath(cli), 'search'])
     assert.fail('search without a query should fail with usage')
   } catch (error) {
     assert.match(error.stderr, /search requires a query/)
