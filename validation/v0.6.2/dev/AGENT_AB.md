@@ -1,6 +1,6 @@
 # v0.6.2 dev: agent A/B after the excerpt, budget and declaration changes
 
-**Result: the returned context is more complete; total agent usage did not change.**
+**Result: at `17ca062` total agent usage did not change, because six tasks returned more than the agent harness shows. With that fixed (`b605975`), those six tasks use less than before the changes. The full set has not been rerun.**
 
 This is a dev-set measurement on the three repositories that v0.6.1 was tuned on. It is not an unseen holdout.
 
@@ -71,4 +71,65 @@ Per repository, input tokens changed by −4.3% (audit-orders), −4.5% (JetBook
 
 The changes are kept because correctness did not regress, but they are not a usage reduction. The open question is the searching runs, especially editing-prep, where every run searches to confirm it has found all references.
 
-Raw runs are under `validation/graphify/ab2-new/` and `validation/graphify/ab2-old/` and are not committed.
+## Follow-up: responses over the harness output limit
+
+Analysis of the searches in the A/B above found that the 20,000-byte budget pushed six tasks over the size Claude Code shows for one tool result.
+
+- In 18 of the 108 `17ca062` runs (six tasks × 3 repetitions) the `stellar context` output was 29.6 to 31.7 KB. Claude Code saved it to a file and showed the agent a 2 KB preview.
+- The agents then parsed the saved file with `python3` or `jq`: 25 extra calls. This never happened in the `7f69090` arm (largest output 23.8 KB).
+- In those 18 runs, after vs before was +5.8% input tokens and +18.5% tool calls. In the other 90 runs it was −1.5% and −6.1%, with cost +7.1% [3.9%, 10.2%].
+
+### Fix
+
+| Commit | Change |
+|---|---|
+| `b605975` | Print `--compact --json` on one line and hold the serialized response under 29,000 bytes |
+
+| 36 dev tasks | `17ca062` | `b605975` |
+|---|---|---|
+| Largest response | 32,444 bytes | 28,484 bytes |
+| Responses over 30,000 bytes | 6 | 0 |
+| Total source bytes returned | 443,257 | 443,257 |
+
+No entry was dropped on the dev set; the reduction is the removed indentation.
+
+### Rerun of the six affected tasks
+
+- Same setup, 6 tasks × 3 repetitions, two `stellar` arms: `b605975` and `7f69090`. All 36 runs completed; `changedDuringCampaign=false` in all six manifests.
+- No `b605975` run had its output saved to a file, and no run parsed a saved output.
+
+| Arm | Input tokens | Tool calls | Search calls | Model turns | Cost | Answer / grounded |
+|---|---|---|---|---|---|---|
+| before (`7f69090`) | 4.08M | 97 | 36 | 90 | $4.31 | 18 / 15 |
+| after (`b605975`) | 3.47M | 80 | 26 | 75 | $4.39 | 18 / 15 |
+| change | −14.9% | −17.5% | −27.8% | −16.7% | +1.9% | same |
+
+Input tokens / tool calls, summed over 3 repetitions:
+
+| Task | before | after |
+|---|---|---|
+| audit-orders `flow-monthly-report-email` | 371K / 7 | 243K / 3 |
+| audit-orders `flow-reconcile-to-history-record` | 373K / 8 | 244K / 3 |
+| Redmine-AI-agent `flow-approve-staged-batch-update` | 1,104K / 26 | 877K / 20 |
+| JetBook `flow-api-update-archived-space-refused` | 938K / 21 | 808K / 17 |
+| audit-orders `edit-storage-dir-configurable` | 663K / 23 | 644K / 22 |
+| JetBook `flow-autosave-version-conflict` | 631K / 12 | 658K / 15 |
+
+- Two flow tasks are now answered from the context alone in all three repetitions. No flow run did that in the A/B above.
+- These six tasks were selected because the truncation affected them. They do not represent the dev set, and six tasks do not support an interval.
+- Cost did not fall: fewer turns are offset by more cache writes for the larger context.
+- The 30,000-byte threshold was observed from Claude Code's truncation messages. Other harnesses were not checked.
+
+### Remaining searches (`17ca062` arm, 141 searches, classified by rule)
+
+| What the agent searched for | Searches |
+|---|---|
+| A function inside a file it already knew | 51 |
+| Repository-wide, every term already in the context | 20 |
+| Repository-wide, some terms in the context | 43 |
+| Repository-wide, no term in the context | 19 |
+| File listings | 8 |
+
+The three gaps behind them: the body of a callee in another file, a list of every place a name is used, and tasks where the context missed the entry point.
+
+Raw runs are under `validation/graphify/ab2-new/`, `ab2-old/`, `ab3-new/` and `ab3-old/` and are not committed.
