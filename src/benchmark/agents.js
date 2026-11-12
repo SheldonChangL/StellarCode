@@ -94,6 +94,13 @@ export function agentSpawnTarget(bin, args) {
   return /\.[cm]?js$/i.test(bin) ? [process.execPath, [bin, ...args]] : [bin, args]
 }
 
+// Windows names the variable Path, and a copied environment object is case-sensitive.
+export function envPath(env) {
+  if (process.platform !== 'win32') return env.PATH
+  const key = Object.keys(env).find(name => name.toUpperCase() === 'PATH')
+  return key ? env[key] : undefined
+}
+
 function capture(bin,args,env) {
   return new Promise(resolve=>{
     const child=spawn(...agentSpawnTarget(bin,args),{env,stdio:['ignore','pipe','pipe']})
@@ -172,7 +179,7 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
   const outputFiles=[]
   if (diagnosticDir) {
     await fs.mkdir(diagnosticDir,{recursive:true,mode:0o700})
-    await fs.writeFile(path.join(diagnosticDir,'diagnostic.json'),JSON.stringify({...diagnostic,promptSent:prompt,cwd,PATH:env.PATH,agentBinary:bin,args},null,2)+'\n',{mode:0o600})
+    await fs.writeFile(path.join(diagnosticDir,'diagnostic.json'),JSON.stringify({...diagnostic,promptSent:prompt,cwd,PATH:envPath(env),agentBinary:bin,args},null,2)+'\n',{mode:0o600})
     for (const name of ['raw-events.jsonl','stdout.log','stderr.log','event-times.jsonl','interactions.jsonl']) outputFiles.push(openSync(path.join(diagnosticDir,name),'w',0o600))
   }
   const closeOutputs=()=>{for(const fd of outputFiles.splice(0))closeSync(fd)}

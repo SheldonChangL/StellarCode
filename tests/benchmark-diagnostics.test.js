@@ -128,7 +128,7 @@ test('a failed debug sample retains its worktree, real executable and metadata-o
     assert.equal(diagnostic.projectResolved,true)
     assert.equal(diagnostic.stellarAvailable,true)
     assert.equal(diagnostic.stellarVersion,VERSION_LABEL)
-    const status=JSON.parse(execFileSync(diagnostic.stellarExecutable,['status','--json'],{cwd:diagnostic.worktreeRoot,encoding:'utf8'}))
+    const status=JSON.parse(execFileSync(diagnostic.stellarExecutable,['status','--json'],{cwd:diagnostic.worktreeRoot,encoding:'utf8',shell:process.platform==='win32'}))
     assert.equal(status.projectId,diagnostic.projectId)
     assert.deepEqual(diagnostic.filesActuallyRead,[])
     assert.deepEqual(diagnostic.sourceRangesRead,[])

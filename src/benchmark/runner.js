@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { prepareBenchmarkSnapshot } from './snapshot.js'
-import { runAgent, commandVersion } from './agents.js'
+import { runAgent, commandVersion, envPath } from './agents.js'
 import { loadBenchmarkTasks, benchmarkConfigPath } from './tasks.js'
 import { StellarError } from '../core/errors.js'
 import { sourceCoverage, completedEvidence } from './evidence.js'
@@ -19,6 +19,13 @@ const execFileAsync=promisify(execFile)
 async function git(root,args) { return (await execFileAsync('git',['-C',root,...args],{maxBuffer:10*1024*1024})).stdout.trim() }
 
 function shellQuote(value) {return "'"+String(value).replaceAll("'", "'\\''")+"'"}
+
+// Node refuses to spawn a .cmd file directly, so on Windows the runner's own calls do what the
+// shim does: the same Node, the same entry script, the same slice switch.
+function shimCall(stellarExecutable, stellarBin, mode, args, env) {
+  if (process.platform !== 'win32') return [stellarExecutable, args, env]
+  return [process.execPath, [stellarBin, ...args], { ...env, STELLAR_SEMANTIC_SLICE: mode === 'stellar-lexical' ? '0' : '1' }]
+}
 
 async function writeShim(binDir, mode, stellarBin, snapshot) {
   await fs.mkdir(binDir,{recursive:true})
@@ -149,12 +156,14 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
           const dirs={data:path.join(base,'stellar-data'),cache:path.join(base,'stellar-cache'),logs:path.join(base,'stellar-logs')}
           const snapshot=condition!=='baseline'?await prepareBenchmarkSnapshot(projectRoot,worktree,base,commit,env):null
           const binDir=path.join(base,'bin');const stellarExecutable=await writeShim(binDir,condition,stellarBin,snapshot)
-          const childEnv={...env,PATH:`${binDir}${path.delimiter}${env.PATH??''}`,STELLAR_DATA_DIR:dirs.data,STELLAR_CACHE_DIR:dirs.cache,STELLAR_LOG_DIR:dirs.logs,STELLAR_BENCH_TRACE_FILE:'',STELLAR_BENCH_INDEX_FILE:snapshot?.indexFile??''}
+          const inherited=process.platform==='win32'?Object.fromEntries(Object.entries(env).filter(([name])=>name.toUpperCase()!=='PATH')):env
+          const childEnv={...inherited,PATH:`${binDir}${path.delimiter}${envPath(env)??''}`,STELLAR_DATA_DIR:dirs.data,STELLAR_CACHE_DIR:dirs.cache,STELLAR_LOG_DIR:dirs.logs,STELLAR_BENCH_TRACE_FILE:'',STELLAR_BENCH_INDEX_FILE:snapshot?.indexFile??''}
           let preflight={stellarAvailable:false,stellarVersion:null,projectResolved:false}
           if(condition!=='baseline') {
             const checks=[]
             for(const args of [['--version'],['status','--json'],['projects','--json']]) {
-              const {stdout,stderr}=await execFileAsync(stellarExecutable,args,{cwd:worktree,env:childEnv})
+              const [file,fileArgs,fileEnv]=shimCall(stellarExecutable,stellarBin,condition,args,childEnv)
+              const {stdout,stderr}=await execFileAsync(file,fileArgs,{cwd:worktree,env:fileEnv})
               checks.push({command:['stellar',...args],stdout,stderr})
             }
             const status=JSON.parse(checks[1].stdout)
@@ -167,7 +176,8 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
           if(PREFETCH_MODES.has(condition)) {
             const args=stellarContextArgs(task.prompt)
             const t0=performance.now()
-            const {stdout}=await execFileAsync(stellarExecutable,args,{cwd:worktree,env:childEnv,maxBuffer:64*1024*1024})
+            const [file,fileArgs,fileEnv]=shimCall(stellarExecutable,stellarBin,condition,args,childEnv)
+            const {stdout}=await execFileAsync(file,fileArgs,{cwd:worktree,env:fileEnv,maxBuffer:64*1024*1024})
             const localMs=Math.round(performance.now()-t0)
             const envelope=buildContextEnvelope(JSON.parse(stdout),{snapshotCommit:commit})
             // Same verbatim-source check as a pull-mode context call: only excerpts that match
