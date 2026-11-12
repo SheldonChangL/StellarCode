@@ -132,4 +132,60 @@ Input tokens / tool calls, summed over 3 repetitions:
 
 The three gaps behind them: the body of a callee in another file, a list of every place a name is used, and tasks where the context missed the entry point.
 
+## Follow-up: entry points the context missed
+
+### A name-usage list was prototyped and not shipped
+
+The idea was to list where the names in the returned source appear elsewhere, so the agent would not search to confirm it. Replayed against the 84 repository-wide searches in the `17ca062` arm:
+
+| List | Searches answered in full | In part | Not at all |
+|---|---|---|---|
+| 16 names, 3 KB | 6 to 7 | 25 to 34 | 43 to 53 |
+| No limit (about 17 KB per response) | 19 | 36 | 29 |
+
+The agents' patterns pair one name from the context with names they guess (`editComment|canEdit|canDelete`). They are looking for what the context did not return. The prototype is on the local branch `exp/v0.6.2-name-usages`.
+
+### What the context missed
+
+Deterministic check, no agent runs: is each task's `expectedFiles` entry returned with source?
+
+- On the dev set 33 of 91 expected files were missing, in 19 of 36 tasks. The agent searched 0 to 2 times per 3 repetitions in most fully covered tasks and 3 to 21 times in the others.
+- Ranking the repository by the task's terms in file bodies puts 15 of the 33 missing files in the top 3 and 22 in the top 10. File ranking used only paths, summaries and symbol names.
+
+### Fix
+
+| Commit | Change |
+|---|---|
+| `75a4e4c` | Leave the benchmark's diagnostic trace out of the response size limit |
+| (this commit) | Credit files whose body carries the task's rare terms in file ranking |
+
+Expected files returned with source, before (`f63d4e0`) and after:
+
+| Set | Tasks | Expected files | Tasks fully covered | First target is an expected file |
+|---|---|---|---|---|
+| dev (3 repositories) | 36 | 58 → 70 of 91 | 17 → 23 | 10 → 23 |
+| regression (6 repositories) | 70 | 110 → 130 of 167 | 37 → 46 | 30 → 41 |
+
+The two parameters were chosen on both sets together, from five settings, so neither set is an unseen holdout for them. The mechanism was designed from the dev set only.
+
+Per repository:
+
+| Repository | Expected | Before | After |
+|---|---|---|---|
+| audit-orders | 30 | 20 | 24 |
+| JetBook | 34 | 20 | 26 |
+| Redmine-AI-agent | 27 | 18 | 20 |
+| goodjobshare | 33 | 9 | 22 |
+| jetchat-admin | 30 | 22 | 24 |
+| kc002-ota | 28 | 23 | 26 |
+| patentskill | 27 | 15 | 19 |
+| nestmind | 30 | 22 | 20 |
+| reefmori | 19 | 19 | 19 |
+
+- Five tasks lost an expected file (2 dev, 3 regression); 25 gained at least one. nestmind is lower overall.
+- Required semantic edges delivered on the dev set fell from 36 to 33 of 71 (candidate pool 58 → 70, seed-reachable 49 → 44). Two tasks gained edges and three lost them; in `impact-schema-check-decorator` the three edges are gone but all three expected files are now returned with source.
+- Query time on JetBook rose from about 0.18 s to about 0.29 s.
+
+**Not verified: agent behavior.** No agent run has used this change. The link between missing files and searching is an observation on one arm, not an experiment.
+
 Raw runs are under `validation/graphify/ab2-new/`, `ab2-old/`, `ab3-new/` and `ab3-old/` and are not committed.

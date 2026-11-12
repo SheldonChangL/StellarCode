@@ -6,7 +6,7 @@ import { loadArchitectureHints, classifyArchitecture, architectureRank, hierarch
 import { classifyIntent } from './intent.js'
 import { semanticSlice, semanticSliceEnabled, capabilityFor } from './semantic-slice.js'
 import { selectSemanticSeeds, symbolNature, SEED_POOL_FILES } from './semantic-seed.js'
-import { stemTerm, termMatch, termWeights, weightedScore, termCoverage, rankFileSymbols, focusRange, overlapLines, subtractTaken, allocateBudget, densestWindow, identifierPattern, moduleDeclarations } from './precision.js'
+import { bodyTermCoverage, stemTerm, termMatch, termWeights, weightedScore, termCoverage, rankFileSymbols, focusRange, overlapLines, subtractTaken, allocateBudget, densestWindow, identifierPattern, moduleDeclarations } from './precision.js'
 
 // Lines a window inside a symbol too long to return whole may gain from unused budget.
 const GROW_MARGIN_LINES = 40
@@ -269,6 +269,12 @@ export async function impact(projectPath, target, options = {}) {
 
 // Share of the top primary score a file needs to stay a primary target. Weak lexical
 // coincidences ("scene", "start") must not take a target slot and source budget.
+// Body evidence (see bodyTermCoverage): limits on what is read per query, the rarity a file
+// needs before its body counts, and the points per unit of rarity.
+const BODY_SCAN_CORPUS_BYTES = 16_000_000
+const BODY_SCAN_FILE_BYTES = 400_000
+const BODY_MIN_COVERAGE = 1.5
+const BODY_POINTS = 10
 const PRIMARY_RELATIVE_CUTOFF = { navigation: 0.5, flow: 0.35, impact: 0.35, 'editing-prep': 0.35 }
 const EVIDENCE_LIMITS = { flow: 3, impact: 2, 'editing-prep': 2, navigation: 1 }
 const EVIDENCE_RELATIVE_CUTOFF = 0.6
@@ -392,8 +398,22 @@ export async function contextForTask(projectPath, task, options = {}) {
         .map(v => ({ ...v, score: architectureRank(v.file, v.architecture), evidence: 0, category: 'primary' }))
     } else {
       const startupNavigation = intent === 'navigation' && profile.concepts.includes('startup')
+      // Body evidence: read the indexed source once and credit files whose body, not name,
+      // carries the task's rare terms. Skipped for a corpus too large to read per query.
+      let bodyCoverage = new Map()
+      const scannable = enriched.filter(v => !v.file.is_generated && Number(v.file.size_bytes) <= BODY_SCAN_FILE_BYTES)
+      if (qTokens.length && scannable.reduce((sum, v) => sum + Number(v.file.size_bytes), 0) <= BODY_SCAN_CORPUS_BYTES) {
+        const bodies = new Map()
+        for (const v of scannable) {
+          const lines = await sourceLines(v.file.path)
+          if (lines) bodies.set(v.file.file_id, lines)
+        }
+        bodyCoverage = bodyTermCoverage(bodies, qTokens)
+      }
       const ranked = enriched.map(v => {
-        const evidence = fileEvidence(v)
+        const body = bodyCoverage.get(v.file.file_id)
+        const bodyEvidence = body && body.covered >= BODY_MIN_COVERAGE ? body.covered * BODY_POINTS : 0
+        const evidence = fileEvidence(v) + bodyEvidence
         const recent = v.file.git_activity > 0 ? Math.min(1, v.file.git_activity / 20) : 0
         const actionBoundary=/(^|\/)actions?\//.test(v.file.path)?20:0
         const startupEntry = startupNavigation

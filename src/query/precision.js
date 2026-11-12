@@ -59,6 +59,41 @@ export function termMatch(text, term) {
   return null
 }
 
+// Query terms found in a file's body, for files whose path, summary and symbol names do not
+// carry the task's vocabulary (a middleware configured inline, a component whose behavior sits
+// in a hook). `bodies` maps a file id to its source lines. A term counts when an identifier
+// word or a comment word starts with it. Returns, per file, the summed rarity of its matched
+// terms: 1 for a term found in one file, falling to 0 once it is in `commonShare` of the files.
+export function bodyTermCoverage(bodies, terms, { commonShare = 0.3 } = {}) {
+  const matchedBy = new Map()
+  const fileCount = new Map(terms.map(term => [term, 0]))
+  for (const [fileId, lines] of bodies) {
+    const words = new Set()
+    for (const line of lines) {
+      for (const word of line.match(/[A-Z]?[a-z]+|[A-Z]+(?![a-z])|\d+/g) ?? []) {
+        if (word.length >= 3) words.add(stemTerm(word.toLowerCase()))
+      }
+    }
+    const matched = []
+    for (const term of terms) {
+      if (term.length < 3) continue
+      let found = words.has(term)
+      if (!found && term.length >= 4) for (const word of words) if (word.startsWith(term)) { found = true; break }
+      if (found) { matched.push(term); fileCount.set(term, fileCount.get(term) + 1) }
+    }
+    matchedBy.set(fileId, matched)
+  }
+  const common = Math.max(2, bodies.size * commonShare)
+  const rarity = new Map(terms.map(term => [term, Math.max(0, 1 - (fileCount.get(term) - 1) / common)]))
+  const coverage = new Map()
+  for (const [fileId, matched] of matchedBy) {
+    let sum = 0
+    for (const term of matched) sum += rarity.get(term)
+    coverage.set(fileId, { covered: sum, matched: matched.filter(term => rarity.get(term) > 0) })
+  }
+  return coverage
+}
+
 const DERIVED_WORD = /(?:ation|ition|ment|ence|ance|ity|ure|ive|ion|at|iz)$/
 const MATCH_POINTS = { exact: 10, suffix: 6, boundary: 3, abbrev: 1.5, inner: 1 }
 const STRONG_MATCHES = new Set(['exact', 'suffix', 'boundary'])
