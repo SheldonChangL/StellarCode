@@ -20,6 +20,7 @@ Legend: ✅ implemented + locally tested, 🟡 implemented but needs external/pl
 |---|---|---|
 | Scanner/ignore/hash | ✅ | scanner + fixture tests |
 | TS/JS/Python parsing | ✅ | golden fixture extraction |
+| Rust/Kotlin/Swift parsing | ⚠ | lexical tier only: symbols, ranges and file imports (`tests/v07-brace-languages.test.js`); no semantic edges |
 | Tree-sitter specifically | ⚠ | replaced in this self-contained MVP by deterministic lightweight parsers |
 | Import/test/reference graph | ✅ | graph tests |
 | Reverse dependencies | ✅ | related/impact tests |

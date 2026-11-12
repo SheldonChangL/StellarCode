@@ -10,7 +10,9 @@ export function toPosix(input) {
 
 export function isTestPath(relativePath) {
   const p = relativePath.toLowerCase()
-  return /(^|\/)(test|tests|__tests__)(\/|$)/.test(p) || /\.(test|spec)\.[^.]+$/.test(p) || /^test_.*\.py$/.test(path.basename(p))
+  if (/(^|\/)(test|tests|__tests__)(\/|$)/.test(p) || /\.(test|spec)\.[^.]+$/.test(p) || /^test_.*\.py$/.test(path.basename(p))) return true
+  // Kotlin and Swift name the test class after the file (`RepoTest.kt`, `RepoTests.swift`).
+  return /\.(kt|swift)$/.test(p) && (/(^|\/)androidtest\//.test(p) || /Tests?\.(kt|swift)$/.test(relativePath))
 }
 
 export function isGeneratedPath(relativePath) {

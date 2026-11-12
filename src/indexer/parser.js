@@ -3,6 +3,7 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 import { extractSemanticFacts } from './semantic-extract.js'
 import { matchBracket, functionBodyOpen, arrowFunctionRange, declarationBodyOpen } from './js-ranges.js'
+import { BRACE_LANGUAGES, parseBraceLanguage } from './brace-languages.js'
 
 function id(parts) {
   return crypto.createHash('sha1').update(parts.join('|')).digest('hex')
@@ -388,10 +389,21 @@ function parsePython(text, file) {
   return { symbols, imports, semantic: facts }
 }
 
+// Rust, Kotlin and Swift: symbols and imports only; no semantic facts are stored.
+function parseBrace(text, file) {
+  const { symbols, imports } = parseBraceLanguage(text, file.language)
+  return {
+    symbols: symbols.map(({ sourceOffset, ...s }) => ({ ...s, fileId: file.fileId, symbolId: makeSymbolId(file, s.kind, s.qualifiedName, s.startLine, sourceOffset) })),
+    imports,
+    semantic: null
+  }
+}
+
 export async function parseFile(file) {
   const text = await fs.readFile(file.absPath, 'utf8')
   let parsed
   if (file.language === 'Python') parsed = parsePython(text, file)
+  else if (BRACE_LANGUAGES.has(file.language)) parsed = parseBrace(text, file)
   else parsed = parseJsTs(text, file)
   return { ...parsed, summary: deterministicSummary(file, parsed.symbols) }
 }
