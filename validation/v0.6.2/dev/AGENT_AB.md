@@ -1,6 +1,6 @@
 # v0.6.2 dev: agent A/B after the excerpt, budget and declaration changes
 
-**Result: at `17ca062` total agent usage did not change, because six tasks returned more than the agent harness shows. With that fixed (`b605975`), those six tasks use less than before the changes. The full set has not been rerun.**
+**Result: at `17ca062` total agent usage did not change, because six tasks returned more than the agent harness shows. With that fixed and body evidence added to file ranking (`6c4097d`), the full dev set uses 14.3% fewer input tokens and 23.5% fewer tool calls than `7f69090`, with the same number of correct answers.**
 
 This is a dev-set measurement on the three repositories that v0.6.1 was tuned on. It is not an unseen holdout.
 
@@ -186,6 +186,55 @@ Per repository:
 - Required semantic edges delivered on the dev set fell from 36 to 33 of 71 (candidate pool 58 → 70, seed-reachable 49 → 44). Two tasks gained edges and three lost them; in `impact-schema-check-decorator` the three edges are gone but all three expected files are now returned with source.
 - Query time on JetBook rose from about 0.18 s to about 0.29 s.
 
-**Not verified: agent behavior.** No agent run has used this change. The link between missing files and searching is an observation on one arm, not an experiment.
+The agent measurement for this change is in the next section.
 
-Raw runs are under `validation/graphify/ab2-new/`, `ab2-old/`, `ab3-new/` and `ab3-old/` and are not committed.
+## Full A/B of the branch (`6c4097d` vs `7f69090`)
+
+- Same setup as the first A/B: Claude CLI, pull delivery, 3 repositories × 12 tasks × 3 repetitions, two `stellar` arms, no `baseline` arm.
+- The `after` arm has every change in this document: symbol-bound ranges, the 20,000-byte budget, same-file declarations, the response size limit and body evidence.
+- All 216 runs completed (exit 0). `changedDuringCampaign=false` in all six manifests. No run in either arm had its output saved to a file.
+
+| Arm | Input tokens | Tool calls | Search calls | Model turns | Cost | Answer / grounded | Answered with no further inspection |
+|---|---|---|---|---|---|---|---|
+| before (`7f69090`) | 17.96M | 434 | 134 | 423 | $28.06 | 108 / 96 | 11 |
+| after (`6c4097d`) | 15.39M | 332 | 93 | 361 | $24.86 | 108 / 97 | 38 |
+
+Intervals are 95% bootstrap intervals over tasks. Positive means a reduction.
+
+| Measure | After vs before | Tasks lower / higher |
+|---|---|---|
+| Input tokens | 14.3% [6.1%, 22.5%] | 24 / 12 |
+| Tool calls | 23.5% [10.1%, 36.4%] | 22 / 6 |
+| Search calls | 30.6% [9.5%, 49.0%] | 14 / 5 |
+| Model turns | 14.7% [7.7%, 22.0%] | 22 / 4 |
+| Cost | 11.4% [4.9%, 17.8%] | 24 / 12 |
+
+| Repository | Input tokens | Tool calls | Search calls | Cost | Answered directly, before → after |
+|---|---|---|---|---|---|
+| audit-orders | 16.9% | 31.7% | 30.6% | 6.5% | 6 → 14 |
+| JetBook | 12.4% | 21.0% | 30.8% | 26.5% | 4 → 12 |
+| Redmine-AI-agent | 14.0% | 17.6% | 30.3% | 1.1% | 1 → 12 |
+
+| Category | Input tokens | Tool calls | Search calls | Cost | Answered directly, before → after |
+|---|---|---|---|---|---|
+| navigation | 24.2% | 33.3% | 31.8% | 13.9% | 3 → 15 |
+| impact | 14.6% | 19.5% | 36.8% | 5.0% | 8 → 15 |
+| flow | 11.8% | 18.8% | 27.5% | 9.0% | 0 → 5 |
+| editing-prep | 9.5% | 25.4% | 30.2% | 17.2% | 0 → 3 |
+
+| After the context | Before: runs (mean input) | After: runs (mean input) |
+|---|---|---|
+| Answered directly | 11 (76K) | 38 (78K) |
+| Read more, no search | 29 (126K) | 15 (145K) |
+| Searched | 68 (198K) | 55 (186K) |
+
+- Cache writes are level (1.74M → 1.75M tokens); cached input fell from 16.22M to 13.65M.
+- 55 of 108 runs still search, and input rose in 12 of 36 tasks.
+
+Limits:
+
+- This is the dev set. All three repositories were used to design and tune these changes; it is not an unseen holdout.
+- The two arms differ by the whole branch. This run does not separate the response size limit from body evidence.
+- One agent (Claude CLI) and one delivery mode were measured.
+
+Raw runs are under `validation/graphify/ab2-new/`, `ab2-old/`, `ab3-new/`, `ab3-old/`, `ab4-new/` and `ab4-old/` and are not committed.
