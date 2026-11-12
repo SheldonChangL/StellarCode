@@ -59,6 +59,41 @@ export function termMatch(text, term) {
   return null
 }
 
+// Query terms found in a file's body, for files whose path, summary and symbol names do not
+// carry the task's vocabulary (a middleware configured inline, a component whose behavior sits
+// in a hook). `bodies` maps a file id to its source lines. A term counts when an identifier
+// word or a comment word starts with it. Returns, per file, the summed rarity of its matched
+// terms: 1 for a term found in one file, falling to 0 once it is in `commonShare` of the files.
+export function bodyTermCoverage(bodies, terms, { commonShare = 0.3 } = {}) {
+  const matchedBy = new Map()
+  const fileCount = new Map(terms.map(term => [term, 0]))
+  for (const [fileId, lines] of bodies) {
+    const words = new Set()
+    for (const line of lines) {
+      for (const word of line.match(/[A-Z]?[a-z]+|[A-Z]+(?![a-z])|\d+/g) ?? []) {
+        if (word.length >= 3) words.add(stemTerm(word.toLowerCase()))
+      }
+    }
+    const matched = []
+    for (const term of terms) {
+      if (term.length < 3) continue
+      let found = words.has(term)
+      if (!found && term.length >= 4) for (const word of words) if (word.startsWith(term)) { found = true; break }
+      if (found) { matched.push(term); fileCount.set(term, fileCount.get(term) + 1) }
+    }
+    matchedBy.set(fileId, matched)
+  }
+  const common = Math.max(2, bodies.size * commonShare)
+  const rarity = new Map(terms.map(term => [term, Math.max(0, 1 - (fileCount.get(term) - 1) / common)]))
+  const coverage = new Map()
+  for (const [fileId, matched] of matchedBy) {
+    let sum = 0
+    for (const term of matched) sum += rarity.get(term)
+    coverage.set(fileId, { covered: sum, matched: matched.filter(term => rarity.get(term) > 0) })
+  }
+  return coverage
+}
+
 const DERIVED_WORD = /(?:ation|ition|ment|ence|ance|ity|ure|ive|ion|at|iz)$/
 const MATCH_POINTS = { exact: 10, suffix: 6, boundary: 3, abbrev: 1.5, inner: 1 }
 const STRONG_MATCHES = new Set(['exact', 'suffix', 'boundary'])
@@ -265,4 +300,47 @@ export function densestWindow(costs, rawScores, budget) {
     }
   }
   return best
+}
+
+// Module-level declarations of one file that a returned range can refer to by name: small
+// indexed functions and constants, plus plain module-level bindings the index does not
+// record (`const LIMIT = 5`, `_DEFAULT_RETRIES: Final[int] = 3`). Read from live source, so
+// nothing is stored. Each declaration is at most `maxLines` long and takes the comment
+// lines directly above it.
+const JS_BINDING = /^(?:export\s+)?(?:declare\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)/
+const PY_BINDING = /^([A-Za-z_]\w*)\s*(?::[^=]*)?=(?!=)/
+const COMMENT_LINE = /^\s*(?:\/\/|\/\*|\*|#)/
+export function moduleDeclarations(filePath, lines, symbols, { maxLines = 20, commentLines = 5 } = {}) {
+  const python = /\.pyi?$/.test(filePath)
+  if (!python && !/\.(?:[cm]?[jt]sx?)$/.test(filePath)) return []
+  const inSymbol = n => symbols.some(symbol => Number(symbol.start_line) <= n && n <= Number(symbol.end_line))
+  const found = []
+  for (const symbol of symbols) {
+    if (!['function', 'constant'].includes(symbol.kind) || String(symbol.qualified_name ?? symbol.name).includes('.')) continue
+    const start = Number(symbol.start_line), end = Number(symbol.end_line)
+    if (end - start + 1 <= maxLines) found.push({ name: symbol.name, start, end })
+  }
+  for (let n = 1; n <= lines.length; n++) {
+    if (inSymbol(n)) continue
+    const match = (python ? PY_BINDING : JS_BINDING).exec(lines[n - 1] ?? '')
+    if (!match) continue
+    let depth = 0
+    let end = null
+    for (let m = n; m <= Math.min(lines.length, n + maxLines - 1); m++) {
+      for (const char of lines[m - 1]) {
+        if (char === '(' || char === '[' || char === '{') depth++
+        else if (char === ')' || char === ']' || char === '}') depth--
+      }
+      if (depth <= 0) { end = m; break }
+    }
+    if (end === null) continue
+    found.push({ name: match[1], start: n, end })
+    n = end
+  }
+  for (const item of found) {
+    let start = item.start
+    while (start > 1 && item.start - start < commentLines && COMMENT_LINE.test(lines[start - 2] ?? '') && !inSymbol(start - 1)) start--
+    item.start = start
+  }
+  return found.sort((a, b) => a.start - b.start || a.end - b.end)
 }

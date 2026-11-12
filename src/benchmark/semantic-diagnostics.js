@@ -2,13 +2,14 @@ import fs from 'node:fs/promises'
 import { contextForTask } from '../query/query-service.js'
 import { loadBenchmarkTasks } from './tasks.js'
 import { readProjectMetadata } from '../core/project.js'
+import { DEFAULT_CONTEXT_BYTES } from '../core/constants.js'
 import { openProjectStore } from '../storage/project-store.js'
 import { STELLAR_CONTEXT_FLAGS } from './agents.js'
 
 // Deterministic per-task view of the semantic slice the benchmark context command
 // returns (same options as STELLAR_CONTEXT_FLAGS). Answer keys (expectedFiles,
 // expectedSemanticEdges) are read here only to score the output after it is built.
-export const DIAGNOSTIC_CONTEXT = { compact: true, depth: 1, maxFiles: 6, maxLines: 160, maxBytes: 12000, withSource: true }
+export const DIAGNOSTIC_CONTEXT = { compact: true, depth: 1, maxFiles: 6, maxLines: 160, maxBytes: DEFAULT_CONTEXT_BYTES, withSource: true }
 
 const key = (path, symbol) => symbol ? `${path}#${symbol}` : path
 

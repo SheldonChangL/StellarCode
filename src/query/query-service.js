@@ -1,11 +1,18 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { withFreshProjectDb } from '../core/runtime.js'
+import { COMPACT_RESPONSE_BYTES, DEFAULT_CONTEXT_BYTES } from '../core/constants.js'
 import { loadArchitectureHints, classifyArchitecture, architectureRank, hierarchyForPath, summarizeHierarchy } from './architecture.js'
 import { classifyIntent } from './intent.js'
 import { semanticSlice, semanticSliceEnabled, capabilityFor } from './semantic-slice.js'
 import { selectSemanticSeeds, symbolNature, SEED_POOL_FILES } from './semantic-seed.js'
-import { stemTerm, termMatch, termWeights, weightedScore, termCoverage, rankFileSymbols, focusRange, overlapLines, subtractTaken, allocateBudget, densestWindow, identifierPattern } from './precision.js'
+import { bodyTermCoverage, stemTerm, termMatch, termWeights, weightedScore, termCoverage, rankFileSymbols, focusRange, overlapLines, subtractTaken, allocateBudget, densestWindow, identifierPattern, moduleDeclarations } from './precision.js'
+
+// Lines a window inside a symbol too long to return whole may gain from unused budget.
+const GROW_MARGIN_LINES = 40
+// Same-file declarations attached to the returned ranges: lines per file and entries per response.
+const DECLARATION_FILE_LINES = 40
+const DECLARATION_ENTRIES = 6
 
 const QUERY_CONCEPTS = [
   { patterns: ['登入', '登錄', '登录', '登入流程', '登入功能', '登入頁'], terms: ['login', 'signin', 'sign-in', 'auth', 'authentication'] },
@@ -262,6 +269,12 @@ export async function impact(projectPath, target, options = {}) {
 
 // Share of the top primary score a file needs to stay a primary target. Weak lexical
 // coincidences ("scene", "start") must not take a target slot and source budget.
+// Body evidence (see bodyTermCoverage): limits on what is read per query, the rarity a file
+// needs before its body counts, and the points per unit of rarity.
+const BODY_SCAN_CORPUS_BYTES = 16_000_000
+const BODY_SCAN_FILE_BYTES = 400_000
+const BODY_MIN_COVERAGE = 1.5
+const BODY_POINTS = 10
 const PRIMARY_RELATIVE_CUTOFF = { navigation: 0.5, flow: 0.35, impact: 0.35, 'editing-prep': 0.35 }
 const EVIDENCE_LIMITS = { flow: 3, impact: 2, 'editing-prep': 2, navigation: 1 }
 const EVIDENCE_RELATIVE_CUTOFF = 0.6
@@ -301,7 +314,7 @@ export async function contextForTask(projectPath, task, options = {}) {
   const depth=Math.max(0,Math.min(2,Number(options.depth??0)))
   const limit=Math.min(Math.max(Number(options.maxFiles??options.limit??(compact?3:8)),1),12)
   const maxLines=Math.min(Math.max(Number(options.maxLines??300),20),1000)
-  const maxBytes=Math.min(Math.max(Number(options.maxBytes??12_000),512),100_000)
+  const maxBytes=Math.min(Math.max(Number(options.maxBytes??DEFAULT_CONTEXT_BYTES),512),100_000)
   return withFreshProjectDb(projectPath, async ({ db, root }) => {
     const profile = queryProfile(task)
     const qTokens = profile.terms
@@ -385,8 +398,22 @@ export async function contextForTask(projectPath, task, options = {}) {
         .map(v => ({ ...v, score: architectureRank(v.file, v.architecture), evidence: 0, category: 'primary' }))
     } else {
       const startupNavigation = intent === 'navigation' && profile.concepts.includes('startup')
+      // Body evidence: read the indexed source once and credit files whose body, not name,
+      // carries the task's rare terms. Skipped for a corpus too large to read per query.
+      let bodyCoverage = new Map()
+      const scannable = enriched.filter(v => !v.file.is_generated && Number(v.file.size_bytes) <= BODY_SCAN_FILE_BYTES)
+      if (qTokens.length && scannable.reduce((sum, v) => sum + Number(v.file.size_bytes), 0) <= BODY_SCAN_CORPUS_BYTES) {
+        const bodies = new Map()
+        for (const v of scannable) {
+          const lines = await sourceLines(v.file.path)
+          if (lines) bodies.set(v.file.file_id, lines)
+        }
+        bodyCoverage = bodyTermCoverage(bodies, qTokens)
+      }
       const ranked = enriched.map(v => {
-        const evidence = fileEvidence(v)
+        const body = bodyCoverage.get(v.file.file_id)
+        const bodyEvidence = body && body.covered >= BODY_MIN_COVERAGE ? body.covered * BODY_POINTS : 0
+        const evidence = fileEvidence(v) + bodyEvidence
         const recent = v.file.git_activity > 0 ? Math.min(1, v.file.git_activity / 20) : 0
         const actionBoundary=/(^|\/)actions?\//.test(v.file.path)?20:0
         const startupEntry = startupNavigation
@@ -715,29 +742,31 @@ export async function contextForTask(projectPath, task, options = {}) {
 
       const relatedEvidence=[]
       const groundedFiles=[]
+      const emitted=[]
+      let spare=maxBytes
       if(options.withSource) {
         // Collect every requested range first, drop duplicates (same path, overlapping
         // lines), then split the byte budget fairly instead of first-come-first-served.
         const requests=[]
-        for(const [index,target] of targets.entries()) requests.push({entry:target,range:target.lines,cap:maxLines,weight:index===0?1.5:1.2,minLines:1})
+        for(const [index,target] of targets.entries()) requests.push({entry:target,range:target.lines,full:kept.find(v=>v.path===target.path)?.lines,cap:maxLines,weight:index===0?1.5:1.2,minLines:1})
         // A seed that is not already a target range is grounded as the slice's start.
         for(const seed of seeds) {
           if(targets.some(t=>t.path===seed.path&&t.lines&&t.lines[0]<=seed.lines[1]&&seed.lines[0]<=t.lines[1]))continue
           if(slice.ground.some(item=>item.path===seed.path&&item.symbol===seed.symbol))continue
-          requests.push({entry:{path:seed.path,symbol:seed.symbol,lines:seed.lines,relation:'semantic-seed',direction:'seed',semantic:{relation:'SEED',role:intentDetail.seedRole},reason:`semantic slice starts at ${seed.symbol} (${intentDetail.seedRole})`},range:seed.lines,cap:80,weight:1.2,minLines:3,evidence:true,semantic:true})
+          requests.push({entry:{path:seed.path,symbol:seed.symbol,lines:seed.lines,relation:'semantic-seed',direction:'seed',semantic:{relation:'SEED',role:intentDetail.seedRole},reason:`semantic slice starts at ${seed.symbol} (${intentDetail.seedRole})`},range:seed.lines,full:seed.lines,cap:80,weight:1.2,minLines:3,evidence:true,semantic:true})
         }
         for(const item of slice.ground) {
           // `relation` keeps the v0.5 vocabulary for compatibility; `semantic` names the resolved relation.
           const sameFile=targets.some(t=>t.path===item.path)
           const relation=sameFile?'same-file-symbol':item.direction==='incoming'?'imported-by':'imported-symbol'
-          requests.push({entry:{path:item.path,symbol:item.symbol,lines:item.lines,relation,direction:item.direction,semantic:{relation:item.relation,confidence:item.confidence},reason:item.reason},range:item.lines,cap:80,weight:1,minLines:3,evidence:true,semantic:true})
+          requests.push({entry:{path:item.path,symbol:item.symbol,lines:item.lines,relation,direction:item.direction,semantic:{relation:item.relation,confidence:item.confidence},reason:item.reason},range:item.lines,full:item.lines,cap:80,weight:1,minLines:3,evidence:true,semantic:true})
         }
         // Lexical evidence fills in only what the semantic slice did not already ground.
         const semanticKeys=new Set(slice.ground.map(item=>`${item.path}#${item.symbol}`))
         for(const candidate of uniqueEvidence.filter(candidate=>!semanticKeys.has(`${candidate.path}#${candidate.symbol}`))) {
           const start=Math.max(1,candidate.start-3)
           const end=Math.min(candidate.lineCount,candidate.end+5)
-          requests.push({entry:{path:candidate.path,symbol:candidate.symbol,lines:[start,end],relation:candidate.relation,direction:candidate.direction,reason:candidate.reason},range:[start,end],cap:80,weight:1,minLines:3,evidence:true})
+          requests.push({entry:{path:candidate.path,symbol:candidate.symbol,lines:[start,end],relation:candidate.relation,direction:candidate.direction,reason:candidate.reason},range:[start,end],full:[candidate.start,candidate.end],cap:80,weight:1,minLines:3,evidence:true})
         }
         const taken=new Map()
         const prepared=[]
@@ -756,7 +785,7 @@ export async function contextForTask(projectPath, task, options = {}) {
           const costs=rendered.map(line=>Buffer.byteLength(line)+1)
           const lineScores=[]
           for(let n=range[0];n<=range[1];n++)lineScores.push(termCoverage(lines[n-1]??'',qTokens,weights).covered)
-          prepared.push({...request,range,rendered,costs,lineScores,desired:costs.reduce((a,b)=>a+b,0)})
+          prepared.push({...request,range,lines,rendered,costs,lineScores,desired:costs.reduce((a,b)=>a+b,0)})
         }
         const allotted=allocateBudget(prepared,maxBytes)
         for(const [index,request] of prepared.entries()) {
@@ -766,14 +795,114 @@ export async function contextForTask(projectPath, task, options = {}) {
           if(count<Math.min(request.minLines,request.costs.length))continue
           request.entry.lines=[request.range[0]+from,request.range[0]+to-1]
           request.entry.source=request.rendered.slice(from,to).join('\n')
+          for(let n=from;n<to;n++)spare-=request.costs[n]
+          emitted.push(request)
           if(request.evidence)relatedEvidence.push(request.entry)
           if(!groundedFiles.includes(request.entry.path))groundedFiles.push(request.entry.path)
+        }
+      }
+      // v0.6.2: a range narrowed by a focus window, a line cap or its fair share ends in the
+      // middle of its symbol, and the agent spends a whole turn reading the few missing
+      // lines. Bytes the allocation left unused grow each range back toward its symbol's
+      // bounds, in rank order, without crossing another returned range of the same file.
+      // A symbol too long to return whole only gains a margin around its window.
+      const symbolBounds=db.prepare('SELECT start_line,end_line FROM symbols WHERE file_id=? AND qualified_name=? LIMIT 1')
+      for(const request of emitted) {
+        if(spare<=0)break
+        const row=request.entry.symbol?symbolBounds.get(request.entry.path,request.entry.symbol):null
+        const full=row?[Number(row.start_line),Number(row.end_line)]:request.full
+        if(!full)continue
+        const others=emitted.filter(other=>other!==request&&other.entry.path===request.entry.path).map(other=>other.entry.lines)
+        const free=n=>!others.some(range=>range[0]<=n&&n<=range[1])
+        const cost=n=>Buffer.byteLength(`${n}: ${request.lines[n-1]}`)+1
+        const low=Math.max(1,full[0])
+        const high=Math.min(request.lines.length,full[1])
+        let [from,to]=request.entry.lines
+        const limit=high-low+1<=maxLines?maxLines:Math.min(maxLines,to-from+1+GROW_MARGIN_LINES)
+        for(let grew=true;grew&&to-from+1<limit;) {
+          grew=false
+          if(from>low&&free(from-1)&&cost(from-1)<=spare){from--;spare-=cost(from);grew=true}
+          if(to<high&&to-from+1<limit&&free(to+1)&&cost(to+1)<=spare){to++;spare-=cost(to);grew=true}
+        }
+        if(from===request.entry.lines[0]&&to===request.entry.lines[1])continue
+        request.entry.lines=[from,to]
+        const rendered=[]
+        for(let n=from;n<=to;n++)rendered.push(`${n}: ${request.lines[n-1]}`)
+        request.entry.source=rendered.join('\n')
+      }
+      // v0.6.2: a returned function often reads a module-level constant or calls a small
+      // helper defined above it, and the agent then reads the top of the file to see it.
+      // Spare bytes attach the same-file declarations the returned ranges name, and the
+      // declarations those name in turn (two hops), merged when they sit together.
+      const evidenceCount=relatedEvidence.length
+      if(spare>0&&emitted.length) {
+        const fileSymbols=db.prepare('SELECT name,qualified_name,kind,start_line,end_line FROM symbols WHERE file_id=?')
+        const identifiers=text=>new Set(text.match(/[A-Za-z_$][\w$]*/g)??[])
+        let entries=0
+        for(const filePath of [...new Set(emitted.map(request=>request.entry.path))]) {
+          if(spare<=0||entries>=DECLARATION_ENTRIES)break
+          const own=emitted.filter(request=>request.entry.path===filePath)
+          const lines=own[0].lines
+          const covered=n=>own.some(request=>request.entry.lines[0]<=n&&n<=request.entry.lines[1])
+          const text=(from,to)=>lines.slice(from-1,to).join('\n')
+          const declarations=moduleDeclarations(filePath,lines,fileSymbols.all(filePath))
+          if(!declarations.length)continue
+          const picked=[]
+          let names=identifiers(own.map(request=>text(...request.entry.lines)).join('\n'))
+          for(let hop=0;hop<2;hop++) {
+            const next=declarations.filter(item=>!picked.includes(item)&&names.has(item.name))
+            if(!next.length)break
+            picked.push(...next)
+            names=identifiers(next.map(item=>text(item.start,item.end)).join('\n'))
+          }
+          // A declaration already inside a returned range is followed for its names but
+          // not repeated; one that is partly inside contributes only its missing lines.
+          const missing=[]
+          for(const item of picked) {
+            let start=item.start,end=item.end
+            while(start<=end&&covered(start))start++
+            while(end>=start&&covered(end))end--
+            if(start<=end)missing.push({name:item.name,start,end})
+          }
+          missing.sort((a,b)=>a.start-b.start)
+          const groups=[]
+          for(const item of missing) {
+            const last=groups.at(-1)
+            let joined=Boolean(last)&&item.start-last.end<=3
+            if(joined)for(let n=last.end+1;n<item.start;n++)if(covered(n))joined=false
+            if(joined){last.end=Math.max(last.end,item.end);last.names.push(item.name)}
+            else groups.push({start:item.start,end:item.end,names:[item.name]})
+          }
+          let fileLines=0
+          for(const group of groups) {
+            if(entries>=DECLARATION_ENTRIES)break
+            const count=group.end-group.start+1
+            const rendered=[]
+            for(let n=group.start;n<=group.end;n++)rendered.push(`${n}: ${lines[n-1]}`)
+            const source=rendered.join('\n')
+            const cost=Buffer.byteLength(source)+1
+            if(fileLines+count>DECLARATION_FILE_LINES||cost>spare)continue
+            fileLines+=count;spare-=cost;entries++
+            relatedEvidence.push({path:filePath,symbol:group.names.join(', '),lines:[group.start,group.end],relation:'same-file-declaration',direction:'internal',reason:`declared in this file and used by the returned ${own.length>1?'ranges':'range'}`,source})
+          }
         }
       }
       const groundedPaths=new Set(groundedFiles)
       const finalRelatedHints=relatedHints.filter(item=>!groundedPaths.has(item.path))
       const semanticFields=sliceOn?{...(slice.trace?{semanticTrace:{...slice.trace,...(seedTrace??{})}}:{}),semanticRoute:{seedRole:intentDetail.seedRole,intentConfidence:intentDetail.intentConfidence,plan:slice.plan??null,seeds:seeds.map(seed=>({path:seed.path,symbol:seed.symbol,kind:seed.kind}))},semanticEvidence:slice.edges,...(slice.hints?.length?{semanticHints:slice.hints}:{}),semanticCapability:capabilityFor([...new Set([...targets.map(t=>t.path),...slice.edges.flatMap(e=>[e.from.path,e.to.path])].map(p=>enriched.find(v=>v.file.path===p)?.file.language))])}:{}
-      return {targets,relatedEvidence,relatedHints:finalRelatedHints,groundedFiles,...semanticFields,intent,intentDetail:{confidence:intentDetail.confidence,intentConfidence:intentDetail.intentConfidence,seedRole:intentDetail.seedRole,signals:intentDetail.signals},depth,more:values.length>primary.length+finalRelatedHints.length+relatedEvidence.length||uniqueEvidence.length>relatedEvidence.length||slice.more,...(options.withSource?{sourceOfTruth:'targets[].source and relatedEvidence[].source are repository source read live from the working tree'}:{})}
+      const response={targets,relatedEvidence,relatedHints:finalRelatedHints,groundedFiles,...semanticFields,intent,intentDetail:{confidence:intentDetail.confidence,intentConfidence:intentDetail.intentConfidence,seedRole:intentDetail.seedRole,signals:intentDetail.signals},depth,more:values.length>primary.length+finalRelatedHints.length+evidenceCount||uniqueEvidence.length>evidenceCount||slice.more,...(options.withSource?{sourceOfTruth:'targets[].source and relatedEvidence[].source are repository source read live from the working tree'}:{})}
+      // Keep the serialized response under the size a harness shows in full: drop evidence from
+      // the end, where the same-file declarations and the lowest-ranked ranges sit.
+      const responseLimit=options.maxResponseBytes??COMPACT_RESPONSE_BYTES
+      // The diagnostic trace is requested only by the benchmark and is not part of what an agent reads.
+      const traceBytes=response.semanticTrace?Buffer.byteLength(JSON.stringify(response.semanticTrace))+18:0
+      while(relatedEvidence.length&&Buffer.byteLength(JSON.stringify(response))-traceBytes>responseLimit) {
+        relatedEvidence.pop()
+        response.more=true
+      }
+      const keptPaths=new Set([...targets,...relatedEvidence].map(item=>item.path))
+      response.groundedFiles=groundedFiles.filter(filePath=>keptPaths.has(filePath))
+      return response
     }
     return {
       query: task,
