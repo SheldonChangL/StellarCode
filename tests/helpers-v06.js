@@ -17,6 +17,8 @@ export async function semanticRepo(files) {
     await fs.writeFile(path.join(repo, file), text)
   }
   await run('git', ['-C', repo, 'init', '-q'])
+  // These files are written with LF; keep a Windows checkout of them byte-identical.
+  await run('git', ['-C', repo, 'config', 'core.autocrlf', 'false'])
   await run('git', ['-C', repo, 'config', 'user.email', 'stellar@test.local'])
   await run('git', ['-C', repo, 'config', 'user.name', 'Stellar Test'])
   await run('git', ['-C', repo, 'add', '.'])
