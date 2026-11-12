@@ -157,7 +157,7 @@ Deterministic check, no agent runs: is each task's `expectedFiles` entry returne
 | Commit | Change |
 |---|---|
 | `75a4e4c` | Leave the benchmark's diagnostic trace out of the response size limit |
-| (this commit) | Credit files whose body carries the task's rare terms in file ranking |
+| `a34e0db` | Credit files whose body carries the task's rare terms in file ranking |
 
 Expected files returned with source, before (`f63d4e0`) and after:
 
