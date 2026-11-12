@@ -88,9 +88,15 @@ export function agentBinary(agent, env = process.env) {
   throw new Error(`Unsupported agent: ${agent}`)
 }
 
+// A Node script cannot be spawned directly on Windows, so one named by its .js/.mjs/.cjs path
+// runs through the current Node on every platform. Any other binary is spawned as given.
+export function agentSpawnTarget(bin, args) {
+  return /\.[cm]?js$/i.test(bin) ? [process.execPath, [bin, ...args]] : [bin, args]
+}
+
 function capture(bin,args,env) {
   return new Promise(resolve=>{
-    const child=spawn(bin,args,{env,stdio:['ignore','pipe','pipe']})
+    const child=spawn(...agentSpawnTarget(bin,args),{env,stdio:['ignore','pipe','pipe']})
     let out='';child.stdout.on('data',d=>out+=d);child.stderr.on('data',d=>out+=d)
     child.on('error',e=>resolve({code:null,out,error:e.message}))
     child.on('close',code=>resolve({code,out:out.trim(),error:null}))
@@ -213,7 +219,7 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
   function isSearchText(text) { return /(?:^|[\s;&|])(rg|grep|find|fd|tree|ls)(?:\s|$)/.test(text) || /search|glob|grep/i.test(text) }
 
   return await new Promise((resolve,reject)=>{
-    const child=spawn(bin,args,{cwd,env,stdio:['ignore','pipe','pipe']})
+    const child=spawn(...agentSpawnTarget(bin,args),{cwd,env,stdio:['ignore','pipe','pipe']})
     let stdout='',stderr='',buffer=''
     child.on('error',error=>{closeOutputs();reject(error)})
     child.stderr.on('data',d=>{if(outputFiles.length)writeSync(outputFiles[2],d);stderr+=d.toString()})

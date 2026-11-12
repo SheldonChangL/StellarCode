@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
 
 import { runBenchmark, conditionOrder, parseBenchmarkModes } from '../src/benchmark/runner.js'
@@ -149,9 +150,9 @@ test('v0.5.9 duplicate reads use range overlap and scale partial overlaps', () =
 })
 
 test('v0.5.9 model turns follow assistant message ids and per-call usage', async () => {
-  const dir = await fs.mkdtemp('/tmp/stellar-turns-')
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'stellar-turns-'))
   try {
-    const fake = path.join(dir, 'claude')
+    const fake = path.join(dir, 'claude.mjs')
     // Two content blocks of one message share an id: still one model turn.
     await fs.writeFile(fake, `#!/usr/bin/env node
 const e=o=>console.log(JSON.stringify(o))

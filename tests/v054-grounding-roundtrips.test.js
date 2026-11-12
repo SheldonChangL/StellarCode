@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs/promises'
 import os from 'node:os'
+import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { initializeProject } from '../src/core/project.js'
 import { syncProject } from '../src/indexer/sync.js'
@@ -56,7 +57,7 @@ test('v0.5.4 the exact STELLAR benchmark-prompt context command parses and retur
     const prompt=benchmarkPrompt({prompt:'Find the login implementation'},'stellar')
     const command=prompt.match(/stellar context "[^"]*"[^.]*?--json/)[0]
     const args=[...command.matchAll(/"([^"]*)"|(\S+)/g)].map(m=>m[1]??m[2]).slice(1)
-    const cli=new URL('../src/cli.js', import.meta.url).pathname
+    const cli=fileURLToPath(new URL('../src/cli.js', import.meta.url))
     const { stdout }=await run(process.execPath,[cli,...args],{cwd:w.repo,env})
     const result=JSON.parse(stdout)
     assert.ok(result.targets.length>=1 && result.targets.length<=6)

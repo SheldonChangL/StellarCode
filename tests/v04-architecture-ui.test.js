@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
@@ -17,7 +18,7 @@ const execFileAsync = promisify(execFile)
 
 test('installed CLI wrapper suppresses only the sqlite experimental warning on help', async () => {
   const bin = new URL('../bin/stellar.js', import.meta.url)
-  const result = await execFileAsync(process.execPath, [bin.pathname, 'help'])
+  const result = await execFileAsync(process.execPath, [fileURLToPath(bin), 'help'])
   assert.equal(result.stdout.split('\n')[0], VERSION_LABEL)
   assert.equal(result.stderr, '')
 })

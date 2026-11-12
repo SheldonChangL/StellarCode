@@ -9,7 +9,7 @@ import { VERSION_LABEL } from '../src/core/version.js'
 test('raw stdout and stderr persist byte-for-byte with the actual prompt before evaluation', async () => {
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'stellar-raw-test-'))
   try {
-    const fake=path.join(dir,'codex')
+    const fake=path.join(dir,'codex.mjs')
     const raw='{"type":"thread.started","thread_id":"test"}\r\nnot-json\n'
     await fs.writeFile(fake,`#!/usr/bin/env node\nprocess.stdout.write(${JSON.stringify(raw)});process.stderr.write('diagnostic failure\\n');process.exitCode=1`,{mode:0o755})
     const task={prompt:'Locate entry point',expectedFiles:[]}
@@ -88,7 +88,7 @@ test('Stellar-only contract requires Stellar context plus source-grounded eviden
 test('only a started read command cannot establish grounding', async () => {
   const w=await makeWorkspace()
   try {
-    const fake=path.join(w.base,'fake')
+    const fake=path.join(w.base,'fake.mjs')
     await fs.writeFile(fake,`#!/usr/bin/env node\nconsole.log(JSON.stringify({type:'item.started',item:{id:'r',type:'command_execution',command:'cat src/auth/AuthService.ts'}}))`,{mode:0o755})
     const result=await runAgent({agent:'codex',task:{prompt:'Read implementation'},mode:'baseline',cwd:w.repo,env:{...process.env,STELLAR_BENCH_CODEX_BIN:fake}})
     assert.deepEqual(result.metrics.filesOpened,[])
@@ -119,7 +119,7 @@ test('a failed debug sample retains its worktree, real executable and metadata-o
     await initializeProject(w.repo);await syncProject(w.repo,{dirs:w.dirs})
     const tasksFile=path.join(w.base,'tasks.json')
     await fs.writeFile(tasksFile,JSON.stringify({version:1,tasks:[{id:'entry',prompt:'Find login',expectedFiles:['src/auth/AuthService.ts']}]}))
-    const fake=path.join(w.base,'fake')
+    const fake=path.join(w.base,'fake.mjs')
     await fs.writeFile(fake,`#!/usr/bin/env node\nif(process.argv.includes('--version'))console.log('test');else if(process.argv.includes('--help'))console.log('--json --sandbox --ephemeral --ignore-user-config --ignore-rules');else console.log(JSON.stringify({type:'turn.completed',usage:{input_tokens:1}}))`,{mode:0o755})
     const result=await runBenchmark({projectRoot:w.repo,tasksFile,agent:'codex',mode:'stellar',outDir:path.join(w.base,'out'),keepWorktreeOnFailure:true,env:{...process.env,STELLAR_DATA_DIR:w.dirs.data,STELLAR_BENCH_CODEX_BIN:fake}})
     const diagnostic=JSON.parse(await fs.readFile(path.join(result.outDir,'diagnostics/entry/stellar-1/diagnostic.json')))
@@ -160,7 +160,7 @@ test('correctness and efficiency gates are reported independently and passGate m
 test('token attribution keeps only the final Codex turn usage rather than summing events', async () => {
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'stellar-attribution-'))
   try {
-    const fake=path.join(dir,'codex')
+    const fake=path.join(dir,'codex.mjs')
     await fs.writeFile(fake,`#!/usr/bin/env node\nconsole.log(JSON.stringify({type:'turn.completed',usage:{input_tokens:100,output_tokens:1}}));console.log(JSON.stringify({type:'turn.completed',usage:{input_tokens:150,output_tokens:2}}));`,{mode:0o755})
     const result=await runAgent({agent:'codex',task:{prompt:'Find code'},mode:'baseline',cwd:dir,env:{...process.env,STELLAR_BENCH_CODEX_BIN:fake},diagnosticDir:path.join(dir,'diagnostic')})
     assert.equal(result.metrics.usage.inputTokens,150)
