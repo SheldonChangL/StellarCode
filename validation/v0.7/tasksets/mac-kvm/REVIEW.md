@@ -1,0 +1,12 @@
+nav-scroll-wire-to-notches: ok
+nav-reconnect-delay-schedule: ok
+nav-own-injected-event-detection: ok
+flow-client-clipboard-to-mac: fixed: prompt boundary narrowed; key unchanged. As drafted ("ends up on this Mac's clipboard", "starting from where peer events are consumed") the answer equally included MacPasteboardAdapter.swift:284-290 (performs the pasteboard write and its own oversized check) and ServerSession.swift:107-112 (the loop that consumes protocolSession.events). Prompt now starts at the app's per-connection handler (ServerRuntime.swift:168-173) and stops at the call into the pasteboard adapter (ServerClipboard.swift:67), with both excluded files named out of scope by role.
+flow-force-return-chord: fixed: key and prompt changed. The callback does not reach the reducer directly: InputTap.swift:50 dispatches LeaveRemoteFlow.escapeAction (LeaveRemoteFlow.swift:37) to ServerCoordinator.dispatch/apply (ServerCoordinator.swift:309-327), which calls InputStateReducer.reduce (isForcedLocal, InputStateReducer.swift:98-109). Recognition also spans MacKeyboardCapture.swift and the predicate wiring in MacKVMApplication.swift:62, so "recognition + callback + state machine" exceeded 4 files and the draft key omitted two on-path files. Recognition is now out of scope; key = InputTap, LeaveRemoteFlow, ServerCoordinator, InputStateReducer (dropped LocalEventSuppressor, EmergencyEscape).
+flow-enter-request-to-session-write: fixed: replaced ServerSession.swift with CaptureQueue.swift. The notification is queued in CaptureQueue.enqueue (ServerEffects.swift:231 -> CaptureQueue.swift:79) and dequeued via outbox.next (ServerRuntime.swift:189, CaptureQueue.swift:135); the draft omitted the queue. The session is "asked to write" at ServerRuntime.swift:200, so ServerSession.enter (ServerSession.swift:61) was callee internals; prompt now stops at that call explicitly.
+impact-trust-decision-outcomes: ok
+impact-screen-adjacency-model: fixed: prompt narrowed to the topology type itself. ScreenTopology.swift also defines ScreenEdge (line 4) and ScreenLink (line 25), which are built in ServerRuntime.swift:55 and used widely (ServerConfiguration, EdgeDetector, ...), so "their links through edges ... public shape" made the key incomplete. Key unchanged: ScreenTopology.swift, ScreenRouter.swift:34-45, ServerCoordinator.swift:67.
+impact-protocol-neutral-session-boundary: ok
+edit-configurable-edge-dwell: ok
+edit-barrier-protocol-revision: ok
+edit-new-standalone-key: ok

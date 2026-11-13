@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "notes": "mac-kvm Swift holdout: 12 tasks (3 per category) across KVMContracts, KVMCore, MacPlatform, BarrierCompatibility and the macOS app target; answer keys verified by reading source, then independently reviewed (see mac-kvm-REVIEW.md).",
+  "tasks": [
+    {
+      "id": "nav-scroll-wire-to-notches",
+      "category": "navigation",
+      "prompt": "Where does a scroll message arriving from the other machine get converted into whole scroll notches, with the horizontal direction flipped relative to the wire value, and dropped when it amounts to less than one notch?",
+      "expectedFiles": ["Packages/BarrierCompatibility/Sources/BarrierCompatibility/BarrierMouseWheelDecoder.swift"],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "nav-reconnect-delay-schedule",
+      "category": "navigation",
+      "prompt": "Where is the waiting schedule between automatic reconnection attempts defined (short delays that double and then settle at a fixed maximum)?",
+      "expectedFiles": ["Packages/KVMCore/Sources/KVMCore/ReconnectManager.swift"],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "nav-own-injected-event-detection",
+      "category": "navigation",
+      "prompt": "Where does the Mac side tell apart input events that this app itself injected from genuine physical user input, so it never re-forwards its own injections?",
+      "expectedFiles": ["Packages/MacPlatform/Sources/MacPlatform/SyntheticEventFilter.swift"],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "flow-client-clipboard-to-mac",
+      "category": "flow",
+      "prompt": "A connected client copies some text. Starting from the server app's per-connection serving code, at the point where it is handed each event the connected client sent, trace how that clipboard text is admitted and handed to this Mac's clipboard store, including the checks that stop oversized content and echoed content. Stop at the call into the platform pasteboard adapter that performs the actual write; that adapter and the session's own event-stream loop are out of scope.",
+      "expectedFiles": [
+        "Apps/macOS/MacKVM/ServerRuntime.swift",
+        "Apps/macOS/MacKVM/ServerClipboard.swift",
+        "Packages/KVMCore/Sources/KVMCore/ServerClipboardRouter.swift",
+        "Packages/KVMCore/Sources/KVMCore/ClipboardLoopGuard.swift"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "flow-force-return-chord",
+      "category": "flow",
+      "prompt": "While another computer is being controlled, the user presses the fixed key chord that forces input back to this Mac. Assume the chord has already been recognized and the low-level input-capture callback has received the suppressor's escape verdict. Trace from that callback: which state-machine action it issues and where that action is defined, how the server's input coordinator applies it, and the state-machine rule that makes the result local from any state. Chord recognition and the side effects run after the transition are out of scope.",
+      "expectedFiles": [
+        "Apps/macOS/MacKVM/InputTap.swift",
+        "Packages/KVMCore/Sources/KVMCore/LeaveRemoteFlow.swift",
+        "Packages/KVMCore/Sources/KVMCore/ServerCoordinator.swift",
+        "Packages/KVMCore/Sources/KVMCore/InputStateReducer.swift"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "flow-enter-request-to-session-write",
+      "category": "flow",
+      "prompt": "Once the server's input coordinator decides to hand control to the client screen and emits its request to send the enter notification, trace how that notification is put into the client's ordered outgoing buffer, taken out again, and handed to the client session's enter call, including how the outcome is reported back to the coordinator. Stop at that call; the session's internals are out of scope.",
+      "expectedFiles": [
+        "Packages/KVMCore/Sources/KVMCore/ServerCoordinator.swift",
+        "Apps/macOS/MacKVM/ServerEffects.swift",
+        "Packages/KVMCore/Sources/KVMCore/CaptureQueue.swift",
+        "Apps/macOS/MacKVM/ServerRuntime.swift"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "impact-trust-decision-outcomes",
+      "category": "impact",
+      "prompt": "If the rule that decides whether to ask the user, allow, or reject a peer based on its recorded certificate identity gains a new outcome, which production code, including the code that consumes that decision, must be reviewed or changed?",
+      "expectedFiles": [
+        "Packages/MacPlatform/Sources/MacPlatform/TrustPolicy.swift",
+        "Packages/MacPlatform/Sources/MacPlatform/KeychainTrustStore.swift",
+        "Packages/MacPlatform/Sources/MacPlatform/FingerprintChangeFlow.swift"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "impact-screen-adjacency-model",
+      "category": "impact",
+      "prompt": "If the validated screen-adjacency model itself (the type that holds the set of screens and their edge links, enforces the reciprocity rule on construction, and answers which screen lies across a given edge) changes its construction rules or its public shape, which production code must be reviewed? The small edge and link value types defined next to it are not changing.",
+      "expectedFiles": [
+        "Packages/KVMContracts/Sources/KVMContracts/ScreenTopology.swift",
+        "Packages/KVMCore/Sources/KVMCore/ScreenRouter.swift",
+        "Packages/KVMCore/Sources/KVMCore/ServerCoordinator.swift"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "impact-protocol-neutral-session-boundary",
+      "category": "impact",
+      "prompt": "If the protocol-neutral session boundary shared by the Barrier adapters and the core gains a new required operation, which production code must be reviewed or changed: the definition, the adapters that implement it, and the core code that holds and drives it?",
+      "expectedFiles": [
+        "Packages/KVMContracts/Sources/KVMContracts/KVMProtocolSession.swift",
+        "Packages/BarrierCompatibility/Sources/BarrierCompatibility/BarrierClientProtocolSession.swift",
+        "Packages/BarrierCompatibility/Sources/BarrierCompatibility/BarrierServerProtocolSession.swift",
+        "Packages/KVMCore/Sources/KVMCore/ServerSession.swift"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "edit-configurable-edge-dwell",
+      "category": "editing-prep",
+      "prompt": "I want the edge-dwell time (how long the pointer must rest on the screen edge before control switches to the other computer) to be settable from the command line when starting the server. Which files must be edited?",
+      "expectedFiles": [
+        "Apps/macOS/MacKVM/ServerConfiguration.swift",
+        "Apps/macOS/MacKVM/ServerRuntime.swift"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "edit-barrier-protocol-revision",
+      "category": "editing-prep",
+      "prompt": "Both the server role and the client role currently hard-code the same four-byte protocol revision that is exchanged during Barrier connection setup. To move to a different revision, which files hold that value and must be edited?",
+      "expectedFiles": [
+        "Packages/BarrierCompatibility/Sources/BarrierCompatibility/BarrierServerHello.swift",
+        "Packages/BarrierCompatibility/Sources/BarrierCompatibility/BarrierClientHelloBack.swift",
+        "Packages/BarrierCompatibility/Sources/BarrierCompatibility/BarrierServerHandshake.swift"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "edit-new-standalone-key",
+      "category": "editing-prep",
+      "prompt": "I am adding one new standalone, non-modifier key (for example a media play/pause key) to the shared platform-neutral key catalog. Which files must be edited just to keep the project compiling, i.e. where the catalog is defined and where switches over it have no default branch?",
+      "expectedFiles": [
+        "Packages/KVMContracts/Sources/KVMContracts/KVMEvent.swift",
+        "Packages/KVMCore/Sources/KVMCore/ModifierStateLedger.swift",
+        "Packages/MacPlatform/Sources/MacPlatform/MacKeyCodeMapper.swift",
+        "Packages/BarrierCompatibility/Sources/BarrierCompatibility/BarrierServerInputEncoder.swift"
+      ],
+      "expectedMatch": "all"
+    }
+  ]
+}

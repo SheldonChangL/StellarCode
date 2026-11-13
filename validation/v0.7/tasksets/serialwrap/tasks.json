@@ -1,0 +1,129 @@
+{
+  "version": 1,
+  "notes": "serialwrap Rust holdout draft: 12 tasks (3 per category) across warden-proto, serialwardend, serialwarden CLI and MCP bridge; answers verified by reading source and rg call-site enumeration.",
+  "tasks": [
+    {
+      "id": "local-socket-peer-process-lookup",
+      "category": "navigation",
+      "prompt": "Where does the daemon ask the operating system which process sits on the other end of an accepted local-socket connection, with separate handling for Linux and macOS?",
+      "expectedFiles": ["crates/serialwardend/src/protocol/peer_cred.rs"],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "lookback-window-shorthand-parsing",
+      "category": "navigation",
+      "prompt": "Where is a lookback shorthand such as '10m' or '2h' (or an absolute RFC 3339 timestamp) converted into a cutoff instant for the history-selection options of the command-line client?",
+      "expectedFiles": ["crates/serialwarden/src/cli/time.rs"],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "dns-rebinding-hostname-refusal",
+      "category": "navigation",
+      "prompt": "Where does the embedded browser UI's HTTP server refuse requests that name a hostname other than this local machine (the DNS-rebinding defence), and where is the hostname test itself implemented?",
+      "expectedFiles": ["crates/serialwardend/src/web/guard.rs"],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "held-agent-send-times-out",
+      "category": "flow",
+      "prompt": "When an AI-agent client sends text to a device, the safety rules hold it for human confirmation, and nobody ever responds, how does that client's request end up being rejected? Trace it from where the incoming message is handled to where the automatic refusal is issued.",
+      "expectedFiles": [
+        "crates/serialwardend/src/protocol/session.rs",
+        "crates/serialwardend/src/gate.rs",
+        "crates/serialwardend/src/gate/approval.rs"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "serial-settings-patch-lifecycle",
+      "category": "flow",
+      "prompt": "When a command-line or agent client connected to the daemon's local socket changes a device's serial settings (say, the line speed) while the device is plugged in and open, trace how the partial patch in the incoming message is merged with the current settings, persisted, handed to the open device's live-apply step, and recorded as a change entry in the device's recorded stream. Stop at the live-apply hand-off; the OS-level terminal reconfiguration itself is out of scope.",
+      "expectedFiles": [
+        "crates/serialwardend/src/protocol/session.rs",
+        "crates/serialwardend/src/protocol/backend.rs",
+        "crates/serialwardend/src/port.rs",
+        "crates/serialwardend/src/device_profile.rs"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "agent-bridge-new-incident-reporting",
+      "category": "flow",
+      "prompt": "In the agent-facing stdio bridge, when the agent asks for a device's saved serial settings, how does the reply also carry any disconnects, lease activity or settings changes that happened since the agent last looked (rather than the device's whole history), and how is that attachment bounded in size?",
+      "expectedFiles": [
+        "crates/serialwarden/src/mcp/tools.rs",
+        "crates/serialwarden/src/mcp/events.rs"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "resolving-held-agent-commands",
+      "category": "impact",
+      "prompt": "I'm about to change what happens when a human accepts or rejects a held agent command that someone else, or the timeout, has already settled. Which production code paths resolve held commands and so must be reviewed?",
+      "expectedFiles": [
+        "crates/serialwardend/src/gate/approval.rs",
+        "crates/serialwardend/src/gate.rs",
+        "crates/serialwardend/src/protocol/session.rs",
+        "crates/serialwardend/src/web/api.rs"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "garbled-output-diagnosis-change",
+      "category": "impact",
+      "prompt": "If I change what the daemon concludes when a device's recorded output looks garbled (the diagnosis plus the suggested alternative line speed), which production code must be reviewed: the inference itself, the per-device state that hosts it, and whatever serves it to the browser UI?",
+      "expectedFiles": [
+        "crates/serialwardend/src/baud_hint.rs",
+        "crates/serialwardend/src/query.rs",
+        "crates/serialwardend/src/web/api.rs"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "result-capping-step-callers",
+      "category": "impact",
+      "prompt": "I'm refactoring the context-protection step that folds duplicate lines, summarizes oversized or binary-heavy ones, and caps a result at a byte budget with a continuation cursor. Where is it defined, and which production modules call it directly rather than through a wrapper?",
+      "expectedFiles": [
+        "crates/serialwardend/src/presentation.rs",
+        "crates/serialwardend/src/query.rs",
+        "crates/serialwardend/src/web/stream.rs",
+        "crates/serialwarden/src/mcp/tools.rs"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "add-nul-text-terminator-choice",
+      "category": "editing-prep",
+      "prompt": "I want to add another choice for the terminator appended to text that a client sends to a device, a lone NUL byte, selectable from the command-line client and from the agent-facing stdio bridge. Which source files must be edited?",
+      "expectedFiles": [
+        "crates/warden-proto/src/request.rs",
+        "crates/serialwardend/src/protocol/session.rs",
+        "crates/serialwarden/src/cli/write.rs",
+        "crates/serialwarden/src/mcp/tools.rs"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "add-mark-check-bit-scheme",
+      "category": "editing-prep",
+      "prompt": "I want to support a 'mark' check-bit scheme (the per-character check bit is always 1) for serial links. Which Rust source files need edits so the daemon can apply it to a device and the command-line tool can request it?",
+      "expectedFiles": [
+        "crates/serialwardend/src/port_config.rs",
+        "crates/serialwarden/src/cli/config.rs"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "add-csv-recording-download-format",
+      "category": "editing-prep",
+      "prompt": "I want to add a CSV rendering of a device's recorded stream alongside the existing jsonl/txt/bin download formats, available from both the command-line tool and the browser UI's download. Which source files need editing?",
+      "expectedFiles": [
+        "crates/warden-proto/src/request.rs",
+        "crates/serialwardend/src/export.rs",
+        "crates/serialwardend/src/web/api.rs",
+        "crates/serialwarden/src/cli/export.rs"
+      ],
+      "expectedMatch": "all"
+    }
+  ]
+}
