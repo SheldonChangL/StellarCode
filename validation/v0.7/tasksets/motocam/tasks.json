@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "notes": "motocam Kotlin holdout draft: 12 tasks (3 per category) authored from .kt source only; answers verified by reading and grepping production code. Reviewed independently; 2 prompts fixed (see motocam-REVIEW.md).",
+  "tasks": [
+    {
+      "id": "clip-cleanup-exemptions-and-order",
+      "category": "navigation",
+      "prompt": "When the app's video-clip cap is reached and old clips get cleaned up to make room, where is it decided which clips are exempt from that cleanup and in what order the remaining ones are removed?",
+      "expectedFiles": [
+        "app/src/main/java/com/jetopto/sw/motocam/recording/RecordingStoragePolicy.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "radar-view-out-of-window-crop",
+      "category": "navigation",
+      "prompt": "In the top-down radar-style view of surrounding vehicles, where are detected objects discarded when their coordinates fall outside the visible area (for example wildly mis-scaled values from the camera), before any smoothing or drawing happens?",
+      "expectedFiles": [
+        "app/src/main/java/com/jetopto/sw/motocam/virtualscene/VirtualSceneFrameSanitizer.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "firmware-download-failure-category",
+      "category": "navigation",
+      "prompt": "When a firmware download fails, where does the app inspect the error and decide that the cause is a corrupted or mismatched file rather than a lost phone connection, a server error or a timeout?",
+      "expectedFiles": [
+        "app/src/main/java/com/jetopto/sw/motocam/ota/OtaFailureClassifier.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "rear-collision-flag-to-clip-capture",
+      "category": "flow",
+      "prompt": "A rear-collision flag switches on in a frame the camera pushes over its socket. Trace how that ends up asking for an emergency clip to be saved. Name the files that handle: receiving the frame from the socket, turning flag changes into one-shot warnings with a cooldown, applying the rider's per-event toggle and the low-speed gate, and the entry point that starts the capture. Skip the JSON frame parsing model and the stores that only persist those settings.",
+      "expectedFiles": [
+        "app/src/main/java/com/jetopto/sw/motocam/network/protocol/ws/DeviceEventStream.kt",
+        "app/src/main/java/com/jetopto/sw/motocam/network/protocol/repository/DeviceEventDispatcher.kt",
+        "app/src/main/java/com/jetopto/sw/motocam/network/protocol/DeviceProtocolBinder.kt",
+        "app/src/main/java/com/jetopto/sw/motocam/recording/EmergencyRecordingManager.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "tip-over-to-crash-clip",
+      "category": "flow",
+      "prompt": "The bike tips over: the phone's tilt sample goes past the limit right after a shock. Trace what happens until a crash clip capture is requested. Name the files that contain logic for: taking in the tilt and accelerometer samples and running the confirmation timer, the pure state transition rules, and the entry point that starts the capture. Ignore files that only declare state data types.",
+      "expectedFiles": [
+        "app/src/main/java/com/jetopto/sw/motocam/sensor/FallDetectionViewModel.kt",
+        "app/src/main/java/com/jetopto/sw/motocam/sensor/FallDetectionStateMachine.kt",
+        "app/src/main/java/com/jetopto/sw/motocam/recording/EmergencyRecordingManager.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "pick-camera-hotspot-to-process-tie",
+      "category": "flow",
+      "prompt": "The rider has picked the camera's hotspot from the list and submitted its passphrase. Trace from that submit action to the place where the app asks Android for that no-internet Wi-Fi and ties the whole app's traffic to the resulting link. Name the two files involved; ignore remembering the credentials and the hotspot scan.",
+      "expectedFiles": [
+        "app/src/main/java/com/jetopto/sw/motocam/ui/connect/DvrConnectScreen.kt",
+        "app/src/main/java/com/jetopto/sw/motocam/network/DvrNetworkBinder.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "retry-wait-doubling-helper-callers",
+      "category": "impact",
+      "prompt": "The small internal helper that doubles the wait between retries (starting at 2 seconds, capped at 30 seconds) is about to change its API. Besides the file that defines it, which production files create and use it?",
+      "expectedFiles": [
+        "app/src/main/java/com/jetopto/sw/motocam/stream/StreamProxyManager.kt",
+        "app/src/main/java/com/jetopto/sw/motocam/network/DvrNetworkBinder.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "gps-speed-reading-new-kind-exhaustive",
+      "category": "impact",
+      "prompt": "We add a fourth kind of GPS velocity reading to the sealed type that today has loading, available and unavailable. Which production files contain an exhaustive match over those kinds that the compiler would force us to update? Exclude the file that produces the readings, and exclude code that only reads the value of the available case through a safe cast.",
+      "expectedFiles": [
+        "app/src/main/java/com/jetopto/sw/motocam/ui/speed/SpeedDisplayScreen.kt",
+        "app/src/main/java/com/jetopto/sw/motocam/network/protocol/DeviceProtocolBinder.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "radar-warning-new-kind-exhaustive",
+      "category": "impact",
+      "prompt": "We add a new kind of rider warning (say a forward-collision one) to the sealed type of warnings that the radar event handler publishes. Which existing production files contain an exhaustive match over the warning kinds that would stop compiling? Do not count the file that defines the type or code that merely collects warnings without branching on their kind.",
+      "expectedFiles": [
+        "app/src/main/java/com/jetopto/sw/motocam/network/protocol/DeviceProtocolBinder.kt",
+        "app/src/main/java/com/jetopto/sw/motocam/ui/dashboard/HudDashboardScreen.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "add-ten-minute-screen-off-option",
+      "category": "editing-prep",
+      "prompt": "Riders want a 10-minute choice for the live view's idle screen-off timeout, alongside the existing 1 minute, 3 minutes, 5 minutes and never choices. Which Kotlin source files must be edited to add it so it can be chosen on the configuration screen and persisted? Resource XML is out of scope.",
+      "expectedFiles": [
+        "app/src/main/java/com/jetopto/sw/motocam/power/LiveTimeoutPreferenceStore.kt",
+        "app/src/main/java/com/jetopto/sw/motocam/ui/settings/SettingsScreen.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "hand-saved-clips-in-event-feed",
+      "category": "editing-prep",
+      "prompt": "Today a clip the rider saves by hand never appears in the tab that lists detected events and is never counted among the events the rider has not yet looked at. We want hand-saved clips to behave like detected events in both. Which Kotlin source files must be edited? Resource XML is out of scope.",
+      "expectedFiles": [
+        "app/src/main/java/com/jetopto/sw/motocam/ui/alerts/AlertsScreen.kt",
+        "app/src/main/java/com/jetopto/sw/motocam/recording/EmergencyRecordingViewModel.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "add-fourth-rear-collision-sensitivity",
+      "category": "editing-prep",
+      "prompt": "We want a fourth, even more eager level for the rear-collision warning sensitivity, on top of the current low, medium and high choices that map to a time-to-collision value sent to the camera. Which Kotlin source files must be edited so the new level exists and is selectable on the configuration screen? Resource XML is out of scope.",
+      "expectedFiles": [
+        "app/src/main/java/com/jetopto/sw/motocam/network/protocol/repository/DeviceSettingsRepository.kt",
+        "app/src/main/java/com/jetopto/sw/motocam/ui/settings/SettingsScreen.kt"
+      ],
+      "expectedMatch": "all"
+    }
+  ]
+}
