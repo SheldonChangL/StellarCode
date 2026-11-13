@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "notes": "vigorplus Kotlin holdout draft: 12 tasks (3 per category) across the camera-communication library, the tire-pressure library and the Android client; answers verified by reading source.",
+  "tasks": [
+    {
+      "id": "tire-alert-hold-duration",
+      "category": "navigation",
+      "prompt": "When a driver taps a tire-pressure warning to acknowledge it, further warnings for that same wheel and fault kind are held back for a fixed time. How long is that hold, and where is that duration defined?",
+      "expectedFiles": [
+        "app/src/main/java/net/camboss/mybase/features/tpms/notification/NotificationPrefsManager.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "camera-reachability-recurring-check",
+      "category": "navigation",
+      "prompt": "Where is the recurring check that the dash cam is still reachable (and that fetches its status list) implemented, i.e. what runs it every few seconds once the phone has joined the camera's Wi-Fi?",
+      "expectedFiles": [
+        "app/src/main/java/net/camboss/mybase/network/service/DvrConnectionService.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "firmware-identity-reply-decoding",
+      "category": "navigation",
+      "prompt": "Where is the camera's reply to its firmware-identity query decoded into the release number, the hardware code and the Taiwan-versus-worldwide build marker?",
+      "expectedFiles": [
+        "DVRNetworkModule/src/main/java/com/jetopto/swapp/dvrnetworkmodule/api/service/DvrResponseParser.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "tire-reading-to-spoken-warning",
+      "category": "flow",
+      "prompt": "Trace what happens from the moment the phone picks up a tire sensor's radio broadcast until an out-of-range reading becomes a system-tray alert and a spoken warning. Which classes decode the broadcast, judge it against the vehicle's configured limits, raise the alert and produce the voice?",
+      "expectedFiles": [
+        "TpmsModule/src/main/java/com/jet/swapp/dvrtpmsmodule/api/TpmsMonitor.kt",
+        "app/src/main/java/net/camboss/mybase/features/tpms/TpmsBackgroundService.kt",
+        "app/src/main/java/net/camboss/mybase/features/tpms/notification/TpmsNotificationHelper.kt",
+        "app/src/main/java/net/camboss/mybase/features/tpms/tts/TTSManager.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "clip-route-onto-screen-map",
+      "category": "flow",
+      "prompt": "When a user opens a recorded video clip saved on the phone and asks to see where it was filmed, how does the route get from the clip's bytes onto the on-screen map? Name the pieces that extract the positions, hold them, and draw the path.",
+      "expectedFiles": [
+        "app/src/main/java/net/camboss/mybase/features/local_media/ui/LocalMediaPlayerScreen.kt",
+        "app/src/main/java/net/camboss/mybase/features/local_media/viewmodel/LocalMediaViewModel.kt",
+        "app/src/main/java/net/camboss/mybase/features/local_media/model/LocalMediaGpsParser.kt",
+        "app/src/main/java/net/camboss/mybase/features/local_media/ui/player/MapViewer.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "home-screen-firmware-update-prompt",
+      "category": "flow",
+      "prompt": "On the camera's home screen, after the camera reports which firmware it runs, how does the application work out which published firmware channel applies to that unit (for example Taiwan versus worldwide builds), decide whether a newer release exists, and finally prompt the user to update?",
+      "expectedFiles": [
+        "app/src/main/java/net/camboss/mybase/features/dvr/DvrMainViewModel.kt",
+        "DVRNetworkModule/src/main/java/com/jetopto/swapp/dvrnetworkmodule/domain/model/OtaUrlResolver.kt",
+        "app/src/main/java/net/camboss/mybase/features/dvr/ota/VersionUtils.kt",
+        "app/src/main/java/net/camboss/mybase/features/dvr/DvrMainActivity.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "battery-flag-consumers",
+      "category": "impact",
+      "prompt": "If the low-battery indicator carried by each decoded tire-sensor reading changed from a yes/no flag to a percentage, which consumer code that reads that indicator (not the code that creates the reading or declares its type) would need to be reviewed?",
+      "expectedFiles": [
+        "app/src/main/java/net/camboss/mybase/features/tpms/TpmsBackgroundService.kt",
+        "app/src/main/java/net/camboss/mybase/features/tpms/TpmsVehicleViewModel.kt",
+        "app/src/main/java/net/camboss/mybase/features/tpms/TpmsVehicleFragment.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "camera-status-entry-readers",
+      "category": "impact",
+      "prompt": "If the per-command status entry returned by the camera's all-status query changed so that its value is no longer an integer, which handset-side code (not the camera-communication library that parses the reply) reads the command id or value of those entries and would need review?",
+      "expectedFiles": [
+        "app/src/main/java/net/camboss/mybase/network/service/DvrConnectionService.kt",
+        "app/src/main/java/net/camboss/mybase/features/dvr/setting/SettingDetailViewModel.kt",
+        "app/src/main/java/net/camboss/mybase/features/dvr/setting/SettingViewModel.kt",
+        "app/src/main/java/net/camboss/mybase/features/dvr/live/LiveViewModel.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "camera-variant-exhaustive-branches",
+      "category": "impact",
+      "prompt": "If one more camera variant is added to the enumeration of supported camera types, which places that branch on the camera type without any catch-all branch would stop compiling until they are updated?",
+      "expectedFiles": [
+        "DVRNetworkModule/src/main/java/com/jetopto/swapp/dvrnetworkmodule/di/DvrModule.kt",
+        "DVRNetworkModule/src/main/java/com/jetopto/swapp/dvrnetworkmodule/domain/factory/DvrSettingsFactory.kt",
+        "DVRNetworkModule/src/main/java/com/jetopto/swapp/dvrnetworkmodule/domain/model/RecordingQualityOptions.kt",
+        "app/src/main/java/net/camboss/mybase/features/dvr/live/DvrServiceFactory.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "add-ten-minute-loop-length",
+      "category": "editing-prep",
+      "prompt": "We want a 10-minute choice in the loop-recording length picker for the newer camera families. Which Kotlin source files must be edited so it appears in the list and shows a readable label (ignore string resource XML)?",
+      "expectedFiles": [
+        "DVRNetworkModule/src/main/java/com/jetopto/swapp/dvrnetworkmodule/domain/model/RecordingTimeOptions.kt",
+        "app/src/main/java/net/camboss/mybase/model/ui/DvrDisplayKeyProvider.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "add-camera-to-device-picker",
+      "category": "editing-prep",
+      "prompt": "A brand-new in-car camera type must be offered when adding a device, and its tile on the saved-device list should show its own picture. Which Kotlin files must be edited (ignore drawable assets and string XML)?",
+      "expectedFiles": [
+        "app/src/main/java/net/camboss/mybase/features/dev_mgr/viewmodel/DeviceSelectionViewModel.kt",
+        "app/src/main/java/net/camboss/mybase/features/dev_mgr/ui/UserDevice.kt"
+      ],
+      "expectedMatch": "all"
+    },
+    {
+      "id": "add-megapascal-pressure-unit",
+      "category": "editing-prep",
+      "prompt": "Add a fifth tire-pressure unit, megapascal, that drivers can choose and that live readings honor. Which Kotlin files must be edited so the unit exists, is selectable with a label, converts slider values and is used when showing the live pressure?",
+      "expectedFiles": [
+        "TpmsModule/src/main/java/com/jet/swapp/dvrtpmsmodule/data/TpmsConstants.kt",
+        "app/src/main/java/net/camboss/mybase/features/tpms/widget/TpmsBottomItemView.kt",
+        "app/src/main/java/net/camboss/mybase/features/tpms/TpmsVehicleFragment.kt"
+      ],
+      "expectedMatch": "all"
+    }
+  ]
+}
