@@ -1,0 +1,64 @@
+# v0.7 Rust / Kotlin / Swift lexical tier: holdout result
+
+Plan: `HOLDOUT_PLAN.md` (pre-registered in `9460b91`, task sets frozen in `7a19d81`). Runtime `7a19d81` (source identical to `901ebed`), `changedDuringCampaign=false` for all three campaigns. 216 runs, all exit 0. Agent: Claude CLI 2.1.322.
+
+## Verdict against the pre-registered targets
+
+| Target | Result | Verdict |
+|---|---|---|
+| Correctness gate: answer and grounded success ≥ baseline, per repository | 36/36 answers in every cell; grounded 36→36, 36→36, 35→36 | **met** |
+| Primary: input tokens, repo-median reduction ≥ 10% | 7.5% | **missed** |
+| Secondary: tool calls, repo-median reduction ≥ 15% | 20.0% | met |
+| Secondary: search calls, repo-median reduction ≥ 15% | 49.5% | met |
+
+## Per repository (`baseline` → `stellar`, 36 paired runs each)
+
+| | mac-kvm (Swift) | serialwrap (Rust) | vigorplus (Kotlin) |
+|---|---|---|---|
+| Input tokens | 7.15M → 5.50M (−23.2%) | 7.22M → 6.68M (−7.5%) | 7.40M → 7.24M (−2.1%) |
+| Tool calls | 260 → 154 (−40.8%) | 251 → 218 (−13.1%) | 255 → 204 (−20.0%) |
+| Search calls | 121 → 45 (−62.8%) | 111 → 56 (−49.5%) | 123 → 73 (−40.7%) |
+| Cost | $16.09 → $12.16 (−24.4%) | $16.94 → $15.61 (−7.9%) | $15.28 → $14.52 (−5.0%) |
+| Answered with no tool call after the context | 9 of 36 | 0 of 36 | 0 of 36 |
+| Expected files delivered by the context | 57 of 102 (56%) | 48 of 99 (48%) | 24 of 105 (23%) |
+| Runs with every expected file in the context | 15 of 36 | 12 of 36 | 3 of 36 |
+
+Pooled over the 36 tasks (paired bootstrap over tasks, 95%): input −10.8% [2.8, 18.3], tool calls −24.8% [15.7, 34.0], search calls −51.0% [41.5, 60.1], cost −12.5% [5.2, 19.7] ($48.30 → $42.29).
+
+## Input tokens by category
+
+| | mac-kvm | serialwrap | vigorplus |
+|---|---|---|---|
+| navigation | −33.3% | +9.5% | −6.9% |
+| flow | −12.1% | −14.2% | +14.8% |
+| impact | −43.9% | −17.2% | −24.2% |
+| editing-prep | −7.9% | +4.2% | +12.1% |
+
+## Catastrophic regressions (task median over repetitions)
+
+No correctness loss. Six tasks crossed a cost threshold:
+
+| Repo | Task | Flag | Input | Tool calls |
+|---|---|---|---|---|
+| mac-kvm | edit-barrier-protocol-revision | input +25% | 168K → 227K | 5 → 6 |
+| serialwrap | add-nul-text-terminator-choice | input +25% | 171K → 218K | 8 → 6 |
+| serialwrap | add-csv-recording-download-format | tool calls > 2× | 179K → 173K | 3 → 8 |
+| vigorplus | add-camera-to-device-picker | input +25% | 119K → 162K | 4 → 4 |
+| vigorplus | add-megapascal-pressure-unit | input +25% | 124K → 165K | 6 → 6 |
+| vigorplus | clip-route-onto-screen-map | input +25% | 171K → 293K | 7 → 7 |
+
+Five of the six are editing-prep tasks.
+
+## Reading
+
+- The benefit follows how many expected files the context delivers. Swift, with type-mention edges, delivers 56% and saves 23% of input. Kotlin delivers 23% and saves 2%: the agent searches less (−41%) but the context call costs about as much as the searches it replaces.
+- Kotlin's low delivery is consistent with its missing edges: references inside one package need no import and so produce no edge. This was a stated limit before the run; the run does not prove it is the cause.
+- Editing-prep is the weakest category in all three repositories (context delivers 6/27, 9/30 and 9/27 expected files). These tasks ask for every exhaustive `match` / `when` / `switch` over a type, which needs "who uses this type" at symbol level; the lexical tier has no such relation.
+
+## Limits
+
+- One repository per language: a language effect cannot be separated from a repository effect.
+- One agent. Baseline rows carry no per-turn telemetry, so model turns are not compared.
+- The three campaigns ran concurrently on one machine.
+
+Raw runs: `validation/v0.7/holdout/<repo>/claude-20261113-0949*/` (not committed).
