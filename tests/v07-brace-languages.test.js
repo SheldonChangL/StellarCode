@@ -155,7 +155,9 @@ object Registry : Base {
     Registry: 'class 39-41 pub',
     'Registry.close': 'method 40-40 pub'
   })
-  assert.deepEqual(specifiers(text, 'Kotlin'), ['com.app.model.User', 'com.app.util.*', 'com.app.net.Client'])
+  // Import statements, the file's package, then each mentioned name once; declared, imported,
+  // annotation and common names are left out.
+  assert.deepEqual(specifiers(text, 'Kotlin'), ['com.app.model.User', 'com.app.util.*', 'com.app.net.Client', 'package:com.app.data', 'type:Closeable'])
 })
 
 test('v0.7 Swift: types, extensions, initializers and protocol requirements', () => {
@@ -295,6 +297,39 @@ test('v0.7.1 Swift: type mentions become file edges by module visibility', async
       assert.ok(references.includes('Apps/Mac/Session+Log.swift -> Session'))
       assert.ok(references.includes('Apps/Mac/AppDelegate.swift -> Packet'))
       assert.ok(!references.includes('Apps/Mac/AppDelegate.swift -> Frame'))
+    } finally { db.close() }
+  } finally { await w.cleanup() }
+})
+
+test('v0.7.2 Kotlin: same-package names, wildcard imports and function imports become file edges', async () => {
+  const dir = 'app/src/main/java/com/app'
+  const w = await semanticRepo({
+    // Same package: no import needed for a class or a composable function.
+    [`${dir}/ui/Screen.kt`]: 'package com.app.ui\n\nimport com.app.util.formatName\nimport com.app.model.*\n\nfun Screen(state: ScreenState) {\n    Header(formatName(state.user))\n    val user: User? = null\n    val tag: Tag? = null\n}\n',
+    [`${dir}/ui/ScreenState.kt`]: 'package com.app.ui\n\ndata class ScreenState(val user: String)\n',
+    [`${dir}/ui/Widgets.kt`]: 'package com.app.ui\n\nfun Header(text: String) {}\n',
+    // Wildcard-imported package.
+    [`${dir}/model/User.kt`]: 'package com.app.model\n\nclass User\n',
+    // Declared twice in the wildcard-imported package: unresolved.
+    [`${dir}/model/TagA.kt`]: 'package com.app.model\n\nclass Tag\n',
+    [`${dir}/model/TagB.kt`]: 'package com.app.model\n\nclass Tag\n',
+    // Imported top-level function: the file is not named after it.
+    [`${dir}/util/Strings.kt`]: 'package com.app.util\n\nfun formatName(name: String) = name.trim()\n',
+    // Same simple name in another package, not imported: not visible.
+    [`${dir}/other/Header.kt`]: 'package com.app.other\n\nclass Header\nclass ScreenState\n'
+  })
+  try {
+    const { db } = await openProjectStore(w.repo, await readProjectMetadata(w.repo), { dirs: w.dirs })
+    try {
+      const imports = db.prepare("SELECT source_id,target_id FROM edges WHERE edge_type='imports'").all().map(e => `${e.source_id.slice(dir.length + 1)} -> ${e.target_id.slice(dir.length + 1)}`).sort()
+      assert.deepEqual(imports, [
+        'ui/Screen.kt -> model/User.kt',
+        'ui/Screen.kt -> ui/ScreenState.kt',
+        'ui/Screen.kt -> ui/Widgets.kt',
+        'ui/Screen.kt -> util/Strings.kt'
+      ])
+      const references = db.prepare("SELECT s.qualified_name FROM edges e JOIN symbols s ON s.symbol_id=e.target_id WHERE e.edge_type='references'").all().map(e => e.qualified_name).sort()
+      assert.deepEqual(references, ['Header', 'ScreenState', 'User', 'formatName'])
     } finally { db.close() }
   } finally { await w.cleanup() }
 })

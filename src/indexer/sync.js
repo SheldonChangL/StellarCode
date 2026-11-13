@@ -10,7 +10,7 @@ import { readProjectMetadata } from '../core/project.js'
 import { INDEXER_VERSION, SUPPORTED_EXTENSIONS } from '../core/constants.js'
 import { markProjectIndexed } from '../storage/registry.js'
 import { resolveSemanticEdges } from './semantic-resolve.js'
-import { resolveBraceImport, createSwiftTypeResolver, TYPE_USE } from './brace-languages.js'
+import { resolveBraceImport, createSwiftTypeResolver, createKotlinNameResolver, TYPE_USE, PACKAGE_OF } from './brace-languages.js'
 
 function edgeId(source, target, type) {
   return crypto.createHash('sha1').update(`${source}|${target}|${type}`).digest('hex')
@@ -139,9 +139,25 @@ function swiftTypeResolver(db) {
   return createSwiftTypeResolver(declarations, moduleImports)
 }
 
-function resolveImport(source, specifier, fileSet, aliases, resolveSwiftType) {
+// Null when the project has no Kotlin declarations.
+function kotlinNameResolver(db) {
+  const declarations = db.prepare(`SELECT s.name,f.path FROM symbols s JOIN files f ON f.file_id=s.file_id
+    WHERE f.language='Kotlin' AND s.qualified_name=s.name`).all()
+  if (!declarations.length) return null
+  const packages = new Map(), wildcards = new Map()
+  for (const row of db.prepare(`SELECT u.source_file_id,u.specifier FROM unresolved_imports u JOIN files f ON f.file_id=u.source_file_id WHERE f.language='Kotlin'`).all()) {
+    if (row.specifier.startsWith(PACKAGE_OF)) packages.set(row.source_file_id, row.specifier.slice(PACKAGE_OF.length))
+    else if (row.specifier.endsWith('.*')) {
+      if (!wildcards.has(row.source_file_id)) wildcards.set(row.source_file_id, new Set())
+      wildcards.get(row.source_file_id).add(row.specifier.slice(0, -2))
+    }
+  }
+  return createKotlinNameResolver(declarations, packages, wildcards)
+}
+
+function resolveImport(source, specifier, fileSet, aliases, names) {
   if (source.endsWith('.py')) return resolvePythonImport(source, specifier, fileSet)
-  const brace = resolveBraceImport(source, specifier, fileSet, resolveSwiftType)
+  const brace = resolveBraceImport(source, specifier, fileSet, names)
   return brace !== undefined ? brace : resolveJSImport(source, specifier, fileSet, aliases)
 }
 
@@ -154,14 +170,14 @@ function rebuildEdges(db, aliases = []) {
   const fileSet = new Set(files.map(f => f.path))
   const fileByPath = new Map(files.map(f => [f.path, f]))
   const imports = db.prepare('SELECT source_file_id,specifier,imported_names,line FROM unresolved_imports').all()
-  const resolveSwiftType = swiftTypeResolver(db)
+  const names = { swift: swiftTypeResolver(db), kotlin: kotlinNameResolver(db) }
 
   for (const row of db.prepare('SELECT symbol_id,file_id FROM symbols').all()) {
     insert.run(edgeId(row.file_id, row.symbol_id, 'contains'), row.file_id, row.symbol_id, 'contains', 1, 1, row.file_id, null)
   }
 
   for (const imp of imports) {
-    const targetPath = resolveImport(imp.source_file_id, imp.specifier, fileSet, aliases, resolveSwiftType)
+    const targetPath = resolveImport(imp.source_file_id, imp.specifier, fileSet, aliases, names)
     if (!targetPath) continue
     const target = fileByPath.get(targetPath)
     insert.run(edgeId(imp.source_file_id, target.file_id, 'imports'), imp.source_file_id, target.file_id, 'imports', 1, 1, imp.source_file_id,

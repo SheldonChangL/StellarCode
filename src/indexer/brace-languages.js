@@ -380,6 +380,13 @@ const KOTLIN_MODIFIERS = 'public|private|protected|internal|open|abstract|final|
 const KOTLIN_MODS = `((?:(?:${KOTLIN_MODIFIERS})\\s+)*)`
 const NOT_A_NAME = new Set(['in', 'is', 'as', 'func', 'var', 'let', 'subscript', 'init', 'case', 'where'])
 
+// Marks an import row that is a name mention, not an import statement.
+export const TYPE_USE = 'type:'
+// Marks the row that records a Kotlin file's own package.
+export const PACKAGE_OF = 'package:'
+// Standard-library names in nearly every file; never worth a row.
+const KOTLIN_COMMON_TYPES = new Set(['String', 'Int', 'Long', 'Short', 'Byte', 'Boolean', 'Double', 'Float', 'Char', 'Unit', 'Any', 'Nothing', 'Number', 'List', 'MutableList', 'Map', 'MutableMap', 'Set', 'MutableSet', 'Array', 'ByteArray', 'IntArray', 'Pair', 'Triple', 'Exception', 'Throwable', 'Result', 'Comparable', 'Iterable', 'Sequence', 'Collection', 'Override', 'Suppress', 'JvmStatic', 'JvmField', 'Deprecated'])
+
 function extractKotlin(ctx) {
   const { masked, nest } = ctx
   const visible = mods => !/\bprivate\b/.test(mods)
@@ -417,11 +424,24 @@ function extractKotlin(ctx) {
     if (nest[m.index] !== 0 && !/\bconst\b/.test(m[1])) continue
     ctx.declare({ kind: 'constant', name: m[2], index: m.index, exported: visible(m[1]), endIndex: expressionEnd(masked, m.index + m[0].length) })
   }
+  const skip = new Set(ctx.decls.map(d => d.name))
   for (const m of masked.matchAll(/^[ \t]*import[ \t]+([\w.`]+?)(\.\*)?(?:[ \t]+as[ \t]+(\w+))?[ \t]*;?[ \t\r]*$/gm)) {
     const specifier = m[1].replaceAll('`', '')
     const last = specifier.split('.').pop()
     ctx.imports.push({ specifier: m[2] ? `${specifier}.*` : specifier, index: m.index, sourceOffset: `kt${m.index}`,
       importedNames: m[2] ? [] : [{ importedName: last, localName: m[3] ?? last, kind: 'named' }] })
+    if (!m[2]) { skip.add(last); if (m[3]) skip.add(m[3]) }
+  }
+  const pkg = /^[ \t]*package[ \t]+([\w.`]+)/m.exec(masked)
+  if (pkg) ctx.imports.push({ specifier: `${PACKAGE_OF}${pkg[1].replaceAll('`', '')}`, index: pkg.index, sourceOffset: `ktp${pkg.index}`, importedNames: [] })
+  // Declarations of the same package (and of wildcard-imported packages) are used without an
+  // import. Capitalized names cover classes, objects and composable functions; each is
+  // recorded once and matched against declarations when edges are built.
+  for (const m of masked.matchAll(/(?<![.\w@])[A-Z]\w+/g)) {
+    const name = m[0]
+    if (skip.has(name) || KOTLIN_COMMON_TYPES.has(name)) continue
+    skip.add(name)
+    ctx.imports.push({ specifier: `${TYPE_USE}${name}`, index: m.index, sourceOffset: `ktt${m.index}`, importedNames: [{ importedName: name, localName: name, kind: 'type' }] })
   }
 }
 
@@ -432,9 +452,6 @@ const SWIFT_MODS = `((?:(?:${SWIFT_MODIFIERS})(?:\\(set\\))?\\s+)*)`
 
 // Standard-library names in nearly every file; never worth a row.
 const SWIFT_COMMON_TYPES = new Set(['String', 'Int', 'Int8', 'Int16', 'Int32', 'Int64', 'UInt', 'UInt8', 'UInt16', 'UInt32', 'UInt64', 'Bool', 'Double', 'Float', 'Character', 'Void', 'Any', 'AnyObject', 'Self', 'Never', 'Array', 'Dictionary', 'Set', 'Optional', 'Error', 'Equatable', 'Hashable', 'Comparable', 'Codable', 'Encodable', 'Decodable', 'Sendable', 'Identifiable', 'CaseIterable', 'Data', 'Date', 'URL', 'UUID', 'Task', 'MainActor', 'Substring', 'Range'])
-// Marks an import row that is a type mention, not an import statement.
-export const TYPE_USE = 'type:'
-
 function extractSwift(ctx) {
   const { masked, nest } = ctx
   const visible = mods => !/\b(?:private|fileprivate)\b/.test(mods.replace(/\b(?:private|fileprivate)\(set\)/g, ''))
@@ -667,12 +684,53 @@ export function createSwiftTypeResolver(declarations, moduleImports) {
   }
 }
 
+// Resolves Kotlin names by package, the unit of visibility that needs no import.
+//   declarations: [{ name, path }] top-level only   packages: Map(path -> package name)
+//   wildcards: Map(source path -> Set(package name)) from `import a.b.*`
+// A name declared by more than one file of a package resolves to nothing.
+export function createKotlinNameResolver(declarations, packages, wildcards) {
+  const byName = new Map()
+  for (const { name, path: file } of declarations) {
+    const key = `${packages.get(file) ?? ''}\0${name}`
+    if (!byName.has(key)) byName.set(key, new Set())
+    byName.get(key).add(file)
+  }
+  const inPackage = (pkg, name, source) => {
+    const files = byName.get(`${pkg}\0${name}`)
+    if (!files) return undefined
+    return files.size === 1 && !files.has(source) ? [...files][0] : null
+  }
+  return {
+    // A bare name: the file's own package first, then its wildcard imports.
+    mention(source, name) {
+      const own = inPackage(packages.get(source) ?? '', name, source)
+      if (own !== undefined) return own
+      const found = new Set()
+      for (const pkg of wildcards.get(source) ?? []) {
+        const hit = inPackage(pkg, name, source)
+        if (hit) found.add(hit)
+      }
+      return found.size === 1 ? [...found][0] : null
+    },
+    // `import a.b.name` where no file is named after `name` (a top-level function).
+    qualified(source, specifier) {
+      const cut = specifier.lastIndexOf('.')
+      return cut < 0 ? null : inPackage(specifier.slice(0, cut), specifier.slice(cut + 1), source) ?? null
+    }
+  }
+}
+
 // Resolved file path or null; undefined when `source` is not a brace-language file.
-// `resolveSwiftType` is a createSwiftTypeResolver() result.
-export function resolveBraceImport(source, specifier, fileSet, resolveSwiftType = null) {
+// `names` holds the per-language resolvers built from the index:
+//   { swift: createSwiftTypeResolver(), kotlin: createKotlinNameResolver() }, each optional.
+export function resolveBraceImport(source, specifier, fileSet, names = {}) {
   if (source.endsWith('.rs')) return resolveRustImport(source, specifier, fileSet)
-  if (source.endsWith('.kt')) return resolveKotlinImport(source, specifier, fileSet)
+  if (source.endsWith('.kt')) {
+    if (specifier.startsWith(PACKAGE_OF)) return null
+    if (specifier.startsWith(TYPE_USE)) return names.kotlin?.mention(source, specifier.slice(TYPE_USE.length)) ?? null
+    return resolveKotlinImport(source, specifier, fileSet) ?? names.kotlin?.qualified(source, specifier) ?? null
+  }
   // Swift import statements name modules, never files; only type mentions resolve.
-  if (source.endsWith('.swift')) return resolveSwiftType && specifier.startsWith(TYPE_USE) ? resolveSwiftType(source, specifier.slice(TYPE_USE.length)) : null
+  if (source.endsWith('.swift')) return names.swift && specifier.startsWith(TYPE_USE) ? names.swift(source, specifier.slice(TYPE_USE.length)) : null
   return undefined
 }
