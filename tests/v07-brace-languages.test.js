@@ -211,7 +211,9 @@ enum Mode { case host, client }
     log: 'function 36-36',
     Mode: 'class 38-38 pub'
   })
-  assert.deepEqual(specifiers(text, 'Swift'), ['Foundation', 'KVMCore'])
+  // Import statements, then each mentioned type name once; own and common types are left out.
+  // `Session.State` is a member access; `Session`, `Transport` and `Mode` are declared here.
+  assert.deepEqual(specifiers(text, 'Swift'), ['Foundation', 'KVMCore', 'type:CustomStringConvertible'])
 })
 
 test('v0.7 test paths for Kotlin and Swift', () => {
@@ -259,6 +261,40 @@ test('v0.7 index: files, symbols and resolved imports for the three languages', 
         'crates/core/src/store/disk.rs -> Repo'
       ])
       assert.equal(db.prepare('SELECT COUNT(*) c FROM semantic_facts').get().c, 0)
+    } finally { db.close() }
+  } finally { await w.cleanup() }
+})
+
+test('v0.7.1 Swift: type mentions become file edges by module visibility', async () => {
+  const w = await semanticRepo({
+    'Packages/Core/Sources/Core/Session.swift': 'public struct Session {\n    var mode: Mode\n    var frame: Frame\n}\n',
+    'Packages/Core/Sources/Core/Mode.swift': 'public enum Mode { case host }\n',
+    // Declared by two modules: visible to Core only through its own copy.
+    'Packages/Core/Sources/Core/Frame.swift': 'struct Frame {}\n',
+    'Packages/Wire/Sources/Wire/Frame.swift': 'public struct Frame {}\npublic struct Packet {}\n',
+    // Imports Core, not Wire: Packet is not visible, Session is.
+    'Packages/Core/Tests/CoreTests/SessionTests.swift': 'import Testing\n@testable import Core\n\nstruct SessionTests {\n    let session: Session? = nil\n    let packet: Packet? = nil\n}\n',
+    // An app target sees the whole repository; a name with two declarations stays unresolved.
+    'Apps/Mac/AppDelegate.swift': 'import Core\n\nfinal class AppDelegate {\n    var session: Session?\n    var frame: Frame?\n    var packet: Packet?\n}\n',
+    'Apps/Mac/Session+Log.swift': 'extension Session {\n    func log() {}\n}\n'
+  })
+  try {
+    const { db } = await openProjectStore(w.repo, await readProjectMetadata(w.repo), { dirs: w.dirs })
+    try {
+      const edges = type => db.prepare('SELECT source_id,target_id FROM edges WHERE edge_type=?').all(type).map(e => `${e.source_id} -> ${e.target_id}`).sort()
+      assert.deepEqual(edges('imports'), [
+        'Apps/Mac/AppDelegate.swift -> Packages/Core/Sources/Core/Session.swift',
+        'Apps/Mac/AppDelegate.swift -> Packages/Wire/Sources/Wire/Frame.swift',
+        'Apps/Mac/Session+Log.swift -> Packages/Core/Sources/Core/Session.swift',
+        'Packages/Core/Sources/Core/Session.swift -> Packages/Core/Sources/Core/Frame.swift',
+        'Packages/Core/Sources/Core/Session.swift -> Packages/Core/Sources/Core/Mode.swift',
+        'Packages/Core/Tests/CoreTests/SessionTests.swift -> Packages/Core/Sources/Core/Session.swift'
+      ])
+      assert.deepEqual(edges('tests'), ['Packages/Core/Tests/CoreTests/SessionTests.swift -> Packages/Core/Sources/Core/Session.swift'])
+      const references = db.prepare("SELECT e.source_id,s.qualified_name FROM edges e JOIN symbols s ON s.symbol_id=e.target_id WHERE e.edge_type='references'").all().map(e => `${e.source_id} -> ${e.qualified_name}`).sort()
+      assert.ok(references.includes('Apps/Mac/Session+Log.swift -> Session'))
+      assert.ok(references.includes('Apps/Mac/AppDelegate.swift -> Packet'))
+      assert.ok(!references.includes('Apps/Mac/AppDelegate.swift -> Frame'))
     } finally { db.close() }
   } finally { await w.cleanup() }
 })
