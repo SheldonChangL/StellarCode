@@ -1,6 +1,7 @@
 #!/bin/sh
 # v0.7 holdout: one repository, baseline / stellar.
-# Usage: run-holdout.sh <repo> <stage> <repeat> [task-ids]
+# Usage: [MODEL=<id>] run-holdout.sh <repo> <stage> <repeat> [task-ids]
+# Set MODEL for any campaign meant to be compared with another: the CLI default can change.
 set -eu
 REPO="$1"; STAGE="$2"; REPEAT="$3"; IDS="${4:-}"; MODES="${MODES:-baseline,stellar}"
 STELLAR_ROOT=/Users/sheldon.chang/Projects/Private/StellarCode_M0-M3_Complete
@@ -20,9 +21,10 @@ mkdir -p "$OUT"
   echo "repo=$REPO stage=$STAGE repeat=$REPEAT taskIds=$IDS modes=$MODES"
   echo "repoCommit=$(git -C "$WT" rev-parse HEAD)"
   echo "stellarCommit=$(git -C "$STELLAR_ROOT" rev-parse HEAD)"
+  echo "model=${MODEL:-unpinned}"
 } > "$OUT/campaign.env"
 node "$STELLAR_ROOT/bin/stellar.js" init "$WT" > "$OUT/index.log"
 node "$STELLAR_ROOT/bin/stellar.js" sync "$WT" --json >> "$OUT/index.log"
 node "$STELLAR_ROOT/bin/stellar.js" benchmark run "$WT" --agent claude --mode "$MODES" --repeat "$REPEAT" \
-  ${IDS:+--task-ids "$IDS"} --tasks "$TASKS" --repository "$REPO" --out "$OUT" 2>&1 | tee "$OUT/run.log"
+  ${MODEL:+--model "$MODEL"} ${IDS:+--task-ids "$IDS"} --tasks "$TASKS" --repository "$REPO" --out "$OUT" 2>&1 | tee "$OUT/run.log"
 echo "$OUT"
