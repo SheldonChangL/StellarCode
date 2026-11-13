@@ -62,3 +62,25 @@ Five of the six are editing-prep tasks.
 - The three campaigns ran concurrently on one machine.
 
 Raw runs: `validation/v0.7/holdout/<repo>/claude-20261113-0949*/` (not committed).
+
+## Follow-up: Kotlin same-package edges (`d65bd96`), not an unseen holdout
+
+After the result above, Kotlin files were linked by same-package and wildcard-import name mentions (file pairs linked in vigorplus: 371 → 514). The frozen Kotlin task set was run again; it had been seen once by then.
+
+**The re-run cannot be compared with the first run.** The agent model was not pinned: the first campaigns ran on `claude-fable-5-2`, the re-run on `claude-opus-5-5` (the CLI default changed in between). Baseline input alone moved from 7.40M to 9.03M.
+
+Within the re-run (36 paired runs, all exit 0, `claude-opus-5-5`): input 9.03M → 8.44M (−6.5%, paired bootstrap 95% [−13.5, 22.4]), tool calls 300 → 218 (−27.3%), search calls 144 → 85 (−41.0%), answers and grounding 36/36 in both conditions. The input interval includes zero.
+
+**Deterministic replay (no agent, no model).** The 12 context commands the agents issued in the first run were replayed against an index built by `901ebed` and one built by `d65bd96`:
+
+| | `901ebed` | `d65bd96` |
+|---|---|---|
+| Expected files returned with source | 8 of 35 | 8 of 35 |
+| Expected files only hinted | 3 | 1 |
+| Tasks with every expected file | 1 of 12 | 0 of 12 |
+
+One task gained an expected file, one navigation task lost its only one, two lost a hint.
+
+**Conclusion.** The new edges do not change what the context delivers for these tasks. Kotlin's low delivery is not caused by missing same-package edges, as the first reading suggested; the expected files are not selected as targets in the first place, and neighbors of the wrong targets do not help. The limit is target selection for Kotlin questions, which this change does not touch.
+
+Raw re-run: `validation/v0.7/rerun-kotlin-edges/vigorplus/claude-20261113-102851/` (not committed).
