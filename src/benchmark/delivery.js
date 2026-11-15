@@ -9,7 +9,6 @@
 // Prefetch input is built only from the task prompt and StellarCode output for the frozen
 // repository snapshot. Benchmark metadata (category, expected files, match mode, answer key)
 // never reaches these functions.
-import crypto from 'node:crypto'
 
 export const DELIVERY_MODES = ['pull', 'prefetch', 'prefetch-contract']
 export const PREFETCH_MODES = new Set(['prefetch', 'prefetch-contract'])
@@ -23,49 +22,8 @@ export function latinSquareOrder(modes, repetition) {
   return [...modes.slice(shift), ...modes.slice(0, shift)]
 }
 
-const sha12 = text => crypto.createHash('sha256').update(String(text ?? '')).digest('hex').slice(0, 12)
-
-// Stable text envelope from a compact `stellar context --with-source --json` result. Only
-// fields a normal context call returns are used: no scores, no debug data. Every excerpt
-// keeps its path, line range and a hash of the exact excerpt text, plus the snapshot commit.
-export function buildContextEnvelope(context, { snapshotCommit = null } = {}) {
-  const lines = ['<stellar-grounded-context>']
-  if (snapshotCommit) lines.push(`Snapshot: ${snapshotCommit}`)
-  lines.push(`Intent: ${context?.intent ?? 'unknown'}`)
-  if (context?.contextMode) lines.push(`Context mode: ${context.contextMode}`)
-  if (context?.confidence) lines.push(`Confidence: ${context.confidence}`)
-  const excerpts = []
-  const section = (title, items) => {
-    const sourced = (items ?? []).filter(item => typeof item?.source === 'string' && item.source.length)
-    if (!sourced.length) return
-    lines.push('', `${title}:`)
-    for (const item of sourced) {
-      const [start, end] = Array.isArray(item.lines) ? item.lines : [null, null]
-      const hash = sha12(item.source)
-      const label = [item.symbol ? `symbol ${item.symbol}` : null, item.relation ? `relation ${item.relation}` : null, item.direction && item.direction !== 'none' ? `direction ${item.direction}` : null].filter(Boolean).join(', ')
-      lines.push('', `[Source: ${item.path} lines ${start}-${end} sha256:${hash}${label ? ` | ${label}` : ''}]`)
-      lines.push(item.source)
-      excerpts.push({ path: item.path, startLine: start, endLine: end, bytes: Buffer.byteLength(item.source), sha256: hash, section: title })
-    }
-  }
-  section('Targets', context?.targets)
-  section('Related evidence', context?.relatedEvidence)
-  const hints = (context?.relatedHints ?? []).filter(hint => hint?.path)
-  if (hints.length) {
-    lines.push('', 'Related hints (navigation metadata only; NOT inspected source):')
-    for (const hint of hints) lines.push(`- ${hint.path}${hint.relation ? ` (${hint.relation})` : ''}`)
-  }
-  lines.push('</stellar-grounded-context>')
-  const text = lines.join('\n')
-  return {
-    text,
-    excerpts,
-    hintPaths: hints.map(hint => hint.path),
-    topTarget: context?.targets?.[0]?.path ?? null,
-    sourceBytes: excerpts.reduce((sum, excerpt) => sum + excerpt.bytes, 0),
-    payloadBytes: Buffer.byteLength(text)
-  }
-}
+// The envelope format is shared with product delivery (`stellar preflight`).
+export { buildContextEnvelope } from '../core/context-envelope.js'
 
 export const GROUNDING_CONTRACT = `The StellarCode excerpts above are live repository source already read from the current committed snapshot; each one is labeled with its path and line range. Do not re-read the exact same path and line range merely to verify it. Use repository tools only when required source is missing, when you need lines outside the supplied ranges, or when the supplied evidence does not answer the task. Related hints are navigation metadata only and are NOT inspected source: inspect a hinted file before listing it in your answer.`
 

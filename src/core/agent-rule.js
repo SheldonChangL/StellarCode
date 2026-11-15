@@ -5,6 +5,7 @@ export const AGENT_RULE = `## StellarCode repository navigation
 
 Repository navigation: query StellarCode before broad find/tree/grep/rg searches.
 Prefer one compact context call with source when implementation evidence is needed: \`stellar context "<task>" --compact --with-source --depth 1 --json\`.
+When a \`<stellar-grounded-context>\` block is already attached to the message, that call has been made for you: do not repeat it, and start from its source.
 Source embedded in a successful Stellar response counts as inspected repository source; do not re-read the same range.
 \`relatedEvidence\` contains grounded related source that may be cited. \`relatedHints\` is navigation metadata only and must not be presented as inspected implementation.
 StellarCode metadata is navigation evidence, not source-of-truth. If the returned source is insufficient, read only the specific missing range via native Read or \`stellar source <path> --lines START:END\`.

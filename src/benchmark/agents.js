@@ -6,6 +6,7 @@ import { DEFAULT_CONTEXT_BYTES } from '../core/constants.js'
 
 import { completedEvidence, strings as flattenStrings } from './evidence.js'
 import { GROUNDING_CONTRACT } from './delivery.js'
+import { STELLAR_GUIDANCE } from '../core/context-envelope.js'
 
 function parseJsonLine(line) {
   try { return JSON.parse(line) } catch { return null }
@@ -128,7 +129,6 @@ export async function commandVersion(agent, env = process.env) {
 export const STELLAR_CONTEXT_FLAGS = ['--compact', '--with-source', '--depth', '1', '--max-files', '6', '--max-lines', '160', '--max-bytes', String(DEFAULT_CONTEXT_BYTES), '--json']
 export function stellarContextArgs(prompt) { return ['context', String(prompt), ...STELLAR_CONTEXT_FLAGS] }
 
-const STELLAR_GUIDANCE = `Any item in targets or relatedEvidence with a "source" field contains repository source read live from the working tree, with line numbers, and counts as inspected source for that range. Do not re-read those same embedded ranges. relatedHints are navigation metadata only: never list a hinted file in the final answer unless you separately inspect its source. Paths, symbols, confidence values and relation metadata without source are never source-of-truth. If targets plus relatedEvidence cover every part the task asks about, answer immediately with no further tool calls. If a concrete part is still unsupported, inspect only the smallest relevant hinted file/range (stellar source <path> --lines START:END --json or your file reader), then answer. Do not answer from paths or symbol names alone. Do not fall back to broad find/tree/grep/rg unless the returned grounded evidence is clearly unrelated.`
 
 // The prompt is built from the task prompt and, for prefetch modes, the StellarCode
 // envelope only. Benchmark metadata (category, expected files, match mode) is never an
