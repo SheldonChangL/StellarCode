@@ -2,6 +2,14 @@
 
 Plan: `HOLDOUT_PLAN.md` (pre-registered in `9460b91`, task sets frozen in `7a19d81`). Runtime `7a19d81` (source identical to `901ebed`), `changedDuringCampaign=false` for all three campaigns. 216 runs, all exit 0. Agent: Claude CLI 2.1.322.
 
+## Note (2026-11-16): cost on repetition 1
+
+Runs of the same task within an hour shared a prompt cache until `runId` was added (`DELIVERY_RESULT.md`, correction), which lowers cost on later repetitions. Input tokens, tool calls and searches are not affected. On repetition 1 alone, where no earlier run is in cache:
+
+- The three repositories below: cost −11.7% [3.4, 20.0] ($16.50 → $14.57), against −12.5% over all repetitions. The reading holds.
+- motocam (second Kotlin holdout, section at the end): cost **+19.7%** [6.7, 35.0] ($4.32 → $5.17), against +11.9% over all repetitions. StellarCode costs more than no StellarCode there.
+- All four together: cost −5.2% [−3.5, 13.1]; the interval includes zero.
+
 ## Verdict against the pre-registered targets
 
 | Target | Result | Verdict |
