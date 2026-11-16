@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import os from 'node:os'
-import { runAgent, benchmarkPrompt } from '../src/benchmark/agents.js'
+import { runAgent, benchmarkPrompt, isolatedPrompt } from '../src/benchmark/agents.js'
 import { VERSION_LABEL } from '../src/core/version.js'
 
 test('raw stdout and stderr persist byte-for-byte with the actual prompt before evaluation', async () => {
@@ -19,7 +19,8 @@ test('raw stdout and stderr persist byte-for-byte with the actual prompt before 
     assert.equal(await fs.readFile(path.join(diagnosticDir,'stdout.log'),'utf8'),raw)
     assert.equal(await fs.readFile(path.join(diagnosticDir,'stderr.log'),'utf8'),'diagnostic failure\n')
     const info=JSON.parse(await fs.readFile(path.join(diagnosticDir,'diagnostic.json'),'utf8'))
-    assert.equal(info.promptSent,benchmarkPrompt(task,'stellar'))
+    assert.match(info.runId,/^[0-9a-f-]{36}$/)
+    assert.equal(info.promptSent,isolatedPrompt(benchmarkPrompt(task,'stellar'),info.runId))
     assert.equal(info.cwd,dir)
     assert.equal(info.PATH,process.env.PATH)
     assert.equal('env' in info,false)
@@ -167,5 +168,28 @@ test('token attribution keeps only the final Codex turn usage rather than summin
     const attribution=JSON.parse(await fs.readFile(path.join(dir,'diagnostic/token-attribution.json')))
     assert.equal(attribution.providerReported.inputTokens,150)
     assert.ok(attribution.estimated.unattributedVsProvider>=0)
+  } finally {await fs.rm(dir,{recursive:true,force:true})}
+})
+
+test('each benchmark run sends a prompt no earlier run sent, so runs cannot share a prompt cache', async () => {
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'stellar-cache-isolation-'))
+  try {
+    const fake=path.join(dir,'codex.mjs')
+    await fs.writeFile(fake,'#!/usr/bin/env node\n',{mode:0o755})
+    const task={prompt:'Locate entry point',expectedFiles:[]}
+    const sent=[]
+    for (const name of ['a','b']) {
+      const diagnosticDir=path.join(dir,name)
+      const result=await runAgent({agent:'codex',task,mode:'stellar',cwd:dir,env:{...process.env,STELLAR_BENCH_CODEX_BIN:fake},diagnosticDir})
+      const info=JSON.parse(await fs.readFile(path.join(diagnosticDir,'diagnostic.json'),'utf8'))
+      assert.equal(result.runId,info.runId)
+      sent.push(info.promptSent)
+    }
+    assert.notEqual(sent[0],sent[1])
+    // The unique line comes first; the rest of the prompt is the condition's prompt, unchanged.
+    for (const prompt of sent) {
+      assert.match(prompt.split('\n')[0],/^Benchmark run [0-9a-f-]{36}\.$/)
+      assert.ok(prompt.endsWith(benchmarkPrompt(task,'stellar')))
+    }
   } finally {await fs.rm(dir,{recursive:true,force:true})}
 })

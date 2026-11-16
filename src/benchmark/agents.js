@@ -2,6 +2,7 @@ import fs from 'node:fs/promises'
 import { openSync, writeSync, closeSync } from 'node:fs'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
 import { DEFAULT_CONTEXT_BYTES } from '../core/constants.js'
 
 import { completedEvidence, strings as flattenStrings } from './evidence.js'
@@ -166,8 +167,15 @@ ${AGENT_RULE}`
 Benchmark condition: STELLAR. Your first action must be exactly one command: stellar context ${JSON.stringify(task.prompt)} ${STELLAR_CONTEXT_FLAGS.join(' ')}. ${STELLAR_GUIDANCE}`
 }
 
+// Every run starts its prompt with a line of its own. Without it, a repeated run of the same
+// task inside the provider's prompt-cache lifetime reads the earlier run's prompt from cache
+// instead of writing it, and a condition with a long identical prompt looks cheaper than it
+// is in real use, where no prompt is sent twice. The system prompt before it stays shared.
+export function isolatedPrompt(prompt, runId = randomUUID()) { return `Benchmark run ${runId}.\n\n${prompt}` }
+
 export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, onEvent, diagnosticDir, diagnostic = {}, envelope = null, settingsFile = null }) {
-  const prompt = benchmarkPrompt({ prompt: task.prompt }, mode, { envelope })
+  const runId = randomUUID()
+  const prompt = isolatedPrompt(benchmarkPrompt({ prompt: task.prompt }, mode, { envelope }), runId)
   const bin = agentBinary(agent, env)
   let args
   if (agent === 'codex') {
@@ -190,7 +198,7 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
   const outputFiles=[]
   if (diagnosticDir) {
     await fs.mkdir(diagnosticDir,{recursive:true,mode:0o700})
-    await fs.writeFile(path.join(diagnosticDir,'diagnostic.json'),JSON.stringify({...diagnostic,promptSent:prompt,cwd,PATH:envPath(env),agentBinary:bin,args},null,2)+'\n',{mode:0o600})
+    await fs.writeFile(path.join(diagnosticDir,'diagnostic.json'),JSON.stringify({...diagnostic,runId,promptSent:prompt,cwd,PATH:envPath(env),agentBinary:bin,args},null,2)+'\n',{mode:0o600})
     for (const name of ['raw-events.jsonl','stdout.log','stderr.log','event-times.jsonl','interactions.jsonl']) outputFiles.push(openSync(path.join(diagnosticDir,name),'w',0o600))
   }
   const closeOutputs=()=>{for(const fd of outputFiles.splice(0))closeSync(fd)}
@@ -324,7 +332,7 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
         estimated.unattributedVsProvider=Math.max(0,metrics.usage.inputTokens-estimated.knownTotal)
         await fs.writeFile(path.join(diagnosticDir,'token-attribution.json'),JSON.stringify({providerReported:{inputTokens:metrics.usage.inputTokens,cachedInputTokens:metrics.usage.cachedInputTokens,outputTokens:metrics.usage.outputTokens},estimated:{...estimated,note:'Estimated from UTF-8 bytes divided by four; provider input includes model context and tool schema that cannot be attributed exactly.'},interactions},null,2)+'\n')
       }
-      resolve({exitCode:code,signal:signal??null,stdout,stderr,durationMs,startedAtEpochMs,commands,metrics:{...metrics,interactions,filesMentioned:[...metrics.filesMentioned].sort(),filesOpened:[...metrics.filesOpened].sort(),structured}})
+      resolve({runId,exitCode:code,signal:signal??null,stdout,stderr,durationMs,startedAtEpochMs,commands,metrics:{...metrics,interactions,filesMentioned:[...metrics.filesMentioned].sort(),filesOpened:[...metrics.filesOpened].sort(),structured}})
     })
   })
 }
