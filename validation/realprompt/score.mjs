@@ -2,7 +2,7 @@
 // Scores StellarCode retrieval on the real-prompt evaluation set built by extract.mjs.
 //
 //   node validation/realprompt/score.mjs <eval-dir> --label NAME [--split dev|holdout] [--confirm-holdout]
-//        [--hook] [--strict] [--session drop|skip]
+//        [--hook] [--strict] [--session drop|skip] [--hints]
 //   node validation/realprompt/score.mjs <eval-dir> --compare BASE NEW [--split dev|holdout]
 //
 // For each prompt it runs the same lookup as `stellar preflight` (context options of the
@@ -14,6 +14,10 @@
 // Delivery variants: --hook uses the Claude hook's character limit; --strict its match gate;
 // --session drop leaves out files the agent already touched earlier in the session, and
 // --session skip attaches nothing when any file it would attach was already touched.
+//
+// --hints adds session hints (files that changed together with the seen files in git history
+// before the prompt's time, once per session); it implies --session drop and replays each
+// session in order with a fresh session store.
 //
 // The holdout split is for confirming a change already chosen on dev. Scoring it needs
 // --confirm-holdout, and every holdout run is appended to <eval-dir>/holdout-log.jsonl.
@@ -45,6 +49,7 @@ function interval(values, statistic, rounds = 4000) {
 const pct = x => `${(100 * x).toFixed(1)}%`
 const METRICS = {
   delivered: 'attached anything',
+  reachNew: 'a new touched file was attached, hinted, or hinted earlier in the session',
   hitNew: 'an attached file was touched and was new to the session',
   hit: 'an attached file was touched',
   top1: 'top target was touched',
@@ -59,6 +64,7 @@ function summarize(rows) {
   return {
     items: rows.length,
     delivered: mean(rows.map(row => +row.delivered)),
+    reachNew: mean(rows.map(row => +row.reachNew)),
     hitNew: mean(rows.map(row => +row.hitNew)),
     hit: mean(rows.map(row => +row.hit)),
     top1: mean(rows.map(row => +row.top1)),
@@ -75,7 +81,7 @@ if (args.includes('--compare')) {
   const [base, next] = [args[i + 1], args[i + 2]].map(label => new Map(readRows(path.join(resultsDir, `${label}.jsonl`)).map(row => [row.id, row])))
   const ids = [...base.keys()].filter(id => next.has(id))
   console.log(`${split}: ${args[i + 1]} -> ${args[i + 2]}, ${ids.length} paired prompts`)
-  for (const metric of ['delivered', 'hitNew', 'hit', 'top1', 'hitWithHints', 'recall']) {
+  for (const metric of ['delivered', 'reachNew', 'hitNew', 'hit', 'top1', 'hitWithHints', 'recall']) {
     const diffs = ids.map(id => +next.get(id)[metric] - +base.get(id)[metric])
     const [lo, hi] = interval(diffs, mean)
     console.log(`  ${metric.padEnd(13)} ${pct(mean(ids.map(id => +base.get(id)[metric])))} -> ${pct(mean(ids.map(id => +next.get(id)[metric])))}  diff ${(100 * mean(diffs)).toFixed(1)} pts [${(100 * lo).toFixed(1)}, ${(100 * hi).toFixed(1)}]`)
@@ -98,21 +104,32 @@ process.env.STELLAR_CACHE_DIR = path.join(evalDir, 'stellar', 'cache')
 process.env.STELLAR_LOG_DIR = path.join(evalDir, 'stellar', 'logs')
 const { preflight } = await import('../../src/core/preflight.js')
 
-const session = flag('--session')
+const hints = args.includes('--hints')
+const session = hints ? 'drop' : flag('--session')
 if (session && !['drop', 'skip'].includes(session)) { console.error('--session drop|skip'); process.exit(2) }
+// Sessions are replayed in order; hint memory lives in a store that starts empty for this run.
+items.sort((a, b) => a.session.localeCompare(b.session) || a.turn - b.turn || a.id.localeCompare(b.id))
+const storeDirs = hints ? { data: process.env.STELLAR_DATA_DIR, logs: process.env.STELLAR_LOG_DIR, cache: fs.mkdtempSync(path.join(evalDir, 'stellar', 'hint-store-')) } : null
+const hintedInSession = new Map()
 const variant = { ...(args.includes('--hook') ? { maxChars: 9800 } : {}), strict: args.includes('--strict') }
 const rows = []
 for (const item of items) {
   const seen = new Set(item.seenBefore ?? [])
-  let result = await preflight({ cwd: path.join(evalDir, 'repos', item.repo), prompt: item.prompt, ...variant, ...(session === 'drop' ? { seenFiles: item.seenBefore ?? [] } : {}) })
+  let result = await preflight({ cwd: path.join(evalDir, 'repos', item.repo), prompt: item.prompt, ...variant, ...(session === 'drop' ? { seenFiles: item.seenBefore ?? [] } : {}), ...(hints ? { sessionHints: { before: item.timestamp }, sessionId: `hints-${item.session}`, dirs: storeDirs } : {}) })
   if (session === 'skip' && result.deliver && result.excerpts.some(excerpt => seen.has(excerpt.path))) result = { deliver: false, reason: 'continuing' }
   const attached = [...new Set((result.excerpts ?? []).map(excerpt => excerpt.path))]
   const hinted = result.hintPaths ?? []
   const touched = new Set(item.touched)
   const found = attached.filter(file => touched.has(file))
+  const remembered = hintedInSession.get(item.session) ?? new Set()
+  hintedInSession.set(item.session, remembered)
+  for (const hint of result.sessionHints ?? []) remembered.add(hint)
+  const reachable = new Set([...attached, ...hinted, ...remembered])
   rows.push({
     id: item.id, repo: item.repo, followUp: seen.size > 0,
     delivered: !!result.deliver, reason: result.reason ?? null, chars: result.chars ?? 0,
+    reachNew: item.touched.some(file => !seen.has(file) && reachable.has(file)),
+    hintsOnly: !!result.hintsOnly, sessionHints: result.sessionHints ?? [],
     hitNew: found.some(file => !seen.has(file)),
     hit: found.length > 0,
     top1: touched.has(result.targets?.[0]),
@@ -135,6 +152,12 @@ for (const [metric, description] of Object.entries(METRICS)) {
   console.log(`  ${metric.padEnd(13)} ${pct(pooled[metric]).padStart(6)} [${pct(lo)}, ${pct(hi)}]  ${description}`)
 }
 console.log(`  attached characters: ${pooled.chars}`)
+if (hints) {
+  const given = rows.flatMap(row => row.sessionHints.map(hint => `${items.find(item => item.id === row.id).session}\n${hint}`))
+  const later = new Set()
+  for (const item of items) for (const file of item.touched) later.add(`${item.session}\n${file}`)
+  console.log(`  session hints: ${given.length} given in ${rows.filter(row => row.sessionHints.length).length} turns (${rows.filter(row => row.hintsOnly).length} without source); ${given.filter(key => later.has(key)).length} were touched in the same session`)
+}
 const table = (title, groups) => {
   console.log(`  ${title} (items, delivered, hitNew, hit, top1, redundant):`)
   for (const [name, group] of groups) {
