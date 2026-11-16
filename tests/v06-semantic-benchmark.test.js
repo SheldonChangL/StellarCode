@@ -53,7 +53,10 @@ console.log(JSON.stringify({type:'turn.completed',usage:{input_tokens:400,cached
       assert.ok(!c.command.includes(marker), 'semantic answer key never reaches StellarCode')
       for (const value of Object.values(c.env)) assert.ok(!String(value).includes(marker), 'semantic answer key never reaches the env')
     }
-    assert.equal(captured[0].argv.at(-1), captured[1].argv.at(-1), 'both conditions send the identical prompt')
+    // Each run's prompt starts with its own run line; the rest must be identical.
+    const condition = prompt => prompt.replace(/^Benchmark run [0-9a-f-]{36}\.\n\n/, '')
+    assert.notEqual(captured[0].argv.at(-1), captured[1].argv.at(-1), 'runs do not share a prompt cache')
+    assert.equal(condition(captured[0].argv.at(-1)), condition(captured[1].argv.at(-1)), 'both conditions send the identical prompt')
     const parsed = captured.map(c => JSON.parse(c.output))
     assert.ok(parsed.some(p => Array.isArray(p.semanticEvidence) && p.semanticEvidence.length > 0), 'semantic condition returns a slice')
     assert.ok(parsed.some(p => p.semanticEvidence === undefined), 'stellar-lexical returns no slice')

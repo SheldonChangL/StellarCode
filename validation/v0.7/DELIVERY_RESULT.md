@@ -2,6 +2,17 @@
 
 Plan: `DELIVERY_PLAN.md` (pre-registered in `abd6351`). Runtime source `f9aa63a`, `changedDuringCampaign=false` for all four campaigns. Model pinned to `claude-fable-5-2` and verified: every model event in the raw logs carries it (405, 428, 464 and 470 events).
 
+## Correction (2026-11-16): the cost result is mostly a cache artifact
+
+The cost numbers below (−17.3% pooled, −15.8% to −18.5% per repository) overstate what `prefetch` saves. Input tokens, model turns and tool calls are not affected.
+
+- Cost is 75% cache writes. Fitting the reported cost of all runs to their token counts gives an exact fit: cache writes $16, output $40 and cache reads $0.2 per million tokens. In `pull`, cache writes are 75% of cost, output 17%, cache reads 8%.
+- `prefetch` sends the task and the context as one long prompt, identical in every repetition. Repetition 2 ran within the one-hour cache lifetime of repetition 1, read that prompt from cache instead of writing it, and wrote 31% less than `pull`. The other conditions do not repeat a long prompt and gain far less this way.
+- Split by repetition, `prefetch` against `pull`: repetition 1 cost −6.4% [2.3, 10.3] (48 tasks), repetition 2 cost −26.6% [22.3, 30.4]. Repetition 1 starts with no earlier run in cache, as real use does, where no prompt is sent twice. Per repository, repetition 1: mac-kvm −4.2%, serialwrap −9.5%, vigorplus −10.2%, motocam −0.4%.
+- **Corrected reading: first-turn delivery lowers cost by about 6% [2.3, 10.3], not 17%.** Removing a turn removes cache reads, the cheapest tokens; the context itself is written once whether it is attached or fetched.
+
+Benchmark runs now start their prompt with a unique line so that runs cannot share a prompt cache (`isolatedPrompt` in `src/benchmark/agents.js`; rows carry `runId`).
+
 ## Deviation from the plan: 104 of 144 pairs are valid
 
 The account's 5-hour usage limit was reached during the campaigns. 79 of 288 runs ended at once with the CLI message "You've hit your 5-hour limit", zero tokens, non-zero exit. All but two are in repetition 3.

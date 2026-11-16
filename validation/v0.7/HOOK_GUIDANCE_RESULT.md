@@ -36,6 +36,7 @@ Pooled over the 24 tasks (paired bootstrap over tasks, 95%, reductions): tool ca
 - The whole effect comes from serialwrap. On mac-kvm nothing moved, so the extra searching the hook showed there (`HOOK_RESULT.md`, +36.4% against `pull`) is not caused by the shorter guidance. Its cause is not known.
 - The full guidance costs 370 to 540 bytes of attached source at the median and did not lower correctness.
 - Cost follows cache writes and output, which moved only on serialwrap. The pooled cost interval includes zero.
+- Added 2026-11-16: on repetition 1 alone, where no earlier run is in cache, full guidance costs 0.8% less than brief ($9.55 → $9.47); the 4.8% pooled figure comes mostly from repetition 2. The reading is unchanged: cost does not fall.
 
 ## Limits
 
