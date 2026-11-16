@@ -162,7 +162,7 @@ async function main() {
         let input = ''
         for await (const chunk of process.stdin) input += chunk
         const event = JSON.parse(input)
-        process.stdout.write(claudeHookOutput(await preflight({ cwd: event.cwd ?? process.cwd(), prompt: event.prompt, sessionId: event.session_id ?? null, maxChars: CLAUDE_HOOK_MAX_CHARS, guidance: claudeHookGuidance(flagValue(args,'--guidance','full')), strict: flagValue(args,'--gate','strict') !== 'any' })))
+        process.stdout.write(claudeHookOutput(await preflight({ cwd: event.cwd ?? process.cwd(), prompt: event.prompt, sessionId: event.session_id ?? null, transcriptPath: event.transcript_path ?? null, maxChars: CLAUDE_HOOK_MAX_CHARS, guidance: claudeHookGuidance(flagValue(args,'--guidance','full')), strict: flagValue(args,'--gate','strict') !== 'any' })))
       } catch {}
       return
     }

@@ -4,7 +4,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { preflight, promptGate, claudeHookOutput, installClaudeHook, CLAUDE_HOOK_MAX_CHARS, CLAUDE_HOOK_GUIDANCE, matchedTerms, namedInPrompt } from '../src/core/preflight.js'
+import { preflight, promptGate, claudeHookOutput, installClaudeHook, CLAUDE_HOOK_MAX_CHARS, CLAUDE_HOOK_GUIDANCE, matchedTerms, namedInPrompt, filesInTranscript } from '../src/core/preflight.js'
 import { semanticRepo } from './helpers-v06.js'
 
 // v0.8 first-turn delivery: the context an agent would ask for in its first turn is
@@ -186,5 +186,49 @@ test('v0.8.1 strict gate: attach only when the prompt names an attached file or 
     assert.equal(named.excerpts[0].path, 'src/auth/throttle.js')
     // Without strict the old behavior holds: the manual command still answers any question.
     assert.equal((await preflight({ cwd: w.repo, prompt: QUESTION, dirs: w.dirs })).deliver, true)
+  } finally { await w.cleanup() }
+})
+
+test('v0.8.2 session-aware delivery: files the conversation already has are not attached again', async () => {
+  const w = await semanticRepo(REPO)
+  try {
+    // A Claude Code transcript: an absolute Read, an Edit, a relative path in a shell command,
+    // a file outside the project and lines that are not tool calls.
+    const transcript = path.join(w.base, 'session.jsonl')
+    const use = (cwd, name, input) => JSON.stringify({ type: 'assistant', cwd, message: { content: [{ type: 'tool_use', name, input }] } })
+    await fs.writeFile(transcript, [
+      JSON.stringify({ type: 'user', cwd: w.repo, message: { content: 'look at the lockout' } }),
+      use(w.repo, 'Read', { file_path: path.join(w.repo, 'src/auth/throttle.js') }),
+      use(path.join(w.repo, 'src'), 'Bash', { command: 'sed -n 1,20p auth/failures.js && ls' }),
+      use(w.repo, 'Read', { file_path: path.join(w.base, 'elsewhere.js') }),
+      use(w.repo, 'Grep', { pattern: 'invoiceTotal' }),
+      'not json'
+    ].join('\n'))
+    assert.deepEqual([...await filesInTranscript(transcript, w.repo)].sort(), ['src/auth/failures.js', 'src/auth/throttle.js'])
+    assert.equal((await filesInTranscript(path.join(w.base, 'missing.jsonl'), w.repo)).size, 0)
+
+    const all = await preflight({ cwd: w.repo, prompt: NAMED, dirs: w.dirs })
+    const files = [...new Set(all.excerpts.map(excerpt => excerpt.path))]
+    assert.ok(files.includes('src/auth/throttle.js') && files.length > 1, `fixture attaches several files (got ${files})`)
+    const rest = await preflight({ cwd: w.repo, prompt: NAMED, dirs: w.dirs, seenFiles: ['src/auth/throttle.js'] })
+    assert.equal(rest.deliver, true)
+    assert.ok(!rest.excerpts.some(excerpt => excerpt.path === 'src/auth/throttle.js'))
+    assert.ok(rest.chars < all.chars)
+    assert.deepEqual(await preflight({ cwd: w.repo, prompt: NAMED, dirs: w.dirs, seenFiles: files }), { deliver: false, reason: 'already-in-context' })
+    // A prompt that named a file the agent already read still counts as naming the code.
+    const named = await preflight({ cwd: w.repo, prompt: NAMED, dirs: w.dirs, strict: true, seenFiles: ['src/auth/throttle.js'] })
+    assert.equal(named.deliver, true)
+
+    // The hook reads the transcript Claude Code passes it.
+    const readOne = path.join(w.base, 'read-one.jsonl')
+    await fs.writeFile(readOne, use(w.repo, 'Read', { file_path: path.join(w.repo, 'src/auth/throttle.js') }) + '\n')
+    const env = { ...process.env, STELLAR_DATA_DIR: w.dirs.data, STELLAR_CACHE_DIR: w.dirs.cache, STELLAR_LOG_DIR: w.dirs.logs }
+    const hook = transcriptPath => execFileSync(process.execPath, [BIN, 'preflight', '--hook'], { input: JSON.stringify({ session_id: `t-${transcriptPath ? 1 : 0}`, cwd: w.repo, prompt: NAMED, ...(transcriptPath ? { transcript_path: transcriptPath } : {}) }), env, encoding: 'utf8' })
+    const fresh = JSON.parse(hook(null)).hookSpecificOutput.additionalContext
+    const later = JSON.parse(hook(readOne)).hookSpecificOutput.additionalContext
+    // Under the hook's limit the attachment is these two files; with both read there is nothing new.
+    assert.equal(hook(transcript), '')
+    assert.match(fresh, /\[Source: src\/auth\/throttle\.js/)
+    assert.doesNotMatch(later, /\[Source: src\/auth\/throttle\.js/)
   } finally { await w.cleanup() }
 })

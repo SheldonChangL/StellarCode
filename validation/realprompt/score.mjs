@@ -2,6 +2,7 @@
 // Scores StellarCode retrieval on the real-prompt evaluation set built by extract.mjs.
 //
 //   node validation/realprompt/score.mjs <eval-dir> --label NAME [--split dev|holdout] [--confirm-holdout]
+//        [--hook] [--strict] [--session drop|skip]
 //   node validation/realprompt/score.mjs <eval-dir> --compare BASE NEW [--split dev|holdout]
 //
 // For each prompt it runs the same lookup as `stellar preflight` (context options of the
@@ -9,6 +10,10 @@
 // compares the attached files with the files the agent actually touched in that turn.
 // Per-prompt results go to <eval-dir>/results/<split>/<label>.jsonl (private: they contain
 // paths); the printed summary contains only aggregates.
+//
+// Delivery variants: --hook uses the Claude hook's character limit; --strict its match gate;
+// --session drop leaves out files the agent already touched earlier in the session, and
+// --session skip attaches nothing when any file it would attach was already touched.
 //
 // The holdout split is for confirming a change already chosen on dev. Scoring it needs
 // --confirm-holdout, and every holdout run is appended to <eval-dir>/holdout-log.jsonl.
@@ -40,11 +45,13 @@ function interval(values, statistic, rounds = 4000) {
 const pct = x => `${(100 * x).toFixed(1)}%`
 const METRICS = {
   delivered: 'attached anything',
+  hitNew: 'an attached file was touched and was new to the session',
   hit: 'an attached file was touched',
   top1: 'top target was touched',
   hitWithHints: 'touched file among attached or hinted',
   recall: 'share of touched files attached',
-  precision: 'share of attached files touched (attached only)'
+  precision: 'share of attached files touched (attached only)',
+  redundant: 'share of attached files the session already had (attached only)'
 }
 
 function summarize(rows) {
@@ -52,11 +59,14 @@ function summarize(rows) {
   return {
     items: rows.length,
     delivered: mean(rows.map(row => +row.delivered)),
+    hitNew: mean(rows.map(row => +row.hitNew)),
     hit: mean(rows.map(row => +row.hit)),
     top1: mean(rows.map(row => +row.top1)),
     hitWithHints: mean(rows.map(row => +row.hitWithHints)),
     recall: mean(rows.map(row => row.recall)),
-    precision: mean(delivered.map(row => row.precision))
+    precision: mean(delivered.map(row => row.precision)),
+    redundant: mean(delivered.map(row => row.redundant)),
+    chars: sum(rows.map(row => row.chars))
   }
 }
 
@@ -65,11 +75,13 @@ if (args.includes('--compare')) {
   const [base, next] = [args[i + 1], args[i + 2]].map(label => new Map(readRows(path.join(resultsDir, `${label}.jsonl`)).map(row => [row.id, row])))
   const ids = [...base.keys()].filter(id => next.has(id))
   console.log(`${split}: ${args[i + 1]} -> ${args[i + 2]}, ${ids.length} paired prompts`)
-  for (const metric of ['delivered', 'hit', 'top1', 'hitWithHints', 'recall']) {
+  for (const metric of ['delivered', 'hitNew', 'hit', 'top1', 'hitWithHints', 'recall']) {
     const diffs = ids.map(id => +next.get(id)[metric] - +base.get(id)[metric])
     const [lo, hi] = interval(diffs, mean)
     console.log(`  ${metric.padEnd(13)} ${pct(mean(ids.map(id => +base.get(id)[metric])))} -> ${pct(mean(ids.map(id => +next.get(id)[metric])))}  diff ${(100 * mean(diffs)).toFixed(1)} pts [${(100 * lo).toFixed(1)}, ${(100 * hi).toFixed(1)}]`)
   }
+  const chars = rows => sum(rows.map(row => row.chars))
+  console.log(`  attached characters ${chars([...base.values()])} -> ${chars([...next.values()])}`)
   process.exit(0)
 }
 
@@ -86,21 +98,28 @@ process.env.STELLAR_CACHE_DIR = path.join(evalDir, 'stellar', 'cache')
 process.env.STELLAR_LOG_DIR = path.join(evalDir, 'stellar', 'logs')
 const { preflight } = await import('../../src/core/preflight.js')
 
+const session = flag('--session')
+if (session && !['drop', 'skip'].includes(session)) { console.error('--session drop|skip'); process.exit(2) }
+const variant = { ...(args.includes('--hook') ? { maxChars: 9800 } : {}), strict: args.includes('--strict') }
 const rows = []
 for (const item of items) {
-  const result = await preflight({ cwd: path.join(evalDir, 'repos', item.repo), prompt: item.prompt })
+  const seen = new Set(item.seenBefore ?? [])
+  let result = await preflight({ cwd: path.join(evalDir, 'repos', item.repo), prompt: item.prompt, ...variant, ...(session === 'drop' ? { seenFiles: item.seenBefore ?? [] } : {}) })
+  if (session === 'skip' && result.deliver && result.excerpts.some(excerpt => seen.has(excerpt.path))) result = { deliver: false, reason: 'continuing' }
   const attached = [...new Set((result.excerpts ?? []).map(excerpt => excerpt.path))]
   const hinted = result.hintPaths ?? []
   const touched = new Set(item.touched)
   const found = attached.filter(file => touched.has(file))
   rows.push({
-    id: item.id, repo: item.repo,
-    delivered: !!result.deliver, reason: result.reason ?? null,
+    id: item.id, repo: item.repo, followUp: seen.size > 0,
+    delivered: !!result.deliver, reason: result.reason ?? null, chars: result.chars ?? 0,
+    hitNew: found.some(file => !seen.has(file)),
     hit: found.length > 0,
     top1: touched.has(result.targets?.[0]),
     hitWithHints: found.length > 0 || hinted.some(file => touched.has(file)),
     recall: found.length / touched.size,
     precision: attached.length ? found.length / attached.length : 0,
+    redundant: attached.length ? attached.filter(file => seen.has(file)).length / attached.length : 0,
     attached, hinted
   })
 }
@@ -115,11 +134,16 @@ for (const [metric, description] of Object.entries(METRICS)) {
   const [lo, hi] = interval(base, sample => summarize(sample)[metric])
   console.log(`  ${metric.padEnd(13)} ${pct(pooled[metric]).padStart(6)} [${pct(lo)}, ${pct(hi)}]  ${description}`)
 }
-console.log('  per repository (items, delivered, hit, top1, recall):')
-for (const repo of [...new Set(rows.map(row => row.repo))].sort()) {
-  const s = summarize(rows.filter(row => row.repo === repo))
-  console.log(`    ${repo} ${String(s.items).padStart(4)}  ${pct(s.delivered).padStart(6)} ${pct(s.hit).padStart(6)} ${pct(s.top1).padStart(6)} ${pct(s.recall).padStart(6)}`)
+console.log(`  attached characters: ${pooled.chars}`)
+const table = (title, groups) => {
+  console.log(`  ${title} (items, delivered, hitNew, hit, top1, redundant):`)
+  for (const [name, group] of groups) {
+    const s = summarize(group)
+    console.log(`    ${name.padEnd(10)} ${String(s.items).padStart(4)}  ${pct(s.delivered).padStart(6)} ${pct(s.hitNew).padStart(6)} ${pct(s.hit).padStart(6)} ${pct(s.top1).padStart(6)} ${pct(s.redundant).padStart(6)}`)
+  }
 }
+table('per repository', [...new Set(rows.map(row => row.repo))].sort().map(repo => [repo, rows.filter(row => row.repo === repo)]))
+table('by conversation state', [['new', rows.filter(row => !row.followUp)], ['follow-up', rows.filter(row => row.followUp)]])
 const reasons = {}
 for (const row of rows) if (!row.delivered) reasons[row.reason] = (reasons[row.reason] ?? 0) + 1
 console.log('  not attached:', JSON.stringify(reasons))

@@ -12,6 +12,7 @@ What makes StellarCode save tokens is whether the code it returns is the code th
 
 - **Item**: a prompt the developer typed in a session whose working directory is inside the repository (or one of its `.claude/worktrees`). Slash commands, tool results, system messages and continuation summaries are excluded.
 - **Label**: the source files the agent read, edited or wrote in that turn, up to the next prompt (Read, Edit, Write, MultiEdit, and file paths in Bash commands), kept if the file exists in the clone and has a supported extension.
+- **Already seen**: the files the agent touched earlier in the same session (`seenBefore`), which are already in the conversation, and the prompt's position in the session (`turn`).
 - **Kept**: items that pass the prompt gate (not a command or short follow-up) and have at least one labeled file.
 
 `score.mjs <eval-dir> --label NAME` runs the `stellar preflight` lookup (the delivery benchmarks' context options, no character limit, no strict gate) on each item and compares the attached files with the label:
@@ -19,11 +20,17 @@ What makes StellarCode save tokens is whether the code it returns is the code th
 | Metric | Meaning |
 |---|---|
 | delivered | anything was attached |
+| **hitNew** | at least one attached file was touched **and was not already in the session** (primary) |
 | hit | at least one attached file was touched |
 | top1 | the top target was touched |
 | hitWithHints | a touched file is among the attached or hinted files |
 | recall | share of touched files that were attached |
 | precision | share of attached files that were touched (over delivered items) |
+| redundant | share of attached files the session already had (over delivered items) |
+
+`hit` counts a file the agent already read in an earlier turn; attaching it again only adds cache writes. `hitNew` counts only what the turn newly needed, so it is the primary metric. Results are also split into new conversations (nothing seen yet) and follow-ups.
+
+Delivery variants: `--hook` (the Claude hook's 9,800-character limit), `--strict` (its match gate), `--session drop` (leave out files already seen), `--session skip` (attach nothing when a file would repeat).
 
 `score.mjs <eval-dir> --compare BASE NEW` gives paired differences with a bootstrap interval over prompts.
 
@@ -43,7 +50,7 @@ What makes StellarCode save tokens is whether the code it returns is the code th
 | R10 | TypeScript game | holdout | 10 |
 | R11 | TypeScript MCP server | holdout | 19 |
 
-Dev: 309 items, sha256 `bf6b419d3e0cb24c6b7475bcebba5520154725cd51e6588a9852a76f0622c1c5`. Holdout: 156 items, sha256 `812a4f59b4585bed5931cb7972ed20629323d779e976608cde755a0a3c8f3f24`. Built 2026-11-16.
+Dev: 309 items, sha256 `bc4e23335008f0b435745a1683cb741138ab8659667af050f2d9c692a9dca8e5`. Holdout: 156 items, sha256 `be9aaeb0e023c65e4f1d8c59e5c3948d7570128b63ddc8c2bfc6ca3eb54c2aa4`. Built 2026-11-16 and rebuilt the same day with `--until 2026-11-16T08:52:14.782Z` to add `seenBefore` and `turn`: the same items, prompts and labels (checked item by item; the first files hashed `bf6b419d…` and `812a4f59…`).
 
 The first split had a 40-item holdout (five repositories never used before); it was rebalanced once, before anything was scored, to put three more repositories in the holdout. R01, R02, R04, R05, R06 and R03 were used in the hook gate analysis (`../v0.7/HOOK_GATE_RESULT.md`), which did not change ranking.
 
@@ -56,7 +63,8 @@ The first split had a 40-item holdout (five repositories never used before); it 
 | Metric | Value |
 |---|---|
 | delivered | 69.3% [64.1, 74.1] |
-| hit | **30.7%** [25.6, 35.9] |
+| hitNew | **18.4%** [14.2, 23.0] |
+| hit | 30.7% [25.6, 35.9] |
 | top1 | 16.8% [12.6, 21.0] |
 | hitWithHints | 37.9% [32.4, 43.0] |
 | recall | 10.9% [8.5, 13.6] |
@@ -69,6 +77,12 @@ The first split had a 40-item holdout (five repositories never used before); it 
 | R03 JavaScript | 15 | 73.3% | 60.0% | 40.0% | 11.8% |
 
 Not attached: 95 prompts, all `no-evidence`.
+
+By conversation state: new conversations (56) hitNew 42.9%; follow-ups (253) hitNew 13.0%, and 34% of the files attached in follow-ups were already in the session.
+
+## Results
+
+- `SESSION_AWARE_RESULT.md`: leaving out files the session already has (v0.8.2).
 
 ## Limits
 

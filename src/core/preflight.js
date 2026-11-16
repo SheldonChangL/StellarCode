@@ -63,6 +63,41 @@ export function namedInPrompt(prompt, { targets = [], paths = [] } = {}) {
   return [...names].filter(name => words.has(name))
 }
 
+// Files the agent already read, edited or wrote in this conversation, from the Claude Code
+// session transcript a hook receives (`transcript_path`): tool calls with a file path, and file
+// paths in shell commands. Returned project-relative; files outside `root` are ignored.
+// Measured on real sessions (validation/realprompt): leaving these out of the attachment kept
+// every useful file and cut the attached characters by a third.
+const FILE_TOOLS = new Set(['Read', 'Edit', 'Write', 'MultiEdit', 'NotebookEdit'])
+const PATH_IN_COMMAND = /[\w./~-]+\.[A-Za-z0-9]+\b/g
+export async function filesInTranscript(transcriptPath, root) {
+  const seen = new Set()
+  let text
+  try { text = await fs.readFile(transcriptPath, 'utf8') } catch { return seen }
+  // The transcript may name the project through a symlinked path (/tmp and /private/tmp on macOS).
+  const roots = [...new Set([root, await fs.realpath(root).catch(() => root)])]
+  const add = (candidate, cwd) => {
+    const absolute = path.resolve(cwd ?? root, String(candidate))
+    for (const base of roots) {
+      const relative = path.relative(base, absolute)
+      if (relative && !relative.startsWith('..') && !path.isAbsolute(relative)) { seen.add(relative.split(path.sep).join('/')); return }
+    }
+  }
+  for (const line of text.split('\n')) {
+    if (!line.includes('"tool_use"')) continue
+    let event
+    try { event = JSON.parse(line) } catch { continue }
+    if (event.type !== 'assistant' || !Array.isArray(event.message?.content)) continue
+    for (const part of event.message.content) {
+      if (part?.type !== 'tool_use') continue
+      const input = part.input ?? {}
+      if (FILE_TOOLS.has(part.name) && (input.file_path || input.notebook_path)) add(input.file_path ?? input.notebook_path, event.cwd)
+      if (part.name === 'Bash' && typeof input.command === 'string') for (const candidate of input.command.match(PATH_IN_COMMAND) ?? []) add(candidate, event.cwd)
+    }
+  }
+  return seen
+}
+
 function sessionFile(sessionId, dirs) {
   const name = crypto.createHash('sha256').update(String(sessionId)).digest('hex').slice(0, 32)
   return path.join((dirs ?? appDirectories()).cache, 'preflight', `${name}.json`)
@@ -92,7 +127,10 @@ async function writeDelivered(file, delivered) {
 //   guidance:  how the agent should treat the attachment.
 //   strict:    attach only on a strong match (see STRONG_MATCH_MIN_TERMS); otherwise the
 //              reason is 'weak-match'. Used for automatic delivery.
-export async function preflight({ cwd = process.cwd(), prompt, sessionId = null, dirs = null, maxBytes = DEFAULT_CONTEXT_BYTES, maxChars = null, guidance = `Do not run that command again. ${STELLAR_GUIDANCE}`, strict = false } = {}) {
+//   seenFiles: project-relative files the agent already has in this conversation; they are
+//              not attached again. Reason 'already-in-context' when nothing else is left.
+//   transcriptPath: a Claude Code session transcript to read seenFiles from.
+export async function preflight({ cwd = process.cwd(), prompt, sessionId = null, dirs = null, maxBytes = DEFAULT_CONTEXT_BYTES, maxChars = null, guidance = `Do not run that command again. ${STELLAR_GUIDANCE}`, strict = false, seenFiles = null, transcriptPath = null } = {}) {
   const gate = promptGate(prompt)
   if (gate) return { deliver: false, reason: gate }
   const root = await findProjectRoot(cwd)
@@ -105,11 +143,14 @@ export async function preflight({ cwd = process.cwd(), prompt, sessionId = null,
   // A host may cap what a hook can attach. The source budget is lowered until the whole
   // text fits, so the agent never receives a truncated excerpt.
   let budget = maxChars ? Math.min(maxBytes, Math.max(1024, maxChars - preamble.length - 1200)) : maxBytes
-  let context, envelope, text
+  const seen = seenFiles ? new Set(seenFiles) : transcriptPath ? await filesInTranscript(transcriptPath, root) : null
+  const unseen = items => (items ?? []).filter(item => !seen.has(item?.path))
+  let found, context, envelope, text
   for (let attempt = 0; ; attempt++) {
-    context = await contextForTask(root, String(prompt), { ...CONTEXT_OPTIONS, maxBytes: budget, ...(dirs ? { dirs } : {}) })
+    found = await contextForTask(root, String(prompt), { ...CONTEXT_OPTIONS, maxBytes: budget, ...(dirs ? { dirs } : {}) })
+    context = seen ? { ...found, targets: unseen(found.targets), relatedEvidence: unseen(found.relatedEvidence), relatedHints: unseen(found.relatedHints) } : found
     envelope = buildContextEnvelope(context, { snapshotCommit })
-    if (!envelope.excerpts.length) return { deliver: false, reason: 'no-evidence' }
+    if (!envelope.excerpts.length) return { deliver: false, reason: seen && buildContextEnvelope(found).excerpts.length ? 'already-in-context' : 'no-evidence' }
     text = `${preamble}\n\n${envelope.text}`
     if (!maxChars || text.length <= maxChars) break
     if (attempt >= 3 || budget <= 1024) return { deliver: false, reason: 'too-large' }
@@ -117,8 +158,11 @@ export async function preflight({ cwd = process.cwd(), prompt, sessionId = null,
   }
 
   if (strict) {
-    const terms = matchedTerms(context.targets)
-    const named = namedInPrompt(prompt, { targets: context.targets, paths: envelope.excerpts.map(excerpt => excerpt.path) })
+    // Match strength and naming belong to the query, so they are read from everything found,
+    // including files already seen; only what is attached is narrowed to unseen files.
+    const terms = matchedTerms(found.targets)
+    const foundPaths = [...(found.targets ?? []), ...(found.relatedEvidence ?? [])].map(item => item?.path).filter(Boolean)
+    const named = namedInPrompt(prompt, { targets: found.targets, paths: seen ? foundPaths : envelope.excerpts.map(excerpt => excerpt.path) })
     if (terms.size < STRONG_MATCH_MIN_TERMS || !named.length) return { deliver: false, reason: 'weak-match', matchedTerms: [...terms], named }
   }
 
