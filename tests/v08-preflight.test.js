@@ -227,8 +227,61 @@ test('v0.8.2 session-aware delivery: files the conversation already has are not 
     const fresh = JSON.parse(hook(null)).hookSpecificOutput.additionalContext
     const later = JSON.parse(hook(readOne)).hookSpecificOutput.additionalContext
     // Under the hook's limit the attachment is these two files; with both read there is nothing new.
-    assert.equal(hook(transcript), '')
+    // (Session hints are measured separately; off here.)
+    assert.equal(execFileSync(process.execPath, [BIN, 'preflight', '--hook', '--session-hints', 'off'], { input: JSON.stringify({ session_id: 't-2', cwd: w.repo, prompt: NAMED, transcript_path: transcript }), env, encoding: 'utf8' }), '')
+    // By default the hook then names what history ties to the files already read: paths only.
+    const hintsOnly = JSON.parse(execFileSync(process.execPath, [BIN, 'preflight', '--hook'], { input: JSON.stringify({ session_id: 't-3', cwd: w.repo, prompt: NAMED, transcript_path: transcript }), env, encoding: 'utf8' })).hookSpecificOutput.additionalContext
+    assert.match(hintsOnly, /changing together[^]*- src\/billing\/invoice\.js/)
+    assert.doesNotMatch(hintsOnly, /\[Source: /)
     assert.match(fresh, /\[Source: src\/auth\/throttle\.js/)
     assert.doesNotMatch(later, /\[Source: src\/auth\/throttle\.js/)
+  } finally { await w.cleanup() }
+})
+
+test('v0.8.3 session hints: files that changed together with the files a session already has', async () => {
+  const { coChangedFiles } = await import('../src/indexer/git.js')
+  const { SESSION_HINT_LIMIT } = await import('../src/core/preflight.js')
+  const w = await semanticRepo(REPO)
+  try {
+    const git = (...args) => execFileSync('git', ['-C', w.repo, ...args], { encoding: 'utf8' })
+    const commit = async (message, files) => {
+      for (const file of files) await fs.appendFile(path.join(w.repo, file), `// ${message}\n`)
+      git('add', '.'); git('commit', '-qm', message)
+    }
+    // failures.js changes with throttle.js twice, invoice.js once; notes.md is not source.
+    await fs.writeFile(path.join(w.repo, 'notes.md'), 'notes\n')
+    await commit('one', ['src/auth/throttle.js', 'src/auth/failures.js', 'notes.md'])
+    await commit('two', ['src/auth/throttle.js', 'src/auth/failures.js'])
+    await commit('three', ['src/auth/throttle.js', 'src/billing/invoice.js'])
+    await commit('alone', ['src/billing/invoice.js'])
+
+    // The fixture's first commit holds all three source files, so each pair starts at 1.
+    const tracked = file => file.startsWith('src/') || file === 'notes.md'
+    assert.deepEqual(await coChangedFiles(w.repo, ['src/auth/throttle.js'], { limit: 5, accept: tracked }), [
+      { path: 'src/auth/failures.js', score: 3 }, { path: 'src/billing/invoice.js', score: 2 }, { path: 'notes.md', score: 1 }])
+    assert.deepEqual(await coChangedFiles(w.repo, [], { limit: 5 }), [])
+    // A commit larger than the cap says nothing about what belongs together.
+    assert.deepEqual((await coChangedFiles(w.repo, ['src/auth/throttle.js'], { maxCommitFiles: 2 })).map(entry => entry.path), ['src/auth/failures.js', 'src/billing/invoice.js'])
+
+    // A follow-up with no lexical match still gets the hints, alone and once per session.
+    const vague = 'please keep going with what we discussed and tidy the remaining parts up'
+    const options = { cwd: w.repo, prompt: vague, dirs: w.dirs, strict: true, seenFiles: ['src/auth/throttle.js'], sessionHints: true, sessionId: 'hints' }
+    const first = await preflight(options)
+    assert.equal(first.deliver, true)
+    assert.equal(first.hintsOnly, true)
+    assert.deepEqual(first.sessionHints, ['src/auth/failures.js', 'src/billing/invoice.js'])
+    assert.ok(first.sessionHints.length <= SESSION_HINT_LIMIT)
+    assert.match(first.text, /NOT inspected source/)
+    assert.ok(!first.text.includes('notes.md') && !first.text.includes('[Source: '))
+    assert.equal((await preflight(options)).deliver, false)
+    // No seen files (a new conversation) or the option off: no hints.
+    assert.equal((await preflight({ ...options, sessionId: 'new', seenFiles: [] })).hintsOnly, undefined)
+    assert.equal((await preflight({ ...options, sessionId: 'off', sessionHints: false })).deliver, false)
+    // With source attached, the hints follow it and leave out files already attached.
+    const both = await preflight({ cwd: w.repo, prompt: 'How does invoiceTotal compute the invoice total for the billing invoice?', dirs: w.dirs, seenFiles: ['src/auth/throttle.js'], sessionHints: true })
+    assert.equal(both.hintsOnly, undefined)
+    assert.ok(both.excerpts.some(excerpt => excerpt.path === 'src/billing/invoice.js'))
+    assert.deepEqual(both.sessionHints, ['src/auth/failures.js'])
+    assert.ok(both.text.indexOf('changing together') > both.text.indexOf('</stellar-grounded-context>'))
   } finally { await w.cleanup() }
 })
