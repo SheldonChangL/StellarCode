@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 // Builds a retrieval evaluation set from a developer's own Claude Code sessions.
 //
-//   node validation/realprompt/extract.mjs <eval-dir>
+//   node validation/realprompt/extract.mjs <eval-dir> [--until ISO-TIME]
 //
 // <eval-dir>/repos.json lists the repositories ({ id, stack, path, split }). For each one this
 // clones the current HEAD into <eval-dir>/repos/<id>, indexes the clone with StellarCode (data
 // under <eval-dir>/stellar), and reads every session transcript in ~/.claude/projects whose
 // working directory is inside the repository. An item is a prompt the developer typed plus the
-// source files the agent read, edited or wrote in that turn, before the next prompt.
+// source files the agent read, edited or wrote in that turn, before the next prompt, and the
+// files it had already touched earlier in the same session (already in the conversation).
+// --until keeps only prompts typed up to that time, so a set can be rebuilt unchanged.
 //
 // Everything written stays in <eval-dir>: prompts are private session content and must never
 // be committed. The committed part is the method (this file, score.mjs) and aggregate results.
@@ -21,6 +23,8 @@ import { SUPPORTED_EXTENSIONS } from '../../src/core/constants.js'
 import { promptGate } from '../../src/core/preflight.js'
 
 const evalDir = path.resolve(process.argv[2] ?? '')
+const untilIndex = process.argv.indexOf('--until')
+const until = untilIndex > 0 ? process.argv[untilIndex + 1] : null
 if (!process.argv[2] || !fs.existsSync(path.join(evalDir, 'repos.json'))) {
   console.error('usage: extract.mjs <eval-dir>   (needs <eval-dir>/repos.json)')
   process.exit(2)
@@ -73,6 +77,8 @@ function sourceFile(candidate, cwd, checkout) {
 }
 
 const items = new Map()
+const sessionTouched = new Map()   // session id -> files touched so far in that session
+const sessionTurns = new Map()     // session id -> prompts seen so far in that session
 const projectsDir = path.join(home, '.claude', 'projects')
 for (const dir of fs.readdirSync(projectsDir)) {
   let files = []
@@ -86,10 +92,14 @@ for (const dir of fs.readdirSync(projectsDir)) {
       const text = promptText(event)
       if (text !== null) {
         const checkout = event.cwd ? checkoutOf(event.cwd) : null
-        if (!checkout) { current = null; continue }
+        if (!checkout || (until && event.timestamp && event.timestamp > until)) { current = null; continue }
+        const seen = sessionTouched.get(event.sessionId) ?? new Set()
+        sessionTouched.set(event.sessionId, seen)
+        const turn = sessionTurns.get(event.sessionId) ?? 0
+        sessionTurns.set(event.sessionId, turn + 1)
         const id = sha(`${event.sessionId}\n${text}`).slice(0, 16)
-        if (!items.has(id)) items.set(id, { id, repo: checkout.repo.id, split: checkout.repo.split, session: sha(String(event.sessionId)).slice(0, 16), timestamp: event.timestamp ?? null, prompt: text, touched: new Set(), edited: new Set() })
-        current = { item: items.get(id), checkout }
+        if (!items.has(id)) items.set(id, { id, repo: checkout.repo.id, split: checkout.repo.split, session: sha(String(event.sessionId)).slice(0, 16), timestamp: event.timestamp ?? null, turn, prompt: text, seenBefore: [...seen].sort(), touched: new Set(), edited: new Set() })
+        current = { item: items.get(id), checkout, seen }
         continue
       }
       if (!current || event.type !== 'assistant') continue
@@ -102,13 +112,14 @@ for (const dir of fs.readdirSync(projectsDir)) {
           const file = sourceFile(direct, cwd, current.checkout)
           if (file) {
             current.item.touched.add(file)
+            current.seen.add(file)
             if (['Edit', 'Write', 'MultiEdit', 'NotebookEdit'].includes(part.name)) current.item.edited.add(file)
           }
         }
         if (part.name === 'Bash' && typeof input.command === 'string') {
           for (const candidate of input.command.match(PATH_IN_COMMAND) ?? []) {
             const file = sourceFile(candidate, cwd, current.checkout)
-            if (file) current.item.touched.add(file)
+            if (file) { current.item.touched.add(file); current.seen.add(file) }
           }
         }
       }
@@ -128,7 +139,7 @@ for (const item of items.values()) {
   kept.push({ ...item, touched: [...item.touched].sort(), edited: [...item.edited].sort() })
 }
 kept.sort((a, b) => a.id.localeCompare(b.id))
-const manifest = { createdAt: new Date().toISOString(), repos: [], splits: {} }
+const manifest = { createdAt: new Date().toISOString(), until, repos: [], splits: {} }
 for (const split of ['dev', 'holdout']) {
   const rows = kept.filter(item => item.split === split)
   const text = rows.map(row => JSON.stringify(row)).join('\n') + '\n'
