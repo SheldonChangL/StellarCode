@@ -2,6 +2,12 @@
 
 Plan: `HOOK_PLAN.md` (pre-registered in `686a5de`, which is also the runtime). 192 runs, **0 failed**, `changedDuringCampaign=false` for all four campaigns. Model pinned to `claude-fable-5-2` and verified: every model event in the raw logs carries it (387, 455, 438 and 358 events). All 96 pairs are valid.
 
+## Correction (2026-11-16): the `prefetch` cost comparison
+
+This result compares the hook's cost (−3.1%) with `prefetch`'s −17.3% from `DELIVERY_RESULT.md`. That figure is mostly a cache artifact (see the correction there): on repetition 1, where no earlier run is in cache, `prefetch` lowers cost by 6.4% [2.3, 10.3] and the hook by 2.2% [−4.4, 8.5]. The two come from different campaigns and their intervals overlap, so the hook is not shown to keep less of the cost saving than `prefetch`.
+
+The hook's own cost numbers below are close to their repetition-1 values (the hook's attached context is not reused from cache across runs). On repetition 1, mac-kvm costs 18.4% more than `pull` [0.9, 36.5], from cache writes. Over both repetitions its `hook` runs read 3.25 files per run against 2.33 with `prefetch`, and re-read attached files 1.71 times per run against 0.92, with identical attached excerpts. Why this happens on Swift only is not known.
+
 ## Verdict against the pre-registered targets (`hook` vs `pull`)
 
 | Target | Result | Verdict |
