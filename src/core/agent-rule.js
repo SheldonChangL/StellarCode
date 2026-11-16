@@ -12,8 +12,11 @@ StellarCode metadata is navigation evidence, not source-of-truth. If the returne
 Do not answer from summaries, paths, symbol names, or related hints alone.
 `
 
-export async function installAgentRule(root) {
+// `ensure`: a file that must carry the rule even if it does not exist yet. Claude Code
+// reads CLAUDE.md, not AGENTS.md.
+export async function installAgentRule(root, { ensure = null } = {}) {
   const candidates = ['AGENTS.md', 'CLAUDE.md']
+  const existing = new Set()
   const installed = []
   let found = false
   for (const name of candidates) {
@@ -21,9 +24,11 @@ export async function installAgentRule(root) {
     try {
       const current = await fs.readFile(file, 'utf8')
       found = true
+      existing.add(name)
       let next
       if (current.includes('## StellarCode repository navigation')) {
-        next = current.replace(/\n?## StellarCode repository navigation\n[\s\S]*?(?=\n## |$)/g, `\n${AGENT_RULE.trimEnd()}`)
+        // Whitespace around the section is kept, so installing twice changes nothing.
+        next = current.replace(/(\n?)## StellarCode repository navigation\n[\s\S]*?(\n*)(?=\n## |$)/g, (match, lead, trail) => `${lead}${AGENT_RULE.trimEnd()}${trail}`)
         if (!next.endsWith('\n')) next += '\n'
       } else {
         next = `${current.trimEnd()}\n\n${AGENT_RULE}`
@@ -38,6 +43,11 @@ export async function installAgentRule(root) {
     const file = path.join(root, 'AGENTS.md')
     await fs.writeFile(file, AGENT_RULE)
     installed.push('AGENTS.md')
+    existing.add('AGENTS.md')
+  }
+  if (ensure && !existing.has(ensure)) {
+    await fs.writeFile(path.join(root, ensure), AGENT_RULE)
+    installed.push(ensure)
   }
   return installed
 }

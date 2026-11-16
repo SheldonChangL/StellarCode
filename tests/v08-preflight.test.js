@@ -102,3 +102,45 @@ test('v0.8 Claude Code hook: output shape, install and a hook that never fails',
     assert.equal(run(JSON.stringify({ cwd: w.base, prompt: QUESTION })), '')
   } finally { await w.cleanup() }
 })
+
+test('v0.8 --install-hook makes sure Claude Code reads the agent rule', async () => {
+  const { installAgentRule } = await import('../src/core/agent-rule.js')
+  const w = await semanticRepo(REPO)
+  try {
+    // Only AGENTS.md exists: Claude Code would never see the rule there.
+    await fs.writeFile(path.join(w.repo, 'AGENTS.md'), '# Rules\n')
+    assert.deepEqual(await installAgentRule(w.repo, { ensure: 'CLAUDE.md' }), ['AGENTS.md', 'CLAUDE.md'])
+    for (const name of ['AGENTS.md', 'CLAUDE.md']) assert.match(await fs.readFile(path.join(w.repo, name), 'utf8'), /<stellar-grounded-context>` block is already attached/)
+    // Idempotent, and an existing CLAUDE.md keeps its own content.
+    assert.deepEqual(await installAgentRule(w.repo, { ensure: 'CLAUDE.md' }), [])
+    await fs.appendFile(path.join(w.repo, 'CLAUDE.md'), '\n## House rules\nKeep it short.\n')
+    assert.deepEqual(await installAgentRule(w.repo, { ensure: 'CLAUDE.md' }), [])
+    const claude = await fs.readFile(path.join(w.repo, 'CLAUDE.md'), 'utf8')
+    assert.match(claude, /## House rules\nKeep it short\./)
+    assert.equal(claude.match(/## StellarCode repository navigation/g).length, 1)
+  } finally { await w.cleanup() }
+})
+
+test('v0.8 benchmark hook condition: product path, no context in the prompt', async () => {
+  const { benchmarkPrompt } = await import('../src/benchmark/agents.js')
+  const { parseBenchmarkModes } = await import('../src/benchmark/runner.js')
+  assert.deepEqual(parseBenchmarkModes('pull,hook'), ['pull', 'hook'])
+  // The shorthand for the v0.5.9 delivery experiment is unchanged.
+  assert.deepEqual(parseBenchmarkModes('delivery'), ['pull', 'prefetch', 'prefetch-contract'])
+  const prompt = benchmarkPrompt({ prompt: QUESTION }, 'hook')
+  assert.ok(prompt.includes(QUESTION))
+  assert.match(prompt, /## StellarCode repository navigation/)
+  assert.ok(!prompt.includes('Your first action must be'))
+  assert.ok(!prompt.includes('[Source: '))
+
+  const w = await semanticRepo(REPO)
+  try {
+    const env = { ...process.env, STELLAR_DATA_DIR: w.dirs.data, STELLAR_CACHE_DIR: w.dirs.cache, STELLAR_LOG_DIR: w.dirs.logs }
+    const attached = JSON.parse(execFileSync(process.execPath, [BIN, 'preflight', QUESTION, w.repo, '--claude', '--json'], { env, encoding: 'utf8' }))
+    assert.equal(attached.deliver, true)
+    assert.ok(attached.chars <= CLAUDE_HOOK_MAX_CHARS)
+    assert.equal(attached.excerpts[0].path, 'src/auth/throttle.js')
+    assert.deepEqual(Object.keys(attached.excerpts[0]).sort(), ['bytes', 'endLine', 'path', 'section', 'sha256', 'startLine'])
+    assert.equal(attached.sourceBytes, attached.excerpts.reduce((sum, e) => sum + e.bytes, 0))
+  } finally { await w.cleanup() }
+})

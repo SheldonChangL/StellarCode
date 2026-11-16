@@ -6,6 +6,7 @@ import { DEFAULT_CONTEXT_BYTES } from '../core/constants.js'
 
 import { completedEvidence, strings as flattenStrings } from './evidence.js'
 import { GROUNDING_CONTRACT } from './delivery.js'
+import { AGENT_RULE } from '../core/agent-rule.js'
 import { STELLAR_GUIDANCE } from '../core/context-envelope.js'
 
 function parseJsonLine(line) {
@@ -153,12 +154,19 @@ Benchmark condition: STELLAR. The output of the command stellar context ${JSON.s
 
 ${envelope}${contract}`
   }
+  // The product path: the context arrives through the hook, and the agent rule (which a
+  // project carries in CLAUDE.md) is the only StellarCode guidance in the prompt.
+  if (mode === 'hook') return `${common}
+
+Benchmark condition: STELLAR. This repository's project instructions include:
+
+${AGENT_RULE}`
   return `${common}
 
 Benchmark condition: STELLAR. Your first action must be exactly one command: stellar context ${JSON.stringify(task.prompt)} ${STELLAR_CONTEXT_FLAGS.join(' ')}. ${STELLAR_GUIDANCE}`
 }
 
-export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, onEvent, diagnosticDir, diagnostic = {}, envelope = null }) {
+export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, onEvent, diagnosticDir, diagnostic = {}, envelope = null, settingsFile = null }) {
   const prompt = benchmarkPrompt({ prompt: task.prompt }, mode, { envelope })
   const bin = agentBinary(agent, env)
   let args
@@ -175,6 +183,8 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
     args=['-p',prompt,'--output-format','stream-json','--verbose','--permission-mode','dontAsk','--allowedTools','Bash,Read,Grep,Glob','--setting-sources','','--strict-mcp-config','--mcp-config',emptyMcp]
     if (model) args.push('--model',model)
     if (maxTurns) args.push('--max-turns',String(maxTurns))
+    // Settings given on the command line still apply with every settings source switched off.
+    if (settingsFile) args.push('--settings',settingsFile)
   }
 
   const outputFiles=[]

@@ -54,7 +54,8 @@ async function writeDelivered(file, delivered) {
 }
 
 // Decides whether to attach context to `prompt`, asked from `cwd`.
-// Returns { deliver: false, reason } or { deliver: true, text, targets, sourceBytes, chars }.
+// Returns { deliver: false, reason } or
+// { deliver: true, text, targets, sourceBytes, chars, excerpts, hintPaths }.
 //   sessionId: when given, excerpts already delivered in the session are not sent again.
 //   maxChars:  hard limit on the returned text, for a host that caps what a hook may attach.
 //   guidance:  how the agent should treat the attachment.
@@ -90,7 +91,7 @@ export async function preflight({ cwd = process.cwd(), prompt, sessionId = null,
     for (const key of keys) delivered.add(key)
     await writeDelivered(file, delivered)
   }
-  return { deliver: true, text, targets: (context.targets ?? []).map(target => target.path), sourceBytes: envelope.sourceBytes, chars: text.length }
+  return { deliver: true, text, targets: (context.targets ?? []).map(target => target.path), sourceBytes: envelope.sourceBytes, chars: text.length, excerpts: envelope.excerpts, hintPaths: envelope.hintPaths }
 }
 
 // ---------------------------------------------------------------- Claude Code hook
