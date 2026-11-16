@@ -25,18 +25,19 @@ import { lintTaskSet } from './benchmark/tasklint.js'
 import { decomposeDiagnosticDirectory } from './benchmark/campaign.js'
 import { readJsonl } from './benchmark/report.js'
 import { installAgentRule, AGENT_RULE } from './core/agent-rule.js'
+import { preflight, claudeHookOutput, installClaudeHook, CLAUDE_HOOK_MAX_CHARS, claudeHookGuidance } from './core/preflight.js'
 import { appDirectories } from './platform/paths.js'
 import { projectSummaries, removeRegisteredProject, garbageCollect, reconcileProjects } from './storage/registry.js'
 import { StellarError } from './core/errors.js'
 import { traceCliResult } from './core/benchmark-trace.js'
 
 function help() {
-  console.log(`${VERSION_LABEL}\n\nUsage:\n  stellar init [path] [--dry-run] [--install-agent-rule]\n  stellar projects [--json]\n  stellar ui [--port 7432]\n  stellar scan [path] [--json]\n  stellar sync [path] [--json]\n  stellar status [path] [--project NAME_OR_ID] [--json]\n  stellar search <query> [path] [--project NAME_OR_ID] [--json]\n  stellar find <query> [path] [--project NAME_OR_ID] [--json]  # alias\n  stellar file <relative-path> [project-path] [--project NAME_OR_ID] [--json]\n  stellar symbol <query> [project-path] [--project NAME_OR_ID] [--json]\n  stellar related <path-or-symbol> [project-path] [--project NAME_OR_ID] [--json]\n  stellar impact <path-or-symbol> [project-path] [--project NAME_OR_ID] [--depth N] [--json]\n  stellar context <task> [project-path] [--compact] [--with-source] [--max-files N] [--max-lines N] [--max-bytes N] [--project NAME_OR_ID] [--json]\n  stellar source <relative-path> [project-path] [--project NAME_OR_ID] [--lines START:END] [--json]\n  stellar architecture [project-path] [--project NAME_OR_ID] [--json]\n  stellar remove <project> [--purge] [--json]\n  stellar gc [--purge-orphaned] [--json]\n  stellar mcp [project-path]\n  stellar serve [project-path] [--port 7432]  # legacy single-project when path is supplied; otherwise global UI\n  stellar agent-rule\n  stellar benchmark init [project-path] [--force]\n  stellar benchmark doctor [--agent claude|codex|all] [--json]\n  stellar benchmark run [project-path] --agent claude|codex [--mode both|delivery|baseline,stellar,stellar-lexical,pull,prefetch,prefetch-contract] [--task-ids ID,...] [--model MODEL] [--repeat N] [--limit N] [--tasks FILE] [--out DIR] [--keep-worktree-on-failure] [--json]\n  stellar benchmark report <baseline.jsonl> <stellar.jsonl> [--html FILE] [--json-out FILE]\n  stellar benchmark compare [NAME=]<report.json>... [--html FILE] [--json-out FILE]\n  stellar benchmark delivery-report [NAME=]<run-dir>... [--json-out FILE]\n  stellar benchmark semantic-slice [project-path] --tasks FILE [--json-out FILE]\n  stellar benchmark semantic-report [NAME=]<run-dir>... [--json-out FILE] [--md FILE]\n  stellar benchmark latency [project-path] --tasks FILE [--repeat N] [--json-out FILE]\n  stellar benchmark lint-tasks <tasks.json> [--repo PATH] [--commit REV] [--json]\n  stellar benchmark first-relevant <run-dir> [--json-out FILE]\n\nGlobal v0.5 workflow:\n  Run 'stellar init' once per repo. Then run 'stellar ui' from anywhere.\n`)
+  console.log(`${VERSION_LABEL}\n\nUsage:\n  stellar init [path] [--dry-run] [--install-agent-rule] [--install-hook]\n  stellar projects [--json]\n  stellar ui [--port 7432]\n  stellar scan [path] [--json]\n  stellar sync [path] [--json]\n  stellar status [path] [--project NAME_OR_ID] [--json]\n  stellar search <query> [path] [--project NAME_OR_ID] [--json]\n  stellar find <query> [path] [--project NAME_OR_ID] [--json]  # alias\n  stellar file <relative-path> [project-path] [--project NAME_OR_ID] [--json]\n  stellar symbol <query> [project-path] [--project NAME_OR_ID] [--json]\n  stellar related <path-or-symbol> [project-path] [--project NAME_OR_ID] [--json]\n  stellar impact <path-or-symbol> [project-path] [--project NAME_OR_ID] [--depth N] [--json]\n  stellar context <task> [project-path] [--compact] [--with-source] [--max-files N] [--max-lines N] [--max-bytes N] [--project NAME_OR_ID] [--json]\n  stellar preflight <task> [project-path] [--claude] [--guidance full|brief] [--json]   # the context a first turn would ask for\n  stellar preflight --hook [--guidance full|brief]    # Claude Code UserPromptSubmit hook (JSON on stdin)\n  stellar source <relative-path> [project-path] [--project NAME_OR_ID] [--lines START:END] [--json]\n  stellar architecture [project-path] [--project NAME_OR_ID] [--json]\n  stellar remove <project> [--purge] [--json]\n  stellar gc [--purge-orphaned] [--json]\n  stellar mcp [project-path]\n  stellar serve [project-path] [--port 7432]  # legacy single-project when path is supplied; otherwise global UI\n  stellar agent-rule\n  stellar benchmark init [project-path] [--force]\n  stellar benchmark doctor [--agent claude|codex|all] [--json]\n  stellar benchmark run [project-path] --agent claude|codex [--mode both|delivery|baseline,stellar,stellar-lexical,pull,prefetch,prefetch-contract] [--task-ids ID,...] [--model MODEL] [--repeat N] [--limit N] [--tasks FILE] [--out DIR] [--keep-worktree-on-failure] [--json]\n  stellar benchmark report <baseline.jsonl> <stellar.jsonl> [--html FILE] [--json-out FILE]\n  stellar benchmark compare [NAME=]<report.json>... [--html FILE] [--json-out FILE]\n  stellar benchmark delivery-report [NAME=]<run-dir>... [--json-out FILE]\n  stellar benchmark semantic-slice [project-path] --tasks FILE [--json-out FILE]\n  stellar benchmark semantic-report [NAME=]<run-dir>... [--json-out FILE] [--md FILE]\n  stellar benchmark latency [project-path] --tasks FILE [--repeat N] [--json-out FILE]\n  stellar benchmark lint-tasks <tasks.json> [--repo PATH] [--commit REV] [--json]\n  stellar benchmark first-relevant <run-dir> [--json-out FILE]\n\nGlobal v0.5 workflow:\n  Run 'stellar init' once per repo. Then run 'stellar ui' from anywhere.\n`)
 }
 
 function hasFlag(args, flag) { return args.includes(flag) }
 function flagValue(args, flag, fallback) { const i=args.indexOf(flag); return i>=0 && args[i+1] ? args[i+1] : fallback }
-function positional(args) { const out=[]; for(let i=0;i<args.length;i++){if(args[i].startsWith('--')){if(!['--json','--dry-run','--install-agent-rule','--purge','--purge-orphaned','--force','--keep-worktree-on-failure','--compact','--with-source'].includes(args[i]))i++;continue}out.push(args[i])} return out }
+function positional(args) { const out=[]; for(let i=0;i<args.length;i++){if(args[i].startsWith('--')){if(!['--json','--dry-run','--install-agent-rule','--install-hook','--hook','--claude','--purge','--purge-orphaned','--force','--keep-worktree-on-failure','--compact','--with-source'].includes(args[i]))i++;continue}out.push(args[i])} return out }
 function print(value, json = false, dense = false) {
   traceCliResult(process.argv[2], process.argv.slice(3), value)
   if (json && dense) console.log(JSON.stringify(value))
@@ -58,8 +59,10 @@ async function cmdInit(args) {
   const { db, registration } = await openProjectStore(root, result.metadata)
   db.close()
   let rules=[]
-  if (hasFlag(args, '--install-agent-rule')) rules = await installAgentRule(root)
-  console.log(`${result.created ? 'Initialized' : 'Already initialized'} StellarCode project\nProject: ${root}\nProject ID: ${result.metadata.projectId}\nIndex DB: ${registration.db_path}${rules.length?`\nAgent rule: ${rules.join(', ')}`:''}`)
+  // The hook attaches context to a prompt; the agent rule tells the agent what that block is.
+  if (hasFlag(args, '--install-agent-rule') || hasFlag(args, '--install-hook')) rules = await installAgentRule(root, { ensure: hasFlag(args, '--install-hook') ? 'CLAUDE.md' : null })
+  const hook = hasFlag(args, '--install-hook') ? await installClaudeHook(root) : null
+  console.log(`${result.created ? 'Initialized' : 'Already initialized'} StellarCode project\nProject: ${root}\nProject ID: ${result.metadata.projectId}\nIndex DB: ${registration.db_path}${rules.length?`\nAgent rule: ${rules.join(', ')}`:''}${hook?`\nClaude Code hook: ${hook.file}${hook.installed?'':' (already present)'}`:''}`)
 }
 
 async function cmdProjects(args) {
@@ -151,6 +154,22 @@ async function main() {
     const pos=positional(args); if(!pos[0])throw new StellarError('context requires a task string','USAGE',2)
     const root=await queryRoot(args,pos[1]??process.cwd())
     return print(await contextForTask(root,pos[0],{compact:hasFlag(args,'--compact'),depth:Number(flagValue(args,'--depth',0)),maxFiles:Number(flagValue(args,'--max-files',3)),maxLines:Number(flagValue(args,'--max-lines',300)),maxBytes:Number(flagValue(args,'--max-bytes',DEFAULT_CONTEXT_BYTES)),withSource:hasFlag(args,'--with-source')}),hasFlag(args,'--json'),hasFlag(args,'--compact'))
+  }
+  if (command === 'preflight') {
+    if (hasFlag(args, '--hook')) {
+      // A hook must never block or break the user's prompt: any failure attaches nothing.
+      try {
+        let input = ''
+        for await (const chunk of process.stdin) input += chunk
+        const event = JSON.parse(input)
+        process.stdout.write(claudeHookOutput(await preflight({ cwd: event.cwd ?? process.cwd(), prompt: event.prompt, sessionId: event.session_id ?? null, maxChars: CLAUDE_HOOK_MAX_CHARS, guidance: claudeHookGuidance(flagValue(args,'--guidance','full')) })))
+      } catch {}
+      return
+    }
+    const pos=positional(args); if(!pos[0])throw new StellarError('preflight requires a task string, or --hook','USAGE',2)
+    // --claude: exactly what the Claude Code hook would attach (character limit, short preamble).
+    const result=await preflight({ cwd: path.resolve(pos[1]??process.cwd()), prompt: pos[0], ...(hasFlag(args,'--claude') ? { maxChars: CLAUDE_HOOK_MAX_CHARS, guidance: claudeHookGuidance(flagValue(args,'--guidance','full')) } : {}) })
+    return hasFlag(args,'--json') ? print(result,true) : console.log(result.deliver ? result.text : `No context attached: ${result.reason}`)
   }
   if (command === 'source') {
     const pos=positional(args); if(!pos[0])throw new StellarError('source requires a project-relative path','USAGE',2)

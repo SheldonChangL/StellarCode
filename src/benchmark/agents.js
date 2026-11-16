@@ -6,6 +6,8 @@ import { DEFAULT_CONTEXT_BYTES } from '../core/constants.js'
 
 import { completedEvidence, strings as flattenStrings } from './evidence.js'
 import { GROUNDING_CONTRACT } from './delivery.js'
+import { AGENT_RULE } from '../core/agent-rule.js'
+import { STELLAR_GUIDANCE } from '../core/context-envelope.js'
 
 function parseJsonLine(line) {
   try { return JSON.parse(line) } catch { return null }
@@ -128,7 +130,6 @@ export async function commandVersion(agent, env = process.env) {
 export const STELLAR_CONTEXT_FLAGS = ['--compact', '--with-source', '--depth', '1', '--max-files', '6', '--max-lines', '160', '--max-bytes', String(DEFAULT_CONTEXT_BYTES), '--json']
 export function stellarContextArgs(prompt) { return ['context', String(prompt), ...STELLAR_CONTEXT_FLAGS] }
 
-const STELLAR_GUIDANCE = `Any item in targets or relatedEvidence with a "source" field contains repository source read live from the working tree, with line numbers, and counts as inspected source for that range. Do not re-read those same embedded ranges. relatedHints are navigation metadata only: never list a hinted file in the final answer unless you separately inspect its source. Paths, symbols, confidence values and relation metadata without source are never source-of-truth. If targets plus relatedEvidence cover every part the task asks about, answer immediately with no further tool calls. If a concrete part is still unsupported, inspect only the smallest relevant hinted file/range (stellar source <path> --lines START:END --json or your file reader), then answer. Do not answer from paths or symbol names alone. Do not fall back to broad find/tree/grep/rg unless the returned grounded evidence is clearly unrelated.`
 
 // The prompt is built from the task prompt and, for prefetch modes, the StellarCode
 // envelope only. Benchmark metadata (category, expected files, match mode) is never an
@@ -153,12 +154,19 @@ Benchmark condition: STELLAR. The output of the command stellar context ${JSON.s
 
 ${envelope}${contract}`
   }
+  // The product path: the context arrives through the hook, and the agent rule (which a
+  // project carries in CLAUDE.md) is the only StellarCode guidance in the prompt.
+  if (mode === 'hook' || mode === 'hook-brief') return `${common}
+
+Benchmark condition: STELLAR. This repository's project instructions include:
+
+${AGENT_RULE}`
   return `${common}
 
 Benchmark condition: STELLAR. Your first action must be exactly one command: stellar context ${JSON.stringify(task.prompt)} ${STELLAR_CONTEXT_FLAGS.join(' ')}. ${STELLAR_GUIDANCE}`
 }
 
-export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, onEvent, diagnosticDir, diagnostic = {}, envelope = null }) {
+export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, onEvent, diagnosticDir, diagnostic = {}, envelope = null, settingsFile = null }) {
   const prompt = benchmarkPrompt({ prompt: task.prompt }, mode, { envelope })
   const bin = agentBinary(agent, env)
   let args
@@ -175,6 +183,8 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
     args=['-p',prompt,'--output-format','stream-json','--verbose','--permission-mode','dontAsk','--allowedTools','Bash,Read,Grep,Glob','--setting-sources','','--strict-mcp-config','--mcp-config',emptyMcp]
     if (model) args.push('--model',model)
     if (maxTurns) args.push('--max-turns',String(maxTurns))
+    // Settings given on the command line still apply with every settings source switched off.
+    if (settingsFile) args.push('--settings',settingsFile)
   }
 
   const outputFiles=[]
