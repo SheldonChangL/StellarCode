@@ -4,7 +4,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { preflight, promptGate, claudeHookOutput, installClaudeHook, CLAUDE_HOOK_MAX_CHARS, CLAUDE_HOOK_GUIDANCE } from '../src/core/preflight.js'
+import { preflight, promptGate, claudeHookOutput, installClaudeHook, CLAUDE_HOOK_MAX_CHARS, CLAUDE_HOOK_GUIDANCE, matchedTerms, namedInPrompt } from '../src/core/preflight.js'
 import { semanticRepo } from './helpers-v06.js'
 
 // v0.8 first-turn delivery: the context an agent would ask for in its first turn is
@@ -18,6 +18,8 @@ const REPO = {
   'src/billing/invoice.js': body('invoiceTotal', 40)
 }
 const QUESTION = 'Where is the lockout duration computed after repeated login failures for an account?'
+// The same question naming the function: what the strict gate of the automatic hook needs.
+const NAMED = 'How does onLoginFailure use lockoutDuration and recordFailure to compute the lockout window after repeated login failures?'
 
 test('v0.8 prompt gate: commands and short follow-ups get no lookup', () => {
   assert.equal(promptGate(''), 'empty')
@@ -92,13 +94,18 @@ test('v0.8 Claude Code hook: output shape, install and a hook that never fails',
 
     const env = { ...process.env, STELLAR_DATA_DIR: w.dirs.data, STELLAR_CACHE_DIR: w.dirs.cache, STELLAR_LOG_DIR: w.dirs.logs }
     const run = input => execFileSync(process.execPath, [BIN, 'preflight', '--hook'], { input, env, encoding: 'utf8' })
-    const output = JSON.parse(run(JSON.stringify({ hook_event_name: 'UserPromptSubmit', session_id: 'cli', cwd: w.repo, prompt: QUESTION })))
+    const output = JSON.parse(run(JSON.stringify({ hook_event_name: 'UserPromptSubmit', session_id: 'cli', cwd: w.repo, prompt: NAMED })))
     assert.equal(output.hookSpecificOutput.hookEventName, 'UserPromptSubmit')
     assert.ok(output.hookSpecificOutput.additionalContext.length <= CLAUDE_HOOK_MAX_CHARS)
     assert.match(output.hookSpecificOutput.additionalContext, /src\/auth\/throttle\.js/)
     // Bad input, a prompt that needs no lookup and a directory outside any project print nothing and exit 0.
     assert.equal(run('not json'), '')
     assert.equal(run(JSON.stringify({ cwd: w.repo, prompt: 'yes go ahead' })), '')
+    // The automatic hook is strict: a prompt that names no attached file or symbol gets nothing,
+    // unless the gate is switched off.
+    assert.equal(run(JSON.stringify({ session_id: 'strict', cwd: w.repo, prompt: QUESTION })), '')
+    const loose = execFileSync(process.execPath, [BIN, 'preflight', '--hook', '--gate', 'any'], { input: JSON.stringify({ session_id: 'loose', cwd: w.repo, prompt: QUESTION }), env, encoding: 'utf8' })
+    assert.match(JSON.parse(loose).hookSpecificOutput.additionalContext, /src\/auth\/throttle\.js/)
     assert.equal(run(JSON.stringify({ cwd: w.base, prompt: QUESTION })), '')
   } finally { await w.cleanup() }
 })
@@ -126,6 +133,8 @@ test('v0.8 benchmark hook condition: product path, no context in the prompt', as
   const { parseBenchmarkModes } = await import('../src/benchmark/runner.js')
   assert.deepEqual(parseBenchmarkModes('pull,hook'), ['pull', 'hook'])
   assert.deepEqual(parseBenchmarkModes('hook-brief,hook'), ['hook-brief', 'hook'])
+  assert.deepEqual(parseBenchmarkModes('hook-any,hook'), ['hook-any', 'hook'])
+  assert.equal(benchmarkPrompt({ prompt: QUESTION }, 'hook-any'), benchmarkPrompt({ prompt: QUESTION }, 'hook'))
   assert.equal(benchmarkPrompt({ prompt: QUESTION }, 'hook-brief'), benchmarkPrompt({ prompt: QUESTION }, 'hook'))
   // The shorthand for the v0.5.9 delivery experiment is unchanged.
   assert.deepEqual(parseBenchmarkModes('delivery'), ['pull', 'prefetch', 'prefetch-contract'])
@@ -138,7 +147,9 @@ test('v0.8 benchmark hook condition: product path, no context in the prompt', as
   const w = await semanticRepo(REPO)
   try {
     const env = { ...process.env, STELLAR_DATA_DIR: w.dirs.data, STELLAR_CACHE_DIR: w.dirs.cache, STELLAR_LOG_DIR: w.dirs.logs }
-    const attached = JSON.parse(execFileSync(process.execPath, [BIN, 'preflight', QUESTION, w.repo, '--claude', '--json'], { env, encoding: 'utf8' }))
+    // --claude applies the hook's strict gate too, so it records what the hook would attach.
+    assert.equal(JSON.parse(execFileSync(process.execPath, [BIN, 'preflight', QUESTION, w.repo, '--claude', '--json'], { env, encoding: 'utf8' })).reason, 'weak-match')
+    const attached = JSON.parse(execFileSync(process.execPath, [BIN, 'preflight', NAMED, w.repo, '--claude', '--json'], { env, encoding: 'utf8' }))
     assert.equal(attached.deliver, true)
     assert.ok(attached.chars <= CLAUDE_HOOK_MAX_CHARS)
     assert.equal(attached.excerpts[0].path, 'src/auth/throttle.js')
@@ -146,8 +157,34 @@ test('v0.8 benchmark hook condition: product path, no context in the prompt', as
     assert.equal(attached.sourceBytes, attached.excerpts.reduce((sum, e) => sum + e.bytes, 0))
     // The hook carries the benchmarked guidance by default; the brief form is opt-in.
     assert.match(attached.text, /answer immediately with no further tool calls/)
-    const brief = JSON.parse(execFileSync(process.execPath, [BIN, 'preflight', QUESTION, w.repo, '--claude', '--guidance', 'brief', '--json'], { env, encoding: 'utf8' }))
+    const brief = JSON.parse(execFileSync(process.execPath, [BIN, 'preflight', NAMED, w.repo, '--claude', '--guidance', 'brief', '--json'], { env, encoding: 'utf8' }))
     assert.ok(!brief.text.includes('answer immediately with no further tool calls'))
     assert.ok(brief.chars <= CLAUDE_HOOK_MAX_CHARS)
+  } finally { await w.cleanup() }
+})
+
+test('v0.8.1 strict gate: attach only when the prompt names an attached file or symbol and matches enough terms', async () => {
+  const targets = [
+    { path: 'src/a.kt', symbol: 'DeviceService.bind', reason: 'name matches bind, device; body mentions error' },
+    { path: 'src/b.kt', symbol: 'Main', reason: 'uses AppError; body mentions commit' },
+    { path: 'src/c.kt', symbol: null, reason: 'Matches query terms: symbol match' }
+  ]
+  assert.deepEqual([...matchedTerms(targets)].sort(), ['bind', 'commit', 'device', 'error'])
+  assert.deepEqual(namedInPrompt('fix DeviceService bind when the device is busy', { targets, paths: ['src/a.kt', 'src/deviceRepository.kt'] }), ['bind'])
+  assert.deepEqual(namedInPrompt('commit these changes', { targets, paths: ['src/a.kt'] }), [])
+  assert.deepEqual(namedInPrompt('look at deviceRepository.kt', { targets: [], paths: ['src/deviceRepository.kt'] }), ['devicerepository'])
+
+  const w = await semanticRepo(REPO)
+  try {
+    // A conversational prompt that only shares common words with the code gets nothing.
+    const chore = await preflight({ cwd: w.repo, prompt: 'commit the login lockout account changes and push them', dirs: w.dirs, strict: true })
+    assert.equal(chore.deliver, false)
+    assert.equal(chore.reason, 'weak-match')
+    assert.equal((await preflight({ cwd: w.repo, prompt: QUESTION, dirs: w.dirs, strict: true })).reason, 'weak-match')
+    const named = await preflight({ cwd: w.repo, prompt: NAMED, dirs: w.dirs, strict: true })
+    assert.equal(named.deliver, true)
+    assert.equal(named.excerpts[0].path, 'src/auth/throttle.js')
+    // Without strict the old behavior holds: the manual command still answers any question.
+    assert.equal((await preflight({ cwd: w.repo, prompt: QUESTION, dirs: w.dirs })).deliver, true)
   } finally { await w.cleanup() }
 })

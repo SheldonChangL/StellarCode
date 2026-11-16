@@ -32,6 +32,37 @@ export function promptGate(prompt) {
   return null
 }
 
+// Whether the attachment is likely to be what the turn works on. Measured on 1,764 real
+// prompts from six repositories (validation/v0.7/HOOK_GATE_RESULT.md): most prompts that
+// pass promptGate are follow-ups, git and deployment chores or UI descriptions, and a lexical
+// match on a common word ("commit", "main", "google") attaches about 3,200 tokens the turn
+// never uses. Requiring the prompt to name an attached file or symbol, plus at least four
+// distinct matched terms, kept 26% of useful attachments and dropped about 90% of the rest.
+export const STRONG_MATCH_MIN_TERMS = 4
+const MATCH_REASON = /^\s*(?:name matches|body mentions)\s+(.+)$/
+
+// The query terms the targets matched, read from their reasons ("name matches a, b; body
+// mentions c"), as produced by the query service.
+export function matchedTerms(targets = []) {
+  const terms = new Set()
+  for (const target of targets) {
+    for (const part of String(target?.reason ?? '').split(';')) {
+      const match = part.match(MATCH_REASON)
+      if (match) for (const term of match[1].split(',')) if (term.trim()) terms.add(term.trim().toLowerCase())
+    }
+  }
+  return terms
+}
+
+// Attached file stems and target symbol names that the prompt names as a word.
+export function namedInPrompt(prompt, { targets = [], paths = [] } = {}) {
+  const words = new Set((String(prompt ?? '').match(/[A-Za-z_][A-Za-z0-9_]{2,}/g) ?? []).map(word => word.toLowerCase()))
+  const names = new Set()
+  for (const file of paths) names.add(path.posix.basename(file).replace(/\.[^.]*$/, '').toLowerCase())
+  for (const target of targets) if (target?.symbol) names.add(String(target.symbol).split('.').at(-1).toLowerCase())
+  return [...names].filter(name => words.has(name))
+}
+
 function sessionFile(sessionId, dirs) {
   const name = crypto.createHash('sha256').update(String(sessionId)).digest('hex').slice(0, 32)
   return path.join((dirs ?? appDirectories()).cache, 'preflight', `${name}.json`)
@@ -59,7 +90,9 @@ async function writeDelivered(file, delivered) {
 //   sessionId: when given, excerpts already delivered in the session are not sent again.
 //   maxChars:  hard limit on the returned text, for a host that caps what a hook may attach.
 //   guidance:  how the agent should treat the attachment.
-export async function preflight({ cwd = process.cwd(), prompt, sessionId = null, dirs = null, maxBytes = DEFAULT_CONTEXT_BYTES, maxChars = null, guidance = `Do not run that command again. ${STELLAR_GUIDANCE}` } = {}) {
+//   strict:    attach only on a strong match (see STRONG_MATCH_MIN_TERMS); otherwise the
+//              reason is 'weak-match'. Used for automatic delivery.
+export async function preflight({ cwd = process.cwd(), prompt, sessionId = null, dirs = null, maxBytes = DEFAULT_CONTEXT_BYTES, maxChars = null, guidance = `Do not run that command again. ${STELLAR_GUIDANCE}`, strict = false } = {}) {
   const gate = promptGate(prompt)
   if (gate) return { deliver: false, reason: gate }
   const root = await findProjectRoot(cwd)
@@ -81,6 +114,12 @@ export async function preflight({ cwd = process.cwd(), prompt, sessionId = null,
     if (!maxChars || text.length <= maxChars) break
     if (attempt >= 3 || budget <= 1024) return { deliver: false, reason: 'too-large' }
     budget = Math.max(1024, Math.floor(budget * 0.75))
+  }
+
+  if (strict) {
+    const terms = matchedTerms(context.targets)
+    const named = namedInPrompt(prompt, { targets: context.targets, paths: envelope.excerpts.map(excerpt => excerpt.path) })
+    if (terms.size < STRONG_MATCH_MIN_TERMS || !named.length) return { deliver: false, reason: 'weak-match', matchedTerms: [...terms], named }
   }
 
   const keys = envelope.excerpts.map(excerpt => `${excerpt.path}:${excerpt.startLine}-${excerpt.endLine}:${excerpt.sha256}`)
