@@ -125,6 +125,8 @@ test('v0.8 benchmark hook condition: product path, no context in the prompt', as
   const { benchmarkPrompt } = await import('../src/benchmark/agents.js')
   const { parseBenchmarkModes } = await import('../src/benchmark/runner.js')
   assert.deepEqual(parseBenchmarkModes('pull,hook'), ['pull', 'hook'])
+  assert.deepEqual(parseBenchmarkModes('hook-brief,hook'), ['hook-brief', 'hook'])
+  assert.equal(benchmarkPrompt({ prompt: QUESTION }, 'hook-brief'), benchmarkPrompt({ prompt: QUESTION }, 'hook'))
   // The shorthand for the v0.5.9 delivery experiment is unchanged.
   assert.deepEqual(parseBenchmarkModes('delivery'), ['pull', 'prefetch', 'prefetch-contract'])
   const prompt = benchmarkPrompt({ prompt: QUESTION }, 'hook')
@@ -142,5 +144,10 @@ test('v0.8 benchmark hook condition: product path, no context in the prompt', as
     assert.equal(attached.excerpts[0].path, 'src/auth/throttle.js')
     assert.deepEqual(Object.keys(attached.excerpts[0]).sort(), ['bytes', 'endLine', 'path', 'section', 'sha256', 'startLine'])
     assert.equal(attached.sourceBytes, attached.excerpts.reduce((sum, e) => sum + e.bytes, 0))
+    // The hook carries the benchmarked guidance by default; the brief form is opt-in.
+    assert.match(attached.text, /answer immediately with no further tool calls/)
+    const brief = JSON.parse(execFileSync(process.execPath, [BIN, 'preflight', QUESTION, w.repo, '--claude', '--guidance', 'brief', '--json'], { env, encoding: 'utf8' }))
+    assert.ok(!brief.text.includes('answer immediately with no further tool calls'))
+    assert.ok(brief.chars <= CLAUDE_HOOK_MAX_CHARS)
   } finally { await w.cleanup() }
 })

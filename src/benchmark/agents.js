@@ -156,7 +156,7 @@ ${envelope}${contract}`
   }
   // The product path: the context arrives through the hook, and the agent rule (which a
   // project carries in CLAUDE.md) is the only StellarCode guidance in the prompt.
-  if (mode === 'hook') return `${common}
+  if (mode === 'hook' || mode === 'hook-brief') return `${common}
 
 Benchmark condition: STELLAR. This repository's project instructions include:
 

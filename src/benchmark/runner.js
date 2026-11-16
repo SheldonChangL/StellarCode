@@ -10,7 +10,7 @@ import { loadBenchmarkTasks, benchmarkConfigPath } from './tasks.js'
 import { StellarError } from '../core/errors.js'
 import { sourceCoverage, completedEvidence } from './evidence.js'
 import { stellarContextArgs } from './agents.js'
-import { DELIVERY_MODES, PREFETCH_MODES, HOOK_MODE, latinSquareOrder, buildContextEnvelope, deliveryMetrics } from './delivery.js'
+import { DELIVERY_MODES, PREFETCH_MODES, HOOK_MODES, latinSquareOrder, buildContextEnvelope, deliveryMetrics } from './delivery.js'
 import { classifyIntent } from '../query/intent.js'
 import { runtimeFingerprint, fileSha256, latencyDecomposition, repositoryIdentity } from './campaign.js'
 
@@ -129,7 +129,7 @@ export async function benchmarkDoctor({agents=['claude','codex'],env=process.env
 
 // `stellar-lexical` is the v0.6 comparison condition: the same runtime, index and prompt
 // as `stellar`, with the semantic slice switched off inside the stellar shim.
-export const BENCHMARK_CONDITIONS = ['baseline', 'stellar', 'stellar-lexical', ...DELIVERY_MODES, HOOK_MODE]
+export const BENCHMARK_CONDITIONS = ['baseline', 'stellar', 'stellar-lexical', ...DELIVERY_MODES, ...HOOK_MODES.keys()]
 
 // --mode both | delivery | a condition | a comma-separated list of conditions.
 export function parseBenchmarkModes(mode) {
@@ -230,10 +230,11 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
           // Hook: the agent CLI runs the product hook itself. The runner only records what the
           // hook will attach (the same deterministic call) and points the CLI at the hook.
           let settingsFile=null
-          if(condition===HOOK_MODE) {
+          if(HOOK_MODES.has(condition)) {
+            const guidanceArgs=HOOK_MODES.get(condition)
             if(agent!=='claude')throw new StellarError('--mode hook needs --agent claude: the hook is a Claude Code hook','USAGE',2)
             const t0=performance.now()
-            const [file,fileArgs,fileEnv]=shimCall(stellarExecutable,stellarBin,condition,['preflight',task.prompt,'--claude','--json'],childEnv)
+            const [file,fileArgs,fileEnv]=shimCall(stellarExecutable,stellarBin,condition,['preflight',task.prompt,'--claude',...guidanceArgs,'--json'],childEnv)
             const {stdout}=await execFileAsync(file,fileArgs,{cwd:worktree,env:fileEnv,maxBuffer:64*1024*1024})
             const attached=JSON.parse(stdout)
             if(attached.deliver) {
@@ -241,7 +242,7 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
               prefetch={envelope:{text:attached.text,excerpts:attached.excerpts,hintPaths:attached.hintPaths,topTarget:attached.targets[0]??null,sourceBytes:attached.sourceBytes,payloadBytes:Buffer.byteLength(attached.text)},localMs:Math.round(performance.now()-t0),reads,discovered:[...new Set([...attached.excerpts.map(e=>e.path),...attached.hintPaths])]}
               await fs.writeFile(path.join(diagnosticDir,'prefetch-envelope.txt'),attached.text)
             }
-            settingsFile=await writeHookSettings(diagnosticDir,task.prompt,shimCall(stellarExecutable,stellarBin,condition,['preflight','--hook'],childEnv))
+            settingsFile=await writeHookSettings(diagnosticDir,task.prompt,shimCall(stellarExecutable,stellarBin,condition,['preflight','--hook',...guidanceArgs],childEnv))
           }
           onProgress?.({phase:'start',task:task.id,mode:condition,repetition:r,completed,total})
           const result=await runAgent({agent,task:{prompt:task.prompt},mode:condition,cwd:worktree,env:childEnv,model,maxTurns:task.maxTurns,diagnosticDir,envelope:PREFETCH_MODES.has(condition)?prefetch?.envelope.text??null:null,settingsFile,diagnostic:{mode:condition,taskId:task.id,agentVersion:agentInfo.version,stellarExecutable,projectRoot,worktreeRoot:worktree,...preflight,snapshot}})
@@ -265,7 +266,7 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
           // recorded next to the author's category to measure classification accuracy later.
           const classifiedIntent=classifyIntent(task.prompt).intent
           const delivery=condition==='baseline'?{}:deliveryMetrics({condition,result,prefetch,expectedFiles:task.expectedFiles,answerFiles:answer.answerFiles??[]})
-          const hook=condition===HOOK_MODE?await hookDelivery(diagnosticDir):{}
+          const hook=HOOK_MODES.has(condition)?await hookDelivery(diagnosticDir):{}
           const row={
             schemaVersion:4,taskId:task.id,repetition:r,category:task.category,categorySource:task.categorySource,benchmarkCategory:task.category,classifiedIntent,mode:condition,agent,agentVersion:agentInfo.version,model:model??null,signal:result.signal??null,
             projectCommit:commit,projectDirtyCount:dirty,exitCode:result.exitCode,durationMs:result.durationMs,firstRelevantMs,firstRelevantSourceMs:firstRelevantMs,...latency,

@@ -15,6 +15,8 @@ export const PREFETCH_MODES = new Set(['prefetch', 'prefetch-contract'])
 // hook: the product path. The agent CLI runs the real `stellar preflight --hook` through a
 // UserPromptSubmit hook, with the host's size limit; the prompt carries no context.
 export const HOOK_MODE = 'hook'
+// hook-brief: the same path with the hook's brief guidance, to measure what the guidance is worth.
+export const HOOK_MODES = new Map([['hook', []], ['hook-brief', ['--guidance', 'brief']]])
 
 // Deterministic Latin-square order: repetition r runs the condition list rotated by r-1,
 // so every condition takes every position equally often across repetitions.

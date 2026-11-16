@@ -100,9 +100,12 @@ const HOOK_COMMAND = 'stellar preflight --hook'
 // Claude Code caps a hook's added context at 10,000 characters; longer output is replaced
 // by a file path and a 2,000-character preview, which would cost the turn this saves.
 export const CLAUDE_HOOK_MAX_CHARS = 9800
-// The full guidance lives in the agent rule (AGENTS.md / CLAUDE.md); the hook only says what
-// the attachment is, to leave the character budget to source.
-export const CLAUDE_HOOK_GUIDANCE = 'Do not run that command again. Source in it is repository source read live from the working tree and counts as inspected for those line ranges; related hints are not inspected source. Read further only what it does not cover.'
+// What the hook tells the agent about the attachment. The full guidance is the one the
+// delivery benchmarks used, including when to answer without further tool calls; it takes
+// about 670 characters of the budget from source. The brief form leaves that to the agent rule.
+export const CLAUDE_HOOK_GUIDANCE = `Do not run that command again. ${STELLAR_GUIDANCE}`
+export const CLAUDE_HOOK_GUIDANCE_BRIEF = 'Do not run that command again. Source in it is repository source read live from the working tree and counts as inspected for those line ranges; related hints are not inspected source. Read further only what it does not cover.'
+export const claudeHookGuidance = name => (name === 'brief' ? CLAUDE_HOOK_GUIDANCE_BRIEF : CLAUDE_HOOK_GUIDANCE)
 
 // Output of a Claude Code UserPromptSubmit hook: context to add, or nothing.
 export function claudeHookOutput(result) {
