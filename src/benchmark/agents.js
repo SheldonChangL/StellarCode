@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto'
 import { DEFAULT_CONTEXT_BYTES } from '../core/constants.js'
 
 import { completedEvidence, strings as flattenStrings } from './evidence.js'
-import { GROUNDING_CONTRACT } from './delivery.js'
+import { GROUNDING_CONTRACT, HOOK_MODES } from './delivery.js'
 import { AGENT_RULE } from '../core/agent-rule.js'
 import { STELLAR_GUIDANCE } from '../core/context-envelope.js'
 
@@ -157,7 +157,7 @@ ${envelope}${contract}`
   }
   // The product path: the context arrives through the hook, and the agent rule (which a
   // project carries in CLAUDE.md) is the only StellarCode guidance in the prompt.
-  if (mode === 'hook' || mode === 'hook-brief') return `${common}
+  if (HOOK_MODES.has(mode)) return `${common}
 
 Benchmark condition: STELLAR. This repository's project instructions include:
 
