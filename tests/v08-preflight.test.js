@@ -231,7 +231,7 @@ test('v0.8.2 session-aware delivery: files the conversation already has are not 
     assert.equal(execFileSync(process.execPath, [BIN, 'preflight', '--hook', '--session-hints', 'off'], { input: JSON.stringify({ session_id: 't-2', cwd: w.repo, prompt: NAMED, transcript_path: transcript }), env, encoding: 'utf8' }), '')
     // By default the hook then names what history ties to the files already read: paths only.
     const hintsOnly = JSON.parse(execFileSync(process.execPath, [BIN, 'preflight', '--hook'], { input: JSON.stringify({ session_id: 't-3', cwd: w.repo, prompt: NAMED, transcript_path: transcript }), env, encoding: 'utf8' })).hookSpecificOutput.additionalContext
-    assert.match(hintsOnly, /changing together[^]*- src\/billing\/invoice\.js/)
+    assert.match(hintsOnly, /by git history or imports[^]*- src\/billing\/invoice\.js/)
     assert.doesNotMatch(hintsOnly, /\[Source: /)
     assert.match(fresh, /\[Source: src\/auth\/throttle\.js/)
     assert.doesNotMatch(later, /\[Source: src\/auth\/throttle\.js/)
@@ -282,6 +282,34 @@ test('v0.8.3 session hints: files that changed together with the files a session
     assert.equal(both.hintsOnly, undefined)
     assert.ok(both.excerpts.some(excerpt => excerpt.path === 'src/billing/invoice.js'))
     assert.deepEqual(both.sessionHints, ['src/auth/failures.js'])
-    assert.ok(both.text.indexOf('changing together') > both.text.indexOf('</stellar-grounded-context>'))
+    assert.ok(both.text.indexOf('by git history or imports') > both.text.indexOf('</stellar-grounded-context>'))
+  } finally { await w.cleanup() }
+})
+
+test('v0.8.4 session hints from the dependency graph, interleaved with git co-change', async () => {
+  const { dependencyNeighbors } = await import('../src/query/query-service.js')
+  const { filesAt } = await import('../src/indexer/git.js')
+  const w = await semanticRepo(REPO)
+  try {
+    // throttle.js imports failures.js: each is the other's neighbor; invoice.js is unrelated.
+    assert.deepEqual(await dependencyNeighbors(w.repo, ['src/auth/throttle.js'], { dirs: w.dirs }), [{ path: 'src/auth/failures.js', score: 1 }])
+    assert.deepEqual(await dependencyNeighbors(w.repo, ['src/auth/failures.js'], { dirs: w.dirs }), [{ path: 'src/auth/throttle.js', score: 1 }])
+    assert.deepEqual(await dependencyNeighbors(w.repo, ['src/auth/throttle.js'], { dirs: w.dirs, accept: file => !file.includes('failures') }), [])
+    assert.deepEqual(await dependencyNeighbors(w.repo, ['missing.js'], { dirs: w.dirs }), [])
+
+    const vague = 'please keep going with what we discussed and tidy the remaining parts up'
+    const hintsFor = async (sessionHints, sessionId) => (await preflight({ cwd: w.repo, prompt: vague, dirs: w.dirs, seenFiles: ['src/auth/throttle.js'], sessionHints, sessionId })).sessionHints
+    // Co-change names both other files (the fixture commits them together); imports only one.
+    assert.deepEqual(await hintsFor({ source: 'deps' }, 'deps'), ['src/auth/failures.js'])
+    assert.deepEqual(await hintsFor({ source: 'cochange' }, 'cochange'), ['src/auth/failures.js', 'src/billing/invoice.js'])
+    assert.deepEqual(await hintsFor(true, 'default'), ['src/auth/failures.js', 'src/billing/invoice.js'])
+    assert.deepEqual(await hintsFor({ limit: 1 }, 'limit'), ['src/auth/failures.js'])
+    const deps = await preflight({ cwd: w.repo, prompt: vague, dirs: w.dirs, seenFiles: ['src/auth/throttle.js'], sessionHints: { source: 'deps' } })
+    assert.match(deps.text, /import, or are imported by/)
+
+    // For evaluation, a candidate must have existed at the prompt's time.
+    assert.equal(await filesAt(w.repo, '2000-01-01T00:00:00Z'), null)
+    assert.ok((await filesAt(w.repo, new Date(Date.now() + 86400000).toISOString())).has('src/auth/throttle.js'))
+    assert.equal((await preflight({ cwd: w.repo, prompt: vague, dirs: w.dirs, seenFiles: ['src/auth/throttle.js'], sessionHints: { before: '2000-01-01T00:00:00Z' } })).deliver, false)
   } finally { await w.cleanup() }
 })

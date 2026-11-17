@@ -228,6 +228,38 @@ export async function related(projectPath, target, options = {}) {
   }, options)
 }
 
+// Files linked to the given files by the dependency graph: imports and tests in either
+// direction, and symbol references in either direction. Each candidate scores the number of
+// given files it is linked to; ties go to the more important file. Paths only.
+export async function dependencyNeighbors(projectPath, files, options = {}) {
+  const limit = Math.min(Math.max(Number(options.limit ?? 3), 1), 50)
+  return withFreshProjectDb(projectPath, async ({ db }) => {
+    const byPath = db.prepare('SELECT file_id,path,importance FROM files WHERE path=?')
+    const fileEdges = db.prepare(`SELECT f.path,f.importance FROM edges e JOIN files f ON f.file_id=e.target_id
+      WHERE e.source_id=? AND e.edge_type IN ('imports','tests')
+      UNION SELECT f.path,f.importance FROM edges e JOIN files f ON f.file_id=e.source_id
+      WHERE e.target_id=? AND e.edge_type IN ('imports','tests')
+      UNION SELECT f.path,f.importance FROM edges e JOIN symbols s ON s.symbol_id=e.target_id JOIN files f ON f.file_id=s.file_id
+      WHERE e.source_id=? AND e.edge_type='references'
+      UNION SELECT f.path,f.importance FROM edges e JOIN symbols s ON s.symbol_id=e.target_id JOIN files f ON f.file_id=e.source_id
+      WHERE s.file_id=? AND e.edge_type='references'`)
+    const given = new Set(files)
+    const scores = new Map()
+    for (const file of given) {
+      const row = byPath.get(file)
+      if (!row) continue
+      for (const neighbor of fileEdges.all(row.file_id, row.file_id, row.file_id, row.file_id)) {
+        if (given.has(neighbor.path) || (options.accept && !options.accept(neighbor.path))) continue
+        const entry = scores.get(neighbor.path) ?? { path: neighbor.path, score: 0, importance: neighbor.importance ?? 0 }
+        entry.score++
+        scores.set(neighbor.path, entry)
+      }
+    }
+    return [...scores.values()].sort((a, b) => b.score - a.score || b.importance - a.importance || a.path.localeCompare(b.path))
+      .slice(0, limit).map(({ path: file, score }) => ({ path: file, score }))
+  }, options)
+}
+
 export async function impact(projectPath, target, options = {}) {
   const maxDepth = Math.min(Number(options.depth ?? 3), 6)
   const limit = Math.min(Number(options.limit ?? 50), 200)

@@ -31,7 +31,7 @@ What makes StellarCode save tokens is whether the code it returns is the code th
 
 `hit` counts a file the agent already read in an earlier turn; attaching it again only adds cache writes. `hitNew` counts only what the turn newly needed, so it is the primary metric. Results are also split into new conversations (nothing seen yet) and follow-ups.
 
-Delivery variants: `--hook` (the Claude hook's 9,800-character limit), `--strict` (its match gate), `--session drop` (leave out files already seen), `--session skip` (attach nothing when a file would repeat), `--hints` (session hints from git history; replays each session in order).
+Delivery variants: `--hook` (the Claude hook's 9,800-character limit), `--strict` (its match gate), `--session drop` (leave out files already seen), `--session skip` (attach nothing when a file would repeat), `--hints` (session hints from git history and the dependency graph; `--hint-source`, `--hint-limit`; replays each session in order).
 
 `score.mjs <eval-dir> --compare BASE NEW` gives paired differences with a bootstrap interval over prompts.
 
@@ -85,6 +85,7 @@ By conversation state: new conversations (56) hitNew 42.9%; follow-ups (253) hit
 
 - `SESSION_AWARE_RESULT.md`: leaving out files the session already has (v0.8.2).
 - `SESSION_HINTS_RESULT.md`: miss diagnosis, and hints from git history for follow-ups (v0.8.3).
+- `DEPENDENCY_HINTS_RESULT.md`: hints from the dependency graph as well, up to five (v0.8.4).
 
 ## Limits
 

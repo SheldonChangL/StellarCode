@@ -3,8 +3,8 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 import { findProjectRoot } from './project.js'
 import { buildContextEnvelope, STELLAR_GUIDANCE } from './context-envelope.js'
-import { contextForTask } from '../query/query-service.js'
-import { gitHead, coChangedFiles } from '../indexer/git.js'
+import { contextForTask, dependencyNeighbors } from '../query/query-service.js'
+import { gitHead, coChangedFiles, filesAt } from '../indexer/git.js'
 import { appDirectories } from '../platform/paths.js'
 import { DEFAULT_CONTEXT_BYTES, SUPPORTED_EXTENSIONS } from './constants.js'
 
@@ -131,35 +131,58 @@ async function writeDelivered(file, delivered) {
 //              not attached again. Reason 'already-in-context' when nothing else is left.
 //   transcriptPath: a Claude Code session transcript to read seenFiles from.
 //   sessionHints: in a follow-up (seen files known), also name up to SESSION_HINT_LIMIT files
-//              that git history shows changing together with the seen files, once per
+//              linked to the seen files (git co-change, dependency graph), once per
 //              session. They are paths only; when no source is attached they are sent alone
-//              (result.hintsOnly). `{ before }` limits history, for evaluation.
+//              (result.hintsOnly). `{ source }` picks the hint source: 'both' (default:
+//              git history and dependency graph interleaved), 'cochange' or 'deps';
+//              `{ limit }` overrides SESSION_HINT_LIMIT. `{ before }` limits
+//              history and candidates to that time, for evaluation.
 export async function preflight(options = {}) {
   const state = {}
   const result = await sourceAttachment(options, state)
   return options.sessionHints && state.seen?.size ? withSessionHints(result, state, options) : result
 }
 
-export const SESSION_HINT_LIMIT = 3
-const SESSION_HINT_HEADER = 'Files that git history shows changing together with files already in this conversation (navigation hints only; NOT inspected source):'
+export const SESSION_HINT_LIMIT = 5
+export const SESSION_HINT_SOURCES = ['cochange', 'deps', 'both']
+const SESSION_HINT_HEADERS = {
+  cochange: 'Files that git history shows changing together with files already in this conversation (navigation hints only; NOT inspected source):',
+  deps: 'Files that import, or are imported by, files already in this conversation (navigation hints only; NOT inspected source):',
+  both: 'Files linked to files already in this conversation by git history or imports (navigation hints only; NOT inspected source):'
+}
+
+// Ranked candidates from one source, or both interleaved (co-change first).
+async function hintCandidates(root, seen, { source, before, limit, dirs }) {
+  const accept = candidate => SUPPORTED_EXTENSIONS.has(path.extname(candidate))
+  const cochange = source === 'deps' ? [] : await coChangedFiles(root, seen, { limit, before, accept })
+  const deps = source === 'cochange' ? [] : await dependencyNeighbors(root, seen, { limit, accept, ...(dirs ? { dirs } : {}) })
+  const merged = []
+  for (let i = 0; i < Math.max(cochange.length, deps.length); i++) for (const list of [cochange, deps]) if (list[i] && !merged.includes(list[i].path)) merged.push(list[i].path)
+  return merged
+}
 
 async function withSessionHints(result, { root, seen }, { sessionId = null, dirs = null, maxChars = null, sessionHints }) {
   const shown = new Set([...(result.excerpts ?? []).map(excerpt => excerpt.path), ...(result.hintPaths ?? [])])
   const file = sessionId ? sessionFile(sessionId, dirs) : null
   const delivered = file ? await readDelivered(file) : new Set()
-  const exists = async candidate => { try { return (await fs.stat(path.join(root, candidate))).isFile() } catch { return false } }
-  const candidates = await coChangedFiles(root, [...seen], { limit: SESSION_HINT_LIMIT + shown.size + 8, before: sessionHints?.before ?? null, accept: candidate => SUPPORTED_EXTENSIONS.has(path.extname(candidate)) })
-  // The strongest SESSION_HINT_LIMIT candidates are the hints; one already given in this
+  const source = SESSION_HINT_SOURCES.includes(sessionHints?.source) ? sessionHints.source : 'both'
+  const before = sessionHints?.before ?? null
+  // With `before` (evaluation), a candidate must also have existed at that time.
+  const tracked = before ? (await filesAt(root, before)) ?? new Set() : null
+  const exists = async candidate => { if (tracked && !tracked.has(candidate)) return false; try { return (await fs.stat(path.join(root, candidate))).isFile() } catch { return false } }
+  const hintLimit = sessionHints?.limit ?? SESSION_HINT_LIMIT
+  const candidates = await hintCandidates(root, [...seen], { source, before, limit: hintLimit + shown.size + 8, dirs })
+  // The strongest hintLimit candidates are the hints; one already given in this
   // session is not repeated and is not replaced by a weaker one.
   const hints = []
   let considered = 0
-  for (const { path: candidate } of candidates) {
+  for (const candidate of candidates) {
     if (shown.has(candidate) || !(await exists(candidate))) continue
-    if (++considered > SESSION_HINT_LIMIT) break
+    if (++considered > hintLimit) break
     if (!delivered.has(`hint:${candidate}`)) hints.push(candidate)
   }
   if (!hints.length) return result
-  const block = `${SESSION_HINT_HEADER}\n${hints.map(hint => `- ${hint}`).join('\n')}`
+  const block = `${SESSION_HINT_HEADERS[source]}\n${hints.map(hint => `- ${hint}`).join('\n')}`
   const text = result.deliver ? `${result.text}\n\n${block}` : `StellarCode: ${block}`
   if (maxChars && text.length > maxChars) return result
   if (file) { for (const hint of hints) delivered.add(`hint:${hint}`); await writeDelivered(file, delivered) }

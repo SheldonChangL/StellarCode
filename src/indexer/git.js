@@ -61,3 +61,10 @@ export async function coChangedFiles(root, files, { limit = 3, before = null, ma
   }
   return [...scores].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, limit).map(([file, score]) => ({ path: file, score }))
 }
+
+// Paths tracked at the last commit before a time, or null when there is none.
+export async function filesAt(root, before) {
+  const commit = (await git(root, ['rev-list', '-1', `--before=${before}`, 'HEAD'])).trim()
+  if (!commit) return null
+  return new Set((await git(root, ['ls-tree', '-r', '--name-only', commit])).split(/\r?\n/).filter(Boolean))
+}
