@@ -28,6 +28,13 @@ function semanticEdgeKey(raw) {
   })
 }
 
+function followUpTask(raw) {
+  if (raw.followUp == null) return undefined
+  const followUp = raw.followUp
+  if (!followUp?.prompt || !Array.isArray(followUp.expectedFiles) || !followUp.expectedFiles.length) throw new StellarError(`Invalid followUp for task ${raw.id}: use {prompt:"...", expectedFiles:["path"], expectedMatch:"any|all"}`, 'BENCHMARK_TASKS_INVALID', 2)
+  return { prompt: String(followUp.prompt), expectedFiles: followUp.expectedFiles.map(v => String(v).replaceAll('\\', '/')), expectedMatch: followUp.expectedMatch === 'all' ? 'all' : 'any' }
+}
+
 export function defaultBenchmarkConfig() {
   return {
     version: BENCHMARK_SCHEMA_VERSION,
@@ -100,7 +107,9 @@ export async function loadBenchmarkTasks(file) {
       expectedMatch: raw.expectedMatch === 'all' ? 'all' : 'any',
       maxTurns: Number.isFinite(raw.maxTurns) ? Math.max(1, Number(raw.maxTurns)) : undefined,
       // v0.6 evaluation-only answer key: never passed to the agent or to StellarCode.
-      expectedSemanticEdges: semanticEdgeKey(raw)
+      expectedSemanticEdges: semanticEdgeKey(raw),
+      // v0.8.5 second turn: the prompt is sent as a follow-up; its expected files are the answer key.
+      followUp: followUpTask(raw)
     })
   }
   if (!tasks.length) throw new StellarError(`No enabled benchmark tasks in ${file}. Edit the file and enable real tasks first.`, 'BENCHMARK_TASKS_EMPTY', 2)

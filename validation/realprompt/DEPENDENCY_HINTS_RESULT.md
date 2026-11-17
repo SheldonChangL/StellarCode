@@ -46,3 +46,4 @@ By repository (turns reaching a new file): R04 12 → 13, R05 10 → 12, R06 0 �
 - More hints per turn: precision stays at the v0.8.3 level on the holdout (24%) but falls on dev (39% → 33%). Each hint is a path of about 60 characters.
 - `reachNew` counts a hint like attached source, and a hint stays countable for the rest of the session. Whether a path hint changes what an agent reads was not measured: no agent was run.
 - The dependency graph is the current index, filtered to files that existed at the prompt's time; edges between files may have differed then.
+- v0.8.5 correction: a hint could name a file whose source the hook attached earlier in the session; such files are now skipped. Dev `reachNew` is unchanged (23.9%); the holdout was not rescored for it (`../followup/README.md`).
