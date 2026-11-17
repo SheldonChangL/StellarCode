@@ -173,9 +173,19 @@ Benchmark condition: STELLAR. Your first action must be exactly one command: ste
 // is in real use, where no prompt is sent twice. The system prompt before it stays shared.
 export function isolatedPrompt(prompt, runId = randomUUID()) { return `Benchmark run ${runId}.\n\n${prompt}` }
 
-export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, onEvent, diagnosticDir, diagnostic = {}, envelope = null, settingsFile = null }) {
+// The second message of a two-turn run: a user's follow-up in the same conversation. The
+// conversation already carries the benchmark instructions and a unique first prompt.
+export function followUpPrompt(text) {
+  return `${text}
+
+Answer with the same final JSON object as before: {"summary":"...","files":["repo/relative/path"],"symbols":["name"]}. The files field must contain only key source files you actually read in this conversation.`
+}
+
+// followUp: continue the session `resume` with a follow-up message instead of starting one.
+export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, onEvent, diagnosticDir, diagnostic = {}, envelope = null, settingsFile = null, resume = null, followUp = null }) {
   const runId = randomUUID()
-  const prompt = isolatedPrompt(benchmarkPrompt({ prompt: task.prompt }, mode, { envelope }), runId)
+  if (followUp != null && (agent !== 'claude' || !resume)) throw new Error('A follow-up turn needs --agent claude and the session to resume')
+  const prompt = followUp != null ? followUpPrompt(followUp) : isolatedPrompt(benchmarkPrompt({ prompt: task.prompt }, mode, { envelope }), runId)
   const bin = agentBinary(agent, env)
   let args
   if (agent === 'codex') {
@@ -189,6 +199,7 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
     await fs.writeFile(emptyMcp,JSON.stringify({mcpServers:{}}))
     env={...env,ENABLE_CLAUDEAI_MCP_SERVERS:'false'}
     args=['-p',prompt,'--output-format','stream-json','--verbose','--permission-mode','dontAsk','--allowedTools','Bash,Read,Grep,Glob','--setting-sources','','--strict-mcp-config','--mcp-config',emptyMcp]
+    if (resume) args.push('--resume',resume)
     if (model) args.push('--model',model)
     if (maxTurns) args.push('--max-turns',String(maxTurns))
     // Settings given on the command line still apply with every settings source switched off.
@@ -204,7 +215,7 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
   const closeOutputs=()=>{for(const fd of outputFiles.splice(0))closeSync(fd)}
   const started=performance.now()
   const startedAtEpochMs=Date.now()
-  const metrics={timing:{firstEventMs:null,firstModelEventMs:null},toolCalls:0,searchCalls:0,stellarCalls:0,filesMentioned:new Set(),filesOpened:new Set(),sourceReads:[],sourceBytesRead:0,firstRelevantMs:null,usage:{inputTokens:0,uncachedInputTokens:0,cachedInputTokens:0,cacheWriteInputTokens:0,outputTokens:0,reasoningOutputTokens:0},costUsd:null,finalText:'',structured:null,rawEvents:0,turns:[],resultNumTurns:null}
+  const metrics={timing:{firstEventMs:null,firstModelEventMs:null},toolCalls:0,searchCalls:0,stellarCalls:0,filesMentioned:new Set(),filesOpened:new Set(),sourceReads:[],sourceBytesRead:0,firstRelevantMs:null,usage:{inputTokens:0,uncachedInputTokens:0,cachedInputTokens:0,cacheWriteInputTokens:0,outputTokens:0,reasoningOutputTokens:0},costUsd:null,finalText:'',structured:null,rawEvents:0,turns:[],resultNumTurns:null,sessionId:null}
   // Model turns: one per distinct assistant message id (one provider call each). Usage on
   // an assistant message is that call's own input accounting.
   const turnById=new Map()
@@ -259,6 +270,7 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
     async function processLine(line) {
       const event=parseJsonLine(line); if(!event)return
       metrics.rawEvents++
+      if(metrics.sessionId==null&&typeof event.session_id==='string')metrics.sessionId=event.session_id
       const eventAtMs=Math.round(performance.now()-started)
       if(metrics.timing.firstEventMs==null)metrics.timing.firstEventMs=eventAtMs
       if(metrics.timing.firstModelEventMs==null && (event.type==='assistant' || (event.type==='item.started'||event.type==='item.completed')))metrics.timing.firstModelEventMs=eventAtMs
@@ -332,7 +344,7 @@ export async function runAgent({ agent, task, mode, cwd, env, model, maxTurns, o
         estimated.unattributedVsProvider=Math.max(0,metrics.usage.inputTokens-estimated.knownTotal)
         await fs.writeFile(path.join(diagnosticDir,'token-attribution.json'),JSON.stringify({providerReported:{inputTokens:metrics.usage.inputTokens,cachedInputTokens:metrics.usage.cachedInputTokens,outputTokens:metrics.usage.outputTokens},estimated:{...estimated,note:'Estimated from UTF-8 bytes divided by four; provider input includes model context and tool schema that cannot be attributed exactly.'},interactions},null,2)+'\n')
       }
-      resolve({runId,exitCode:code,signal:signal??null,stdout,stderr,durationMs,startedAtEpochMs,commands,metrics:{...metrics,interactions,filesMentioned:[...metrics.filesMentioned].sort(),filesOpened:[...metrics.filesOpened].sort(),structured}})
+      resolve({runId,sessionId:metrics.sessionId,exitCode:code,signal:signal??null,stdout,stderr,durationMs,startedAtEpochMs,commands,metrics:{...metrics,interactions,filesMentioned:[...metrics.filesMentioned].sort(),filesOpened:[...metrics.filesOpened].sort(),structured}})
     })
   })
 }

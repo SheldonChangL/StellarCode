@@ -44,28 +44,42 @@ process.stdout.write(run.stdout??'')
   return settings
 }
 
-// Whether the hook's context reached the model, read from the agent CLI's own session
-// transcript (the event stream does not report it). null when the transcript is not found.
-async function hookDelivery(diagnosticDir) {
+// What the hook attached to a prompt, read from the agent CLI's own session transcript (the
+// event stream does not report it): whether grounded source arrived, its size, the source
+// files and the session hints. `since` (epoch ms) skips attachments of earlier prompts in the
+// same session. Fields are null when the transcript is not found.
+const HINT_HEADER = /already in this conversation[^\n]*\(navigation hints only; NOT inspected source\):\n((?:- \S+\n?)+)/
+export function hookAttachment(content) {
+  const text = String(content ?? '')
+  return {
+    hookDelivered: text.includes('<stellar-grounded-context>'),
+    hookChars: text.length,
+    hookSourceFiles: [...new Set([...text.matchAll(/\[Source: (\S+) lines \d+-\d+/g)].map(match => match[1]))],
+    hookHints: (HINT_HEADER.exec(text)?.[1] ?? '').split('\n').map(line => line.replace(/^- /, '').trim()).filter(Boolean)
+  }
+}
+
+async function hookDelivery(diagnosticDir, { env = process.env, since = null } = {}) {
+  const missing = { hookDelivered: null, hookChars: null, hookSourceFiles: null, hookHints: null }
   try {
     const events=await fs.readFile(path.join(diagnosticDir,'raw-events.jsonl'),'utf8')
     const sessionId=/"session_id":"([0-9a-f-]{36})"/.exec(events)?.[1]
-    if(!sessionId)return {hookDelivered:null,hookChars:null}
-    const projects=path.join(process.env.CLAUDE_CONFIG_DIR||path.join(os.homedir(),'.claude'),'projects')
+    if(!sessionId)return missing
+    const projects=path.join(env.CLAUDE_CONFIG_DIR||path.join(os.homedir(),'.claude'),'projects')
     for(const dir of await fs.readdir(projects)) {
       let text
       try{text=await fs.readFile(path.join(projects,dir,`${sessionId}.jsonl`),'utf8')}catch{continue}
       for(const line of text.split('\n')) {
         if(!line.includes('"hook_additional_context"'))continue
-        const attachment=JSON.parse(line).attachment
+        const entry=JSON.parse(line), attachment=entry.attachment
         if(attachment?.hookEvent!=='UserPromptSubmit')continue
-        const content=Array.isArray(attachment.content)?attachment.content.join('\n'):String(attachment.content??'')
-        return {hookDelivered:content.includes('<stellar-grounded-context>'),hookChars:content.length}
+        if(since!=null&&Date.parse(entry.timestamp)<since)continue
+        return hookAttachment(Array.isArray(attachment.content)?attachment.content.join('\n'):attachment.content)
       }
-      return {hookDelivered:false,hookChars:0}
+      return hookAttachment('')
     }
   } catch {}
-  return {hookDelivered:null,hookChars:null}
+  return missing
 }
 
 async function writeShim(binDir, mode, stellarBin, snapshot) {
@@ -145,7 +159,7 @@ export function conditionOrder(modes, mode, taskIndex, repetition) {
   return latinSquareOrder(modes, repetition)
 }
 
-export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='both',model,limit,repeat=1,outDir,stellarBin,env=process.env,onProgress,keepWorktreeOnFailure=false,repository,taskIds}) {
+export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='both',model,limit,repeat=1,outDir,stellarBin,env=process.env,onProgress,keepWorktreeOnFailure=false,repository,taskIds,followUp=false}) {
   const configFile=tasksFile ?? await benchmarkConfigPath(projectRoot)
   const {tasks:loadedTasks}=await loadBenchmarkTasks(configFile)
   // A fixed subset is selected by id; the task file itself (and its hash) stays unchanged.
@@ -156,6 +170,8 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
   const modes=parseBenchmarkModes(mode)
   if(tasks.some(t=>t.category==='edit'))throw new StellarError('v0.5.1 benchmark run supports read-only navigation tasks only; edit benchmarks are not yet implemented.','BENCHMARK_EDIT_UNSUPPORTED',2)
   if(!['claude','codex'].includes(agent))throw new StellarError('--agent must be claude or codex','USAGE',2)
+  if(followUp&&agent!=='claude')throw new StellarError('--follow-up needs --agent claude: the second turn resumes a Claude Code session','USAGE',2)
+  if(followUp){const missing=tasks.filter(task=>!task.followUp).map(task=>task.id);if(missing.length)throw new StellarError(`--follow-up needs a followUp for every task; missing: ${missing.join(', ')}`,'USAGE',2)}
   if(!modes.length||!modes.every(v=>BENCHMARK_CONDITIONS.includes(v))||new Set(modes).size!==modes.length)throw new StellarError(`--mode must be both, delivery, or a list of ${BENCHMARK_CONDITIONS.join('|')}`,'USAGE',2)
   const agentInfo=(await benchmarkDoctor({agents:[agent],env}))[0]
   if(!agentInfo.available)throw new StellarError(`${agent} CLI is unavailable: ${agentInfo.error??agentInfo.version??'not found'}`,'BENCHMARK_AGENT_UNAVAILABLE',2)
@@ -165,7 +181,9 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
   const destination=outDir??path.join(projectRoot,'.stellar','benchmark','runs',`${new Date().toISOString().replace(/[:.]/g,'-')}-${agent}`)
   await fs.mkdir(destination,{recursive:true})
   const files=Object.fromEntries((mode==='both'?['baseline','stellar']:modes).map(condition=>[condition,path.join(destination,`${condition}.jsonl`)]))
-  await Promise.all(Object.values(files).map(f=>fs.writeFile(f,'')))
+  // Follow-up rows (the second turn of each run) go to <condition>-followup.jsonl.
+  const followUpFiles=followUp?Object.fromEntries(Object.keys(files).map(condition=>[condition,path.join(destination,`${condition}-followup.jsonl`)])):{}
+  await Promise.all([...Object.values(files),...Object.values(followUpFiles)].map(f=>fs.writeFile(f,'')))
   const packageRoot=path.resolve(fileURLToPath(new URL('../../',import.meta.url)))
   stellarBin=stellarBin??path.join(packageRoot,'bin','stellar.js')
   // Campaign identity is recorded for comparability only; none of it reaches the agent or
@@ -180,7 +198,7 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
       throw new StellarError('StellarCode runtime source changed during the benchmark campaign; the campaign is invalid.','BENCHMARK_RUNTIME_CHANGED',2)
     }
   }
-  let completed=0,total=tasks.length*modes.length*repeat
+  let completed=0,total=tasks.length*modes.length*repeat*(followUp?2:1)
   for(let r=1;r<=repeat;r++) {
     for(let i=0;i<tasks.length;i++) {
       const task=tasks[i]
@@ -266,7 +284,7 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
           // recorded next to the author's category to measure classification accuracy later.
           const classifiedIntent=classifyIntent(task.prompt).intent
           const delivery=condition==='baseline'?{}:deliveryMetrics({condition,result,prefetch,expectedFiles:task.expectedFiles,answerFiles:answer.answerFiles??[]})
-          const hook=HOOK_MODES.has(condition)?await hookDelivery(diagnosticDir):{}
+          const hook=HOOK_MODES.has(condition)?await hookDelivery(diagnosticDir,{env}):{}
           const row={
             schemaVersion:4,taskId:task.id,repetition:r,category:task.category,categorySource:task.categorySource,benchmarkCategory:task.category,classifiedIntent,mode:condition,agent,agentVersion:agentInfo.version,model:model??null,runId:result.runId??null,signal:result.signal??null,
             projectCommit:commit,projectDirtyCount:dirty,exitCode:result.exitCode,durationMs:result.durationMs,firstRelevantMs,firstRelevantSourceMs:firstRelevantMs,...latency,
@@ -289,6 +307,12 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
             discoverySuccess:row.discoverySuccess,sourceGrounded:row.sourceGrounded,answerSuccess:row.answerSuccess,success:row.success},null,2)+'\n')
           await fs.appendFile(files[condition],JSON.stringify(row)+'\n')
           completed++;onProgress?.({phase:'done',task:task.id,mode:condition,repetition:r,completed,total,row})
+          if(followUp) {
+            const followRow=await runFollowUp({agent,model,task,condition,r,orderIndex,commit,dirty,worktree,childEnv,settingsFile,diagnosticDir,agentInfo,first:result,firstRow:row,firstReads:sourceReadPaths,env})
+            failed=failed||!followRow.success
+            await fs.appendFile(followUpFiles[condition],JSON.stringify(followRow)+'\n')
+            completed++;onProgress?.({phase:'done',task:task.id,mode:condition,repetition:r,completed,total,row:followRow,turn:2})
+          }
         } catch(error) {
           const file=path.join(diagnosticDir,'diagnostic.json')
           const diagnostic=JSON.parse(await fs.readFile(file,'utf8'))
@@ -299,8 +323,38 @@ export async function runBenchmark({projectRoot,tasksFile,agent='codex',mode='bo
     }
   }
   await assertRuntimeUnchanged()
-  const manifest={schemaVersion:3,createdAt:new Date().toISOString(),startedAt,completedAt:new Date().toISOString(),repository:repository??path.basename(projectRoot),repositoryIdentity:await repositoryIdentity(projectRoot),agent,agentVersion:agentInfo.version,model:model??null,projectRoot,projectCommit:commit,projectDirtyCount:dirty,tasksFile:configFile,taskHash,taskCount:tasks.length,repeat,modes,files,
+  const manifest={schemaVersion:3,followUp:Boolean(followUp),followUpFiles,createdAt:new Date().toISOString(),startedAt,completedAt:new Date().toISOString(),repository:repository??path.basename(projectRoot),repositoryIdentity:await repositoryIdentity(projectRoot),agent,agentVersion:agentInfo.version,model:model??null,projectRoot,projectCommit:commit,projectDirtyCount:dirty,tasksFile:configFile,taskHash,taskCount:tasks.length,repeat,modes,files,
     runtime:{...runtime,changedDuringCampaign:false},environment:{os:`${os.type()} ${os.release()} ${os.arch()}`,platform:process.platform,node:process.version},isolation:{freshAgentSession:true,detachedWorktree:true,stellarRulesRemovedFromWorktree:true,stellarContractInjectedViaPrompt:true,stableProjectIdentity:true,readOnlyIndexSnapshot:true,userMcpConfigIgnored:true,stellarIndexPreparedBeforeTimedRun:true,sourceGroundingRequired:true,rawAgentTelemetryPersisted:true}}
   await fs.writeFile(path.join(destination,'manifest.json'),JSON.stringify(manifest,null,2)+'\n')
-  return {outDir:destination,files,manifest}
+  return {outDir:destination,files,followUpFiles,manifest}
+}
+
+// The second turn: the same agent session resumed with the task's follow-up message. With a
+// hook condition the CLI runs the product hook again, now with a transcript that shows what
+// the first turn read, so session-aware delivery and session hints act as in real use.
+// Usage and cost are this turn's own. The answer is judged on the follow-up's expected
+// files; source counts as grounded when it was read in either turn or attached to this one.
+async function runFollowUp({agent,model,task,condition,r,orderIndex,commit,dirty,worktree,childEnv,settingsFile,diagnosticDir,agentInfo,first,firstRow,firstReads,env}) {
+  const judgeTask={expectedFiles:task.followUp.expectedFiles,expectedMatch:task.followUp.expectedMatch}
+  const base={schemaVersion:4,turn:2,taskId:task.id,repetition:r,category:task.category,mode:condition,agent,agentVersion:agentInfo.version,model:model??null,firstRunId:first.runId??null,sessionId:first.sessionId??null,projectCommit:commit,projectDirtyCount:dirty,conditionOrder:orderIndex+1,firstTurnCostUsd:firstRow.costUsd,firstTurnSuccess:firstRow.success}
+  if(!first.sessionId)return {...base,success:false,skipped:'no-session'}
+  const followDir=`${diagnosticDir}-followup`
+  await fs.mkdir(followDir,{recursive:true,mode:0o700})
+  // The hook wrapper hands the product hook the follow-up text, as the user would type it.
+  if(settingsFile)await fs.writeFile(path.join(diagnosticDir,'hook-task.txt'),task.followUp.prompt)
+  const result=await runAgent({agent,task:{prompt:task.prompt},mode:condition,cwd:worktree,env:childEnv,model,maxTurns:task.maxTurns,diagnosticDir:followDir,settingsFile,resume:first.sessionId,followUp:task.followUp.prompt,diagnostic:{mode:condition,taskId:task.id,turn:2,agentVersion:agentInfo.version,resumedSession:first.sessionId}})
+  const hook=HOOK_MODES.has(condition)?await hookDelivery(followDir,{env,since:result.startedAtEpochMs}):{}
+  const reads=[...new Set(result.metrics.filesOpened??[])]
+  const answer=judgeAnswer(judgeTask,result.metrics.structured)
+  const grounding=judgePaths(judgeTask,[...firstReads,...reads,...(hook.hookSourceFiles??[])])
+  const hints=hook.hookHints??[]
+  return {...base,runId:result.runId,exitCode:result.exitCode,signal:result.signal??null,durationMs:result.durationMs,
+    inputTokens:result.metrics.usage.inputTokens,uncachedInputTokens:result.metrics.usage.uncachedInputTokens,cachedInputTokens:result.metrics.usage.cachedInputTokens,cacheWriteInputTokens:result.metrics.usage.cacheWriteInputTokens,
+    outputTokens:result.metrics.usage.outputTokens,reasoningOutputTokens:result.metrics.usage.reasoningOutputTokens,costUsd:result.metrics.costUsd,modelTurns:result.metrics.turns.length,resultNumTurns:result.metrics.resultNumTurns,
+    toolCalls:result.metrics.toolCalls,searchCalls:result.metrics.searchCalls,stellarCalls:result.metrics.stellarCalls,filesOpened:reads.length,filesOpenedList:reads,rawSourceBytesRead:result.metrics.sourceBytesRead,
+    rereadFiles:reads.filter(file=>firstReads.includes(file)),newFilesRead:reads.filter(file=>!firstReads.includes(file)),
+    answerVerified:answer.verified,answerSuccess:result.exitCode===0?answer.success:false,matchedExpectedFiles:answer.matched,missingExpectedFiles:answer.missing,answerFiles:answer.answerFiles??[],
+    sourceGrounded:result.exitCode===0?grounding.success:false,success:result.exitCode===0&&answer.success===true&&grounding.success===true,
+    ...hook,hintsRead:hints.filter(file=>reads.includes(file)),hintsExpected:hints.filter(file=>judgeTask.expectedFiles.includes(file)),
+    final:result.metrics.structured??result.metrics.finalText,stderr:result.exitCode===0?'':result.stderr.slice(0,4000)}
 }

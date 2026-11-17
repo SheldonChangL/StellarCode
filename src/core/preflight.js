@@ -161,10 +161,15 @@ async function hintCandidates(root, seen, { source, before, limit, dirs }) {
   return merged
 }
 
+const DELIVERED_EXCERPT = /^(.+):\d+-\d+:[0-9a-f]+$/
+
 async function withSessionHints(result, { root, seen }, { sessionId = null, dirs = null, maxChars = null, sessionHints }) {
   const shown = new Set([...(result.excerpts ?? []).map(excerpt => excerpt.path), ...(result.hintPaths ?? [])])
   const file = sessionId ? sessionFile(sessionId, dirs) : null
   const delivered = file ? await readDelivered(file) : new Set()
+  // Files whose source the hook attached earlier in the session are in the conversation too,
+  // although the transcript shows them as an attachment, not as a read.
+  const attachedBefore = new Set([...delivered].map(key => DELIVERED_EXCERPT.exec(key)?.[1]).filter(Boolean))
   const source = SESSION_HINT_SOURCES.includes(sessionHints?.source) ? sessionHints.source : 'both'
   const before = sessionHints?.before ?? null
   // With `before` (evaluation), a candidate must also have existed at that time.
@@ -177,7 +182,7 @@ async function withSessionHints(result, { root, seen }, { sessionId = null, dirs
   const hints = []
   let considered = 0
   for (const candidate of candidates) {
-    if (shown.has(candidate) || !(await exists(candidate))) continue
+    if (shown.has(candidate) || attachedBefore.has(candidate) || !(await exists(candidate))) continue
     if (++considered > hintLimit) break
     if (!delivered.has(`hint:${candidate}`)) hints.push(candidate)
   }

@@ -17,7 +17,8 @@ export const PREFETCH_MODES = new Set(['prefetch', 'prefetch-contract'])
 export const HOOK_MODE = 'hook'
 // hook-brief: the same path with the hook's brief guidance, to measure what the guidance is worth.
 // hook-any: the same path without the strict match gate, as the hook behaved before v0.8.1.
-export const HOOK_MODES = new Map([['hook', []], ['hook-brief', ['--guidance', 'brief']], ['hook-any', ['--gate', 'any']]])
+// hook-nohints: the same path without session hints (they only act in a follow-up turn).
+export const HOOK_MODES = new Map([['hook', []], ['hook-brief', ['--guidance', 'brief']], ['hook-any', ['--gate', 'any']], ['hook-nohints', ['--session-hints', 'off']]])
 
 // Deterministic Latin-square order: repetition r runs the condition list rotated by r-1,
 // so every condition takes every position equally often across repetitions.
