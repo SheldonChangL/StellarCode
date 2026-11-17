@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "notes": "Two-turn subset of validation/v0.7/tasksets/mac-kvm; followUp answer keys found with grep and source reading only.",
+  "tasks": [
+    {
+      "id": "nav-scroll-wire-to-notches",
+      "category": "navigation",
+      "prompt": "Where does a scroll message arriving from the other machine get converted into whole scroll notches, with the horizontal direction flipped relative to the wire value, and dropped when it amounts to less than one notch?",
+      "expectedFiles": [
+        "Packages/BarrierCompatibility/Sources/BarrierCompatibility/BarrierMouseWheelDecoder.swift"
+      ],
+      "expectedMatch": "all",
+      "followUp": {
+        "prompt": "Which part of the client session calls that, and what does it do with the result?",
+        "expectedFiles": [
+          "Packages/BarrierCompatibility/Sources/BarrierCompatibility/BarrierClientProtocolSession.swift"
+        ],
+        "expectedMatch": "any"
+      }
+    },
+    {
+      "id": "nav-reconnect-delay-schedule",
+      "category": "navigation",
+      "prompt": "Where is the waiting schedule between automatic reconnection attempts defined (short delays that double and then settle at a fixed maximum)?",
+      "expectedFiles": [
+        "Packages/KVMCore/Sources/KVMCore/ReconnectManager.swift"
+      ],
+      "expectedMatch": "all",
+      "followUp": {
+        "prompt": "What drives that schedule after a connection drops, deciding when the next attempt starts?",
+        "expectedFiles": [
+          "Packages/KVMCore/Sources/KVMCore/MacRecoveryCoordinator.swift"
+        ],
+        "expectedMatch": "any"
+      }
+    },
+    {
+      "id": "nav-own-injected-event-detection",
+      "category": "navigation",
+      "prompt": "Where does the Mac side tell apart input events that this app itself injected from genuine physical user input, so it never re-forwards its own injections?",
+      "expectedFiles": [
+        "Packages/MacPlatform/Sources/MacPlatform/SyntheticEventFilter.swift"
+      ],
+      "expectedMatch": "all",
+      "followUp": {
+        "prompt": "Where is that check used to keep those events from being sent on again?",
+        "expectedFiles": [
+          "Packages/MacPlatform/Sources/MacPlatform/LocalEventSuppressor.swift"
+        ],
+        "expectedMatch": "any"
+      }
+    },
+    {
+      "id": "flow-force-return-chord",
+      "category": "flow",
+      "prompt": "While another computer is being controlled, the user presses the fixed key chord that forces input back to this Mac. Assume the chord has already been recognized and the low-level input-capture callback has received the suppressor's escape verdict. Trace from that callback: which state-machine action it issues and where that action is defined, how the server's input coordinator applies it, and the state-machine rule that makes the result local from any state. Chord recognition and the side effects run after the transition are out of scope.",
+      "expectedFiles": [
+        "Apps/macOS/MacKVM/InputTap.swift",
+        "Packages/KVMCore/Sources/KVMCore/LeaveRemoteFlow.swift",
+        "Packages/KVMCore/Sources/KVMCore/ServerCoordinator.swift",
+        "Packages/KVMCore/Sources/KVMCore/InputStateReducer.swift"
+      ],
+      "expectedMatch": "all",
+      "followUp": {
+        "prompt": "Where exactly is that key combination itself defined?",
+        "expectedFiles": [
+          "Packages/KVMCore/Sources/KVMCore/EmergencyEscape.swift"
+        ],
+        "expectedMatch": "any"
+      }
+    },
+    {
+      "id": "edit-configurable-edge-dwell",
+      "category": "editing-prep",
+      "prompt": "I want the edge-dwell time (how long the pointer must rest on the screen edge before control switches to the other computer) to be settable from the command line when starting the server. Which files must be edited?",
+      "expectedFiles": [
+        "Apps/macOS/MacKVM/ServerConfiguration.swift",
+        "Apps/macOS/MacKVM/ServerRuntime.swift"
+      ],
+      "expectedMatch": "all",
+      "followUp": {
+        "prompt": "Where is that wait actually measured while the pointer rests at the edge?",
+        "expectedFiles": [
+          "Packages/KVMCore/Sources/KVMCore/EdgeDetector.swift",
+          "Packages/KVMCore/Sources/KVMCore/EnterRemoteTrigger.swift"
+        ],
+        "expectedMatch": "any"
+      }
+    },
+    {
+      "id": "edit-barrier-protocol-revision",
+      "category": "editing-prep",
+      "prompt": "Both the server role and the client role currently hard-code the same four-byte protocol revision that is exchanged during Barrier connection setup. To move to a different revision, which files hold that value and must be edited?",
+      "expectedFiles": [
+        "Packages/BarrierCompatibility/Sources/BarrierCompatibility/BarrierServerHello.swift",
+        "Packages/BarrierCompatibility/Sources/BarrierCompatibility/BarrierClientHelloBack.swift",
+        "Packages/BarrierCompatibility/Sources/BarrierCompatibility/BarrierServerHandshake.swift"
+      ],
+      "expectedMatch": "all",
+      "followUp": {
+        "prompt": "And on the client side, where is the server greeting received and checked?",
+        "expectedFiles": [
+          "Packages/BarrierCompatibility/Sources/BarrierCompatibility/BarrierClientHandshake.swift"
+        ],
+        "expectedMatch": "any"
+      }
+    }
+  ]
+}
