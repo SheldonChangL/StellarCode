@@ -2,7 +2,7 @@
 // Scores StellarCode retrieval on the real-prompt evaluation set built by extract.mjs.
 //
 //   node validation/realprompt/score.mjs <eval-dir> --label NAME [--split dev|holdout] [--confirm-holdout]
-//        [--hook] [--strict] [--session drop|skip] [--hints [--hint-source both|cochange|deps] [--hint-limit N]]
+//        [--hook] [--strict] [--session drop|skip] [--hints [--hint-source both|cochange|deps] [--hint-limit N] [--hint-tests]]
 //   node validation/realprompt/score.mjs <eval-dir> --compare BASE NEW [--split dev|holdout]
 //
 // For each prompt it runs the same lookup as `stellar preflight` (context options of the
@@ -19,6 +19,7 @@
 // prompt's time or by the dependency graph, once per session); it implies --session drop and replays each
 // session in order with a fresh session store. --hint-source picks git co-change and the
 // dependency graph interleaved (default), or one of them; --hint-limit caps the hints.
+// --hint-tests keeps test files as hints (they are left out by default).
 // Candidates must have existed at the prompt's time.
 //
 // The holdout split is for confirming a change already chosen on dev. Scoring it needs
@@ -118,7 +119,7 @@ const variant = { ...(args.includes('--hook') ? { maxChars: 9800 } : {}), strict
 const rows = []
 for (const item of items) {
   const seen = new Set(item.seenBefore ?? [])
-  let result = await preflight({ cwd: path.join(evalDir, 'repos', item.repo), prompt: item.prompt, ...variant, ...(session === 'drop' ? { seenFiles: item.seenBefore ?? [] } : {}), ...(hints ? { sessionHints: { before: item.timestamp, source: hintSource, ...(flag('--hint-limit') ? { limit: Number(flag('--hint-limit')) } : {}) }, sessionId: `hints-${item.session}`, dirs: storeDirs } : {}) })
+  let result = await preflight({ cwd: path.join(evalDir, 'repos', item.repo), prompt: item.prompt, ...variant, ...(session === 'drop' ? { seenFiles: item.seenBefore ?? [] } : {}), ...(hints ? { sessionHints: { before: item.timestamp, source: hintSource, ...(flag('--hint-limit') ? { limit: Number(flag('--hint-limit')) } : {}), ...(args.includes('--hint-tests') ? { tests: true } : {}) }, sessionId: `hints-${item.session}`, dirs: storeDirs } : {}) })
   if (session === 'skip' && result.deliver && result.excerpts.some(excerpt => seen.has(excerpt.path))) result = { deliver: false, reason: 'continuing' }
   const attached = [...new Set((result.excerpts ?? []).map(excerpt => excerpt.path))]
   const hinted = result.hintPaths ?? []

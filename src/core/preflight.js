@@ -4,6 +4,7 @@ import crypto from 'node:crypto'
 import { findProjectRoot } from './project.js'
 import { buildContextEnvelope, STELLAR_GUIDANCE } from './context-envelope.js'
 import { contextForTask, dependencyNeighbors } from '../query/query-service.js'
+import { isTestPath } from '../indexer/scanner.js'
 import { gitHead, coChangedFiles, filesAt } from '../indexer/git.js'
 import { appDirectories } from '../platform/paths.js'
 import { DEFAULT_CONTEXT_BYTES, SUPPORTED_EXTENSIONS } from './constants.js'
@@ -135,7 +136,8 @@ async function writeDelivered(file, delivered) {
 //              session. They are paths only; when no source is attached they are sent alone
 //              (result.hintsOnly). `{ source }` picks the hint source: 'both' (default:
 //              git history and dependency graph interleaved), 'cochange' or 'deps';
-//              `{ limit }` overrides SESSION_HINT_LIMIT. `{ before }` limits
+//              `{ limit }` overrides SESSION_HINT_LIMIT. Test files are left out
+//              (`{ tests: true }` keeps them). `{ before }` limits
 //              history and candidates to that time, for evaluation.
 export async function preflight(options = {}) {
   const state = {}
@@ -163,6 +165,11 @@ async function hintCandidates(root, seen, { source, before, limit, dirs }) {
 
 const DELIVERED_EXCERPT = /^(.+):\d+-\d+:[0-9a-f]+$/
 
+// Hints leave out test files: in the two-turn agent campaign (validation/followup/RESULT.md)
+// they were 6 of 37 hints and none of the answers; on the real-prompt dev split leaving them
+// out lost no reached turn. Hub files (a composition root, a crate's lib.rs) were left in:
+// sessions do go on to touch them (validation/realprompt/HINT_PRECISION_RESULT.md).
+
 async function withSessionHints(result, { root, seen }, { sessionId = null, dirs = null, maxChars = null, sessionHints }) {
   const shown = new Set([...(result.excerpts ?? []).map(excerpt => excerpt.path), ...(result.hintPaths ?? [])])
   const file = sessionId ? sessionFile(sessionId, dirs) : null
@@ -176,7 +183,9 @@ async function withSessionHints(result, { root, seen }, { sessionId = null, dirs
   const tracked = before ? (await filesAt(root, before)) ?? new Set() : null
   const exists = async candidate => { if (tracked && !tracked.has(candidate)) return false; try { return (await fs.stat(path.join(root, candidate))).isFile() } catch { return false } }
   const hintLimit = sessionHints?.limit ?? SESSION_HINT_LIMIT
-  const candidates = await hintCandidates(root, [...seen], { source, before, limit: hintLimit + shown.size + 8, dirs })
+  const keepTests = sessionHints?.tests === true
+  const candidates = (await hintCandidates(root, [...seen], { source, before, limit: hintLimit + shown.size + 16, dirs }))
+    .filter(candidate => keepTests || !isTestPath(candidate))
   // The strongest hintLimit candidates are the hints; one already given in this
   // session is not repeated and is not replaced by a weaker one.
   const hints = []
