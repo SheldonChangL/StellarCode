@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "notes": "Two-turn subset of validation/v0.7/tasksets/serialwrap; followUp answer keys found with grep and source reading only.",
+  "tasks": [
+    {
+      "id": "local-socket-peer-process-lookup",
+      "category": "navigation",
+      "prompt": "Where does the daemon ask the operating system which process sits on the other end of an accepted local-socket connection, with separate handling for Linux and macOS?",
+      "expectedFiles": [
+        "crates/serialwardend/src/protocol/peer_cred.rs"
+      ],
+      "expectedMatch": "all",
+      "followUp": {
+        "prompt": "After the daemon gets that process id, where is it kept so the rest of the daemon can tell who is connected?",
+        "expectedFiles": [
+          "crates/serialwardend/src/protocol/registry.rs"
+        ],
+        "expectedMatch": "any"
+      }
+    },
+    {
+      "id": "lookback-window-shorthand-parsing",
+      "category": "navigation",
+      "prompt": "Where is a lookback shorthand such as '10m' or '2h' (or an absolute RFC 3339 timestamp) converted into a cutoff instant for the history-selection options of the command-line client?",
+      "expectedFiles": [
+        "crates/serialwarden/src/cli/time.rs"
+      ],
+      "expectedMatch": "all",
+      "followUp": {
+        "prompt": "Which commands accept that option, and where do they filter the records with it?",
+        "expectedFiles": [
+          "crates/serialwarden/src/cli/tail.rs",
+          "crates/serialwarden/src/cli/export.rs"
+        ],
+        "expectedMatch": "any"
+      }
+    },
+    {
+      "id": "dns-rebinding-hostname-refusal",
+      "category": "navigation",
+      "prompt": "Where does the embedded browser UI's HTTP server refuse requests that name a hostname other than this local machine (the DNS-rebinding defence), and where is the hostname test itself implemented?",
+      "expectedFiles": [
+        "crates/serialwardend/src/web/guard.rs"
+      ],
+      "expectedMatch": "all",
+      "followUp": {
+        "prompt": "Where is that check hooked into the server so it runs on every request?",
+        "expectedFiles": [
+          "crates/serialwardend/src/web/mod.rs"
+        ],
+        "expectedMatch": "any"
+      }
+    },
+    {
+      "id": "held-agent-send-times-out",
+      "category": "flow",
+      "prompt": "When an AI-agent client sends text to a device, the safety rules hold it for human confirmation, and nobody ever responds, how does that client's request end up being rejected? Trace it from where the incoming message is handled to where the automatic refusal is issued.",
+      "expectedFiles": [
+        "crates/serialwardend/src/protocol/session.rs",
+        "crates/serialwardend/src/gate.rs",
+        "crates/serialwardend/src/gate/approval.rs"
+      ],
+      "expectedMatch": "all",
+      "followUp": {
+        "prompt": "Where does the length of that wait come from, and where would an operator change it?",
+        "expectedFiles": [
+          "crates/serialwardend/src/gate/rules.rs"
+        ],
+        "expectedMatch": "any"
+      }
+    },
+    {
+      "id": "add-mark-check-bit-scheme",
+      "category": "editing-prep",
+      "prompt": "I want to support a 'mark' check-bit scheme (the per-character check bit is always 1) for serial links. Which Rust source files need edits so the daemon can apply it to a device and the command-line tool can request it?",
+      "expectedFiles": [
+        "crates/serialwardend/src/port_config.rs",
+        "crates/serialwarden/src/cli/config.rs"
+      ],
+      "expectedMatch": "all",
+      "followUp": {
+        "prompt": "Where does the daemon actually apply those settings to the device once it is opened?",
+        "expectedFiles": [
+          "crates/serialwardend/src/port_io.rs"
+        ],
+        "expectedMatch": "any"
+      }
+    }
+  ]
+}
