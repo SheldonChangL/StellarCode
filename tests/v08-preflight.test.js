@@ -227,10 +227,11 @@ test('v0.8.2 session-aware delivery: files the conversation already has are not 
     const fresh = JSON.parse(hook(null)).hookSpecificOutput.additionalContext
     const later = JSON.parse(hook(readOne)).hookSpecificOutput.additionalContext
     // Under the hook's limit the attachment is these two files; with both read there is nothing new.
-    // (Session hints are measured separately; off here.)
-    assert.equal(execFileSync(process.execPath, [BIN, 'preflight', '--hook', '--session-hints', 'off'], { input: JSON.stringify({ session_id: 't-2', cwd: w.repo, prompt: NAMED, transcript_path: transcript }), env, encoding: 'utf8' }), '')
-    // By default the hook then names what history ties to the files already read: paths only.
-    const hintsOnly = JSON.parse(execFileSync(process.execPath, [BIN, 'preflight', '--hook'], { input: JSON.stringify({ session_id: 't-3', cwd: w.repo, prompt: NAMED, transcript_path: transcript }), env, encoding: 'utf8' })).hookSpecificOutput.additionalContext
+    // Session hints are off by default (v0.8.7) and with --session-hints off.
+    assert.equal(execFileSync(process.execPath, [BIN, 'preflight', '--hook'], { input: JSON.stringify({ session_id: 't-2', cwd: w.repo, prompt: NAMED, transcript_path: transcript }), env, encoding: 'utf8' }), '')
+    assert.equal(execFileSync(process.execPath, [BIN, 'preflight', '--hook', '--session-hints', 'off'], { input: JSON.stringify({ session_id: 't-4', cwd: w.repo, prompt: NAMED, transcript_path: transcript }), env, encoding: 'utf8' }), '')
+    // With --session-hints on the hook names what history ties to the files already read: paths only.
+    const hintsOnly = JSON.parse(execFileSync(process.execPath, [BIN, 'preflight', '--hook', '--session-hints', 'on'], { input: JSON.stringify({ session_id: 't-3', cwd: w.repo, prompt: NAMED, transcript_path: transcript }), env, encoding: 'utf8' })).hookSpecificOutput.additionalContext
     assert.match(hintsOnly, /by git history or imports[^]*- src\/billing\/invoice\.js/)
     assert.doesNotMatch(hintsOnly, /\[Source: /)
     assert.match(fresh, /\[Source: src\/auth\/throttle\.js/)

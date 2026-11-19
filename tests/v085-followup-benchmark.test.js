@@ -66,6 +66,7 @@ test('v0.8.5 follow-up task format and prompt', async () => {
     assert.match(prompt, /same final JSON object/)
     assert.ok(!prompt.includes('Benchmark condition'))
     assert.ok(BENCHMARK_CONDITIONS.includes('hook-nohints'))
+    assert.ok(BENCHMARK_CONDITIONS.includes('hook-hints'))
     await assert.rejects(runAgent({ agent: 'claude', task: { prompt: 'x' }, mode: 'baseline', cwd: w.repo, env: process.env, followUp: VAGUE }), /session to resume/)
   } finally { await w.cleanup() }
 })
@@ -90,12 +91,12 @@ test('v0.8.5 two-turn benchmark: the second turn resumes the session and the hoo
     await fs.writeFile(fake, FAKE, { mode: 0o755 })
     const fakeLog = path.join(w.base, 'fake-log')
     const env = { ...process.env, STELLAR_DATA_DIR: w.dirs.data, STELLAR_BENCH_CLAUDE_BIN: fake, CLAUDE_CONFIG_DIR: path.join(w.base, 'claude-config'), FAKE_LOG: fakeLog }
-    const run = extra => runBenchmark({ projectRoot: w.repo, tasksFile, agent: 'claude', mode: 'baseline,hook,hook-nohints', outDir: path.join(w.base, 'run'), stellarBin: path.resolve('bin/stellar.js'), env, ...extra })
+    const run = extra => runBenchmark({ projectRoot: w.repo, tasksFile, agent: 'claude', mode: 'baseline,hook,hook-hints', outDir: path.join(w.base, 'run'), stellarBin: path.resolve('bin/stellar.js'), env, ...extra })
     await assert.rejects(run({ agent: 'codex', followUp: true }), /--follow-up needs --agent claude/)
     const result = await run({ followUp: true })
 
     const rows = async file => (await fs.readFile(file, 'utf8')).trim().split('\n').map(line => JSON.parse(line))
-    assert.deepEqual(Object.keys(result.followUpFiles).sort(), ['baseline', 'hook', 'hook-nohints'])
+    assert.deepEqual(Object.keys(result.followUpFiles).sort(), ['baseline', 'hook', 'hook-hints'])
     assert.equal(result.manifest.followUp, true)
     const first = Object.fromEntries(await Promise.all(Object.entries(result.files).map(async ([mode, file]) => [mode, (await rows(file))[0]])))
     const second = Object.fromEntries(await Promise.all(Object.entries(result.followUpFiles).map(async ([mode, file]) => [mode, (await rows(file))[0]])))
@@ -105,7 +106,7 @@ test('v0.8.5 two-turn benchmark: the second turn resumes the session and the hoo
     const resumed = calls.filter(call => call.resume)
     assert.equal(resumed.length, 3)
     for (const call of resumed) assert.equal(call.prompt, followUpPrompt(VAGUE))
-    for (const mode of ['baseline', 'hook', 'hook-nohints']) {
+    for (const mode of ['baseline', 'hook', 'hook-hints']) {
       assert.equal(second[mode].turn, 2)
       assert.ok(second[mode].sessionId)
       assert.equal(second[mode].firstRunId, first[mode].runId)
@@ -121,13 +122,14 @@ test('v0.8.5 two-turn benchmark: the second turn resumes the session and the hoo
     assert.deepEqual(first.hook.hookHints, [])
     assert.ok(first.hook.filesOpenedList.includes('src/auth/failures.js'))
     // Turn 2: the hook read the transcript; throttle.js was read and failures.js attached, so
-    // it attached no source and named the remaining linked file as a hint, unless hints are off.
-    assert.equal(second.hook.hookDelivered, false)
-    assert.deepEqual(second.hook.hookHints, ['src/billing/invoice.js'])
-    assert.deepEqual(second.hook.hintsRead, ['src/billing/invoice.js'])
-    assert.deepEqual(second.hook.hintsExpected, ['src/billing/invoice.js'])
-    assert.deepEqual(second['hook-nohints'].hookHints, [])
-    assert.equal(second['hook-nohints'].hookChars, 0)
+    // it attached no source; with hints on it named the remaining linked file as a hint.
+    // Hints are off by default (v0.8.7), so the product hook attached nothing.
+    assert.equal(second['hook-hints'].hookDelivered, false)
+    assert.deepEqual(second['hook-hints'].hookHints, ['src/billing/invoice.js'])
+    assert.deepEqual(second['hook-hints'].hintsRead, ['src/billing/invoice.js'])
+    assert.deepEqual(second['hook-hints'].hintsExpected, ['src/billing/invoice.js'])
+    assert.deepEqual(second.hook.hookHints, [])
+    assert.equal(second.hook.hookChars, 0)
     assert.equal(second.baseline.hookHints, undefined)
     // The hook hands the product hook the follow-up text, not the wrapped prompt.
     const hookCall = resumed.find(call => call.attached)
