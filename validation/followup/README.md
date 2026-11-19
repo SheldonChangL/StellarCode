@@ -23,9 +23,10 @@ Conditions:
 |---|---|
 | baseline | no StellarCode |
 | hook-nohints | hook with session-aware delivery, without session hints (`--session-hints off`) |
-| hook | the product hook: session-aware delivery and session hints |
+| hook-hints | hook with session-aware delivery and session hints (`--session-hints on`) |
+| hook | the product hook with its defaults |
 
-`hook` vs `hook-nohints` isolates the hints. `hook` vs `baseline` measures the whole delivery path over a conversation.
+Since v0.8.7 session hints are off by default (`RESULT2.md`), so `hook` is the same as `hook-nohints`; the campaigns in `RESULT.md` and `RESULT2.md` ran before that, when `hook` gave hints. `hook-hints` vs `hook-nohints` isolates the hints. `hook` vs `baseline` measures the whole delivery path over a conversation.
 
 Turn 2 fields: cost and token usage, model turns, tool and search calls, `filesOpenedList`, `newFilesRead` and `rereadFiles` (against turn 1), answer and grounding against the follow-up's expected files (grounded if read in either turn or attached in turn 2), and for hook conditions `hookDelivered`, `hookChars`, `hookSourceFiles`, `hookHints`, `hintsRead` (hints the agent then read) and `hintsExpected` (hints in the answer key). The attachment is read from the CLI's own session transcript, after the turn's start time.
 
